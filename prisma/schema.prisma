@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+ shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+
+}
+
+model NSDomain {
+  @@map("ns_domain")
+  id                 Int       @id @default(autoincrement()) @db.UnsignedInt
+  active             Int       @default(1) @db.TinyInt
+  title              String    @db.VarChar(128)
+  domain             String    @unique @db.VarChar(64)
+  port               Int       @db.UnsignedInt
+  db_exists          Int       @default(0) @db.TinyInt
+  api_secret         String    @db.VarChar(32)
+  enable             String    @db.VarChar(1024)
+  show_plugins       String    @db.VarChar(1024)
+  mmconnect_username String?   @db.VarChar(32)
+  mmconnect_password String?   @db.VarChar(32)
+  mmconnect_server   String?   @default("EU") @db.Char(2)
+  bridge_username    String?   @db.VarChar(32)
+  bridge_password    String?   @db.VarChar(32)
+  bridge_server      String?   @default("EU") @db.Char(2)
+  created            DateTime  @default(now()) @db.Timestamp(0)
+  last_updated       DateTime? @default(now()) @db.Timestamp(0)
+  db_password        String?   @db.VarChar(64)
+  nsversion          String?   @db.VarChar(50)
+  Environments       NSDomainEnvironment[]
+}
+
+model NSDomainEnvironment {
+  @@map("ns_domain_environment")
+  id       Int     @id @default(autoincrement())
+  Domain   NSDomain @relation(fields: [ns_domain_id], references: [id])
+  ns_domain_id Int  @db.UnsignedInt
+  variable String  @db.VarChar(128)
+  value    String? @db.VarChar(4096)
+}
+model User {
+  @@map("auth_user")
+  id            String          @id @default(cuid())
+  name          String?         
+  username      String?         @unique 
+  email         String?         @unique 
+  emailVerified DateTime?       @map("email_verified")
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  Authenticator Authenticator[] // Optional for WebAuthn support
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Account {
+  @@map("auth_account")
+  id                       String  @id @default(cuid())
+  userId                   String  @map("user_id")
+  type                     String  @map("type")
+  provider                 String  @map("provider")
+  providerAccountId        String  @map("provider_account_id")
+  refresh_token            String? @db.Text @map("refresh_token")
+  access_token             String? @db.Text @map("access_token")
+  expires_at               Int?    @map("expires_at")
+  token_type               String? @map("token_type")
+  scope                    String? @map("scope")
+  id_token                 String? @db.Text @map("id_token")
+  session_state            String? @map("session_state")
+  refresh_token_expires_in Int?    @map("refresh_token_expires_in")
+  user                     User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  @@map("auth_session")
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime @map("expires")
+  user         User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  @@map("auth_verification_token")
+  identifier String @map("identifier")
+  token      String @map("token")
+  expires    DateTime @map("expires")
+
+  @@unique([identifier, token])
+}
+
+// Optional for WebAuthn support
+model Authenticator {
+  @@map("auth_authenticator")
+  credentialID         String  @unique @map("credential_id")
+  userId               String  @map("user_id")
+  providerAccountId    String  @map("provider_account_id")
+  credentialPublicKey  String  @map("credential_public_key")
+  counter              Int     @map("counter")
+  credentialDeviceType String  @map("credential_device_type")
+  credentialBackedUp   Boolean @map("credential_backed_up")
+  transports           String? @map("transports")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}

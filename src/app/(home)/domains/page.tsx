@@ -1,40 +1,49 @@
+'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { auth } from '../../../auth';
 import { Box } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { prisma } from '../../../lib/prisma'
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useSession } from 'next-auth/react';
+import { NSDomain } from '.prisma/client';
 
-export default async function DomainsPage() {
-    const session = await auth();
+export default function DomainsPage() {
+    const [rows, setRows] = React.useState<GridRowsProp>([]);
+    const { data: session, status } = useSession();
 
-    const domains = await prisma.nSDomain.findMany();
+    if (status === 'loading') {
+        return <p>Loading...</p>;
+    }
 
-    const rows: GridRowsProp = domains.map((domain) => {
-        return {
-            id: domain.id,
-            active: domain.active,
-            title: domain.title,
-            domain: domain.domain,
-            created: domain.created.toLocaleString(),
-            last_updated: domain.last_updated?.toLocaleString(),
-            data_source: domain.enable.indexOf('bridge') > -1 ? 'Dexcom' : 'API',
-        }
-    });
+    if (!session) {
+        return <p>You are not signed in. Please sign in to access this page.</p>;
+    }
 
-    // const deleteUser = React.useCallback(
-    //     (id: GridRowId) => () => {
-    //         console.log(`Delete user ${id}`);
-    //     },
-    //     [],
-    // );
+    React.useEffect(() => {
 
-    // const rows: GridRowsProp = [
-    //     { id: 1, col1: 'Hello', col2: 'World' },
-    //     { id: 2, col1: 'DataGridPro', col2: 'is Awesome' },
-    //     { id: 3, col1: 'MUI', col2: 'is Amazing' },
-    // ];
+        fetch(`http://localhost:3000/api/domain`).then((response) => {
+            response.json().then((domains) => {
+                const rows: GridRowsProp = domains.map((domain: NSDomain) => {
+                    return {
+                        id: domain.id,
+                        active: domain.active,
+                        title: domain.title,
+                        domain: domain.domain,
+                        created: domain.created.toLocaleString(),
+                        last_updated: domain.last_updated?.toLocaleString(),
+                        data_source: domain.enable.indexOf('bridge') > -1 ?
+                            'Dexcom' : domain.enable.indexOf('mmconnect') > -1 ? 'Medtronic' : 'API',
+                    }
+                });
+                setRows(rows);
+            });
+
+        });
+    }, []);
+
+    const redirectToDetails = (id: GridRowId) => () => {
+        console.log('Redirecting to domain details:', id);
+    };
 
     const columns: GridColDef[] = [
         {
@@ -79,30 +88,18 @@ export default async function DomainsPage() {
             type: 'string',
             flex: 1,
         },
-        // {
-        //     field: 'actions',
-        //     type: 'actions',
-        //     width: 80,
-        //     getActions: (params) => [
-        //         // <GridActionsCellItem
-        //         //     icon={<DeleteIcon />}
-        //         //     label="Delete"
-        //         //     onClick={deleteUser(params.id)}
-        //         // />,
-        //         //   <GridActionsCellItem
-        //         //     icon={<SecurityIcon />}
-        //         //     label="Toggle Admin"
-        //         //     onClick={toggleAdmin(params.id)}
-        //         //     showInMenu
-        //         //   />,
-        //         //   <GridActionsCellItem
-        //         //     icon={<FileCopyIcon />}
-        //         //     label="Duplicate User"
-        //         //     onClick={duplicateUser(params.id)}
-        //         //     showInMenu
-        //         //   />,
-        //     ],
-        // },
+        {
+            field: 'actions',
+            type: 'actions',
+            width: 80,
+            getActions: (params) => [
+                <GridActionsCellItem
+                    icon={<SettingsIcon />}
+                    label="Details"
+                    onClick={redirectToDetails(params.id)}
+                />,
+            ],
+        },
     ];
 
 
@@ -115,5 +112,4 @@ export default async function DomainsPage() {
         />
     </Box>
 
-    //<Typography>Welcome to Nightscout Romania, {session?.user?.name || 'User'} ({session?.user?.id || "Unknown ID"})!</Typography>;
 }

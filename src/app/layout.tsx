@@ -6,6 +6,8 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import { auth } from '../auth';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { bgBG } from '@mui/x-data-grid/locales';
 
 const NAVIGATION: Navigation = [
     {
@@ -21,6 +23,11 @@ const NAVIGATION: Navigation = [
         title: 'Orders',
         icon: <ShoppingCartIcon />,
     },
+    {
+        segment: 'domains',
+        title: 'Domains',
+        icon: <ShoppingCartIcon />,
+    }
 ];
 
 const BRANDING = {
@@ -32,6 +39,15 @@ const AUTHENTICATION = {
     signIn,
     signOut,
 };
+
+// const THEME = createTheme(
+//     {
+//         palette: {
+//             primary: { main: '#1976d2' },
+//         },
+//     },
+//     bgBG,
+// );
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
     const session = await auth();
@@ -46,6 +62,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                             branding={BRANDING}
                             session={session}
                             authentication={AUTHENTICATION}
+                        // theme={THEME}
                         >
                             {props.children}
                         </AppProvider>

@@ -19,15 +19,11 @@ const NAVIGATION: Navigation = [
         icon: <DashboardIcon />,
     },
     {
-        segment: 'orders',
-        title: 'Orders',
-        icon: <ShoppingCartIcon />,
-    },
-    {
         segment: 'domains',
         title: 'Domains',
+        pattern: '/domains/:id',
         icon: <ShoppingCartIcon />,
-    }
+    },
 ];
 
 const BRANDING = {

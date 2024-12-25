@@ -12,3 +12,16 @@ export async function getAllNSDomains() {
         await prisma.$disconnect();
     }
 }
+
+export async function getNSDomainById(id: number) {
+    const domain = prisma.nSDomain.findFirst({
+        where: {
+            id: id,
+        },
+        include: {
+            Environments: true,
+        }
+    });
+
+    return domain;
+}

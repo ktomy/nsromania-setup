@@ -6,6 +6,7 @@ import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, Gri
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
 import { NSDomain } from '.prisma/client';
+import { redirect } from 'next/navigation';
 
 export default function DomainsPage() {
     const [rows, setRows] = React.useState<GridRowsProp>([]);
@@ -21,7 +22,7 @@ export default function DomainsPage() {
 
     React.useEffect(() => {
 
-        fetch(`http://localhost:3000/api/domain`).then((response) => {
+        fetch(`http://localhost:3000/api/domains`).then((response) => {
             response.json().then((domains) => {
                 const rows: GridRowsProp = domains.map((domain: NSDomain) => {
                     return {
@@ -43,6 +44,7 @@ export default function DomainsPage() {
 
     const redirectToDetails = (id: GridRowId) => () => {
         console.log('Redirecting to domain details:', id);
+        redirect(`/domains/${id}`);
     };
 
     const columns: GridColDef[] = [

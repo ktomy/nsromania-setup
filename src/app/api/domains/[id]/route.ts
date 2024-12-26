@@ -3,8 +3,15 @@ import { getNSDomainById } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
 
+type Props = {
+    params: Promise<{
+        id: string
+    }>
+}
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, props: Props) {
+    const params = await props.params
+    const { id } = await params;
     const session = await auth();
 
     if (!session || !session.user) {
@@ -14,7 +21,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         });
     }
 
-    const { id } = await params;
     try {
         const nsDomains = await getNSDomainById(parseInt(id));
         if (!nsDomains) {

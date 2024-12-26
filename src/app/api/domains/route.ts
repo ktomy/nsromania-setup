@@ -1,9 +1,9 @@
-import { NextApiRequest } from 'next';
 import { getAllNSDomains, getNSDomainsByUserId } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
+import { NextRequest } from 'next/server';
 
-export async function GET(req: NextApiRequest) {
+export async function GET(req: NextRequest) {
     const session = await auth();
 
     if (!session || !session.user) {

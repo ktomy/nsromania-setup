@@ -13,15 +13,8 @@ export default function DomainsPage() {
     const [rows, setRows] = React.useState<GridRowsProp>([]);
     const { data: session, status } = useSession();
 
-    if (status === 'loading') {
-        return <p>Loading...</p>;
-    }
-
-    if (!session) {
-        return <p>You are not signed in. Please sign in to access this page.</p>;
-    }
-
     React.useEffect(() => {
+        if (!session) return;
 
         fetch(`/api/domains`).then((response) => {
             response.json().then((domains) => {
@@ -32,7 +25,7 @@ export default function DomainsPage() {
                         title: domain.title,
                         domain: domain.domain,
                         created: formatDate(domain.created),
-                        last_updated: formatDate(domain.last_updated),
+                        last_updated: formatDate(domain.lastUpdated),
                         data_source: domain.enable.indexOf('bridge') > -1 ?
                             'Dexcom' : domain.enable.indexOf('mmconnect') > -1 ? 'Medtronic' : 'API',
                     }
@@ -41,7 +34,16 @@ export default function DomainsPage() {
             });
 
         });
-    }, []);
+    }, [session]);
+
+
+    if (status === 'loading') {
+        return <p>Loading...</p>;
+    }
+
+    if (!session) {
+        return <p>You are not signed in. Please sign in to access this page.</p>;
+    }
 
     const redirectToDetails = (id: GridRowId) => () => {
         console.log('Redirecting to domain details:', id);

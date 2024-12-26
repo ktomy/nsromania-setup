@@ -59,7 +59,7 @@ const RenderDomainProperties = ({ properties }: { properties: Record<string, Ren
     );
 };
 
-export default function DomainPage({ params }: { params: { id: string } }) {
+export default function DomainPage() {
     const { id } = useParams() as { id: string };
 
     const [domain, setDomain] = React.useState<ApiResponse | null>(null);
@@ -73,7 +73,7 @@ export default function DomainPage({ params }: { params: { id: string } }) {
             setDomain(domain);
             setLoading(false);
         });
-    }, []);
+    }, [id]);
 
     const domainProperties: Record<string, RenderProperty> = {
         Domain: domain?.domain || "",

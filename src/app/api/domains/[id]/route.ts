@@ -1,10 +1,10 @@
-import { NextApiRequest } from 'next';
+// /src/app/api/domains/[id]/route.ts
 import { getNSDomainById } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
 
 
-export async function GET(req: NextApiRequest, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
     const session = await auth();
 
     if (!session || !session.user) {

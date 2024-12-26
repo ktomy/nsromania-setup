@@ -7,6 +7,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
 import { NSDomain } from '.prisma/client';
 import { redirect } from 'next/navigation';
+import { formatDate } from '../../../lib/utils';
 
 export default function DomainsPage() {
     const [rows, setRows] = React.useState<GridRowsProp>([]);
@@ -22,7 +23,7 @@ export default function DomainsPage() {
 
     React.useEffect(() => {
 
-        fetch(`http://localhost:3000/api/domains`).then((response) => {
+        fetch(`/api/domains`).then((response) => {
             response.json().then((domains) => {
                 const rows: GridRowsProp = domains.map((domain: NSDomain) => {
                     return {
@@ -30,8 +31,8 @@ export default function DomainsPage() {
                         active: domain.active,
                         title: domain.title,
                         domain: domain.domain,
-                        created: domain.created.toLocaleString(),
-                        last_updated: domain.last_updated?.toLocaleString(),
+                        created: formatDate(domain.created),
+                        last_updated: formatDate(domain.last_updated),
                         data_source: domain.enable.indexOf('bridge') > -1 ?
                             'Dexcom' : domain.enable.indexOf('mmconnect') > -1 ? 'Medtronic' : 'API',
                     }

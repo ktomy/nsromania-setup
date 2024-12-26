@@ -21,7 +21,7 @@ const NAVIGATION: Navigation = [
     {
         segment: 'domains',
         title: 'Domains',
-        pattern: '/domains/:id',
+        pattern: 'domains{/:id}*',
         icon: <ShoppingCartIcon />,
     },
 ];

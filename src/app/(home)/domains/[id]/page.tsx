@@ -5,12 +5,11 @@ import { notFound, useParams } from 'next/navigation';
 import { Container, Box, Typography, Paper } from "@mui/material";
 import Grid from '@mui/material/Grid2';
 import React from 'react';
-import Link from 'next/link';
-import { formatDate } from '../../../../lib/utils';
+import { formatDate } from '@/lib/utils';
 
 
 type ApiResponse = NSDomain & {
-    Environments?: NSDomainEnvironment[];
+    environments?: NSDomainEnvironment[];
 }
 
 async function fetchDomain(id: string): Promise<ApiResponse | null> {
@@ -82,14 +81,14 @@ export default function DomainPage({ params }: { params: { id: string } }) {
         Title: domain?.title || "",
         'Data source': domain?.enable.indexOf("bridge") !== -1 ?
             "Dexcom" : domain?.enable.indexOf("mmconnect") !== -1 ? ["Medtronic", "red"] : "API",
-        "API Secret": domain?.api_secret || "",
+        "API Secret": domain?.apiSecret || "",
         Created: formatDate(domain?.created),
-        "Last updated": formatDate(domain?.last_updated),
+        "Last updated": formatDate(domain?.lastUpdated),
     };
 
     let variables = {};
-    if (domain?.Environments) {
-        domain?.Environments.sort((a, b) => a.variable.localeCompare(b.variable)).forEach((env) => {
+    if (domain?.environments) {
+        domain?.environments.sort((a, b) => a.variable.localeCompare(b.variable)).forEach((env) => {
             variables = { ...variables, [env.variable]: env.value };
         });
     }
@@ -118,6 +117,4 @@ export default function DomainPage({ params }: { params: { id: string } }) {
             </Box>
 
     );
-
-
 }

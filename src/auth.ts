@@ -1,19 +1,21 @@
 import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
-import Credentials from 'next-auth/providers/credentials';
 import type { Provider } from 'next-auth/providers';
 import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./lib/prisma"
+import { User } from '@prisma/client';
 
 const providers: Provider[] = [
     GitHub({
         clientId: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        allowDangerousEmailAccountLinking: true,
     }),
     Google({
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        allowDangerousEmailAccountLinking: true,
     }),
     // Credentials({
     //     credentials: {
@@ -56,7 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     adapter: PrismaAdapter(prisma),
     callbacks: {
-        authorized({ auth: session, request: { nextUrl } }) {
+        async authorized({ auth: session, request: { nextUrl } }) {
             const isLoggedIn = !!session?.user;
             const isPublicPage = nextUrl.pathname.startsWith('/public');
 
@@ -66,11 +68,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             return false; // Redirect unauthenticated users to login page
         },
-        signIn({ user, account, profile, email, credentials }) {
-            if (!user || !user.email) {
+        async signIn({ user, account, profile, email, credentials }) {
+
+            if (!user) {
                 return false;
             }
-            return true;
-        }
+
+            const dbUser = user as User;
+            if (dbUser.loginAllowed === 1) {
+                return true;
+            }
+
+            return false;
+
+        },
     },
 });

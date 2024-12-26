@@ -1,10 +1,23 @@
 import { NextApiRequest } from 'next';
-import { getAllNSDomains } from '../../../lib/services/domains';
+import { getAllNSDomains, getNSDomainsByUserId } from '@/lib/services/domains';
+import { auth } from '@/auth';
+import { User } from '@prisma/client';
 
 export async function GET(req: NextApiRequest) {
+    const session = await auth();
+
+    if (!session || !session.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+    const user = session.user as User;
 
     try {
-        const nsDomains = await getAllNSDomains();
+        const nsDomains = user.role === "admin" ?
+            await getAllNSDomains() :
+            await getNSDomainsByUserId(user.id);
         return new Response(JSON.stringify(nsDomains), {
             headers: { "Content-Type": "application/json" },
         });

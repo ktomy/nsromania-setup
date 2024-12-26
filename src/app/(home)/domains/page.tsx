@@ -97,6 +97,7 @@ export default function DomainsPage() {
             width: 80,
             getActions: (params) => [
                 <GridActionsCellItem
+                    key={1}
                     icon={<SettingsIcon />}
                     label="Details"
                     onClick={redirectToDetails(params.id)}

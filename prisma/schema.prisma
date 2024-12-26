@@ -29,11 +29,11 @@ model NSDomain {
   lastUpdated       DateTime?             @default(now()) @map("last_updated") @db.Timestamp(0)
   dbPassword        String?               @map("db_password") @db.VarChar(64)
   nsversion         String?               @db.VarChar(50)
-  nsUserId          Int?                  @map("ns_user_id") @db.UnsignedInt
-  User              NSUser?               @relation(fields: [nsUserId], references: [id])
-  Environments      NSDomainEnvironment[]
+  authUserId        String?               @map("auth_user_id")
+  authUser          User?                 @relation(fields: [authUserId], references: [id])
+  environments      NSDomainEnvironment[]
 
-  @@index([nsUserId], map: "ns_domain_ns_user_id_fkey")
+  @@index([authUserId], map: "ns_domain_auth_user_id_fkey")
   @@map("ns_domain")
 }
 
@@ -57,9 +57,12 @@ model User {
   image         String?
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
+  loginAllowed  Int?            @map("login_allowed") @db.TinyInt
+  role          String?         @db.VarChar(16)
   accounts      Account[]
   Authenticator Authenticator[]
   sessions      Session[]
+  nsDomains     NSDomain[]
 
   @@map("auth_user")
 }
@@ -122,15 +125,4 @@ model Authenticator {
 
   @@id([userId, credentialID])
   @@map("auth_authenticator")
-}
-
-model NSUser {
-  id          Int        @id @default(autoincrement()) @db.UnsignedInt
-  email       String     @unique(map: "email") @db.VarChar(255)
-  role        String     @db.VarChar(10)
-  created     DateTime   @default(now()) @db.Timestamp(0)
-  lastUpdated DateTime?  @default(now()) @map("last_updated") @db.Timestamp(0)
-  Domains     NSDomain[]
-
-  @@map("ns_user")
 }

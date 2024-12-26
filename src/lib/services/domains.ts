@@ -19,9 +19,24 @@ export async function getNSDomainById(id: number) {
             id: id,
         },
         include: {
-            Environments: true,
+            environments: true,
+            authUser: true
         }
     });
 
     return domain;
+}
+
+export async function getNSDomainsByUserId(id: string) {
+    const domains = prisma.nSDomain.findMany({
+        where: {
+            authUserId: id,
+        },
+        include: {
+            environments: true,
+            authUser: true
+        }
+    });
+
+    return domains;
 }

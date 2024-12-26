@@ -17,22 +17,6 @@ const providers: Provider[] = [
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         allowDangerousEmailAccountLinking: true,
     }),
-    // Credentials({
-    //     credentials: {
-    //         email: { label: 'Email Address', type: 'email' },
-    //         password: { label: 'Password', type: 'password' },
-    //     },
-    //     authorize(c) {
-    //         if (c.password !== 'password') {
-    //             return null;
-    //         }
-    //         return {
-    //             id: 'test',
-    //             name: 'Test User',
-    //             email: String(c.email),
-    //         };
-    //     },
-    // }),
 ];
 
 if (!process.env.GITHUB_CLIENT_ID) {

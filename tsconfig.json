@@ -19,7 +19,7 @@
         "plugins": [
             {
                 "name": "next"
-            }
+            },
         ],
         "target": "ES2017",
         "baseUrl": "src",

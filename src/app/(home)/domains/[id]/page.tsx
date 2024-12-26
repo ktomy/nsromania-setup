@@ -98,7 +98,7 @@ export default function DomainPage() {
         (loading || !domain) ? <Typography>Loading...</Typography> :
             <Box>
                 <Typography variant="h6">
-                    <a href={`http://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
+                    <a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
                 </Typography>
                 <br />
                 <Typography variant="h6">

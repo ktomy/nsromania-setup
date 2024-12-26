@@ -1,13 +1,17 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { Box } from '@mui/material';
+import { Box, Chip } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
 import { NSDomain } from '.prisma/client';
 import { redirect } from 'next/navigation';
 import { formatDate } from '../../../lib/utils';
+
+type NSDomainExtended = NSDomain & {
+    status: string;
+};
 
 export default function DomainsPage() {
     const [rows, setRows] = React.useState<GridRowsProp>([]);
@@ -18,7 +22,7 @@ export default function DomainsPage() {
 
         fetch(`/api/domains`).then((response) => {
             response.json().then((domains) => {
-                const rows: GridRowsProp = domains.map((domain: NSDomain) => {
+                const rows: GridRowsProp = domains.map((domain: NSDomainExtended) => {
                     return {
                         id: domain.id,
                         active: domain.active,
@@ -28,6 +32,7 @@ export default function DomainsPage() {
                         last_updated: formatDate(domain.lastUpdated),
                         data_source: domain.enable.indexOf('bridge') > -1 ?
                             'Dexcom' : domain.enable.indexOf('mmconnect') > -1 ? 'Medtronic' : 'API',
+                        status: domain.status,
                     }
                 });
                 setRows(rows);
@@ -94,6 +99,25 @@ export default function DomainsPage() {
             flex: 1,
         },
         {
+            field: 'status',
+            headerName: 'Status',
+            type: 'string',
+            width: 120,
+            renderCell: (params) => {
+                const status = params.value;
+                return (
+                    <Chip
+                        label={status}
+                        size="small"
+                        style={{
+                            backgroundColor: status === 'online' ? 'green' : 'red',
+                            color: 'white',
+                        }}
+                    />
+                );
+            },
+        },
+        {
             field: 'actions',
             type: 'actions',
             width: 80,
@@ -114,6 +138,7 @@ export default function DomainsPage() {
         <DataGrid
             rows={rows}
             columns={columns}
+            disableRowSelectionOnClick
 
         />
     </Box>

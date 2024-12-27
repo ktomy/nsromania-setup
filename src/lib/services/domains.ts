@@ -43,6 +43,16 @@ export async function getNSDomainsByUserId(id: string) {
 }
 
 export async function createNSDomain(data: NSDomain) {
+    const existingDomain = await prisma.nSDomain.findUnique({
+        where: {
+            domain: data.domain,
+        },
+    });
+
+    if (existingDomain) {
+        throw new Error('Domain name already exists');
+    }
+
     const domain = prisma.nSDomain.create({
         data: {
             ...data
@@ -50,7 +60,6 @@ export async function createNSDomain(data: NSDomain) {
         include: {
             environments: true,
         }
-
     });
 
     return domain;

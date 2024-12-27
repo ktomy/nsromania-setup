@@ -1,18 +1,14 @@
 'use client';
-import { NSDomain, NSDomainEnvironment } from '.prisma/client';
 import { notFound, useParams } from 'next/navigation';
 
 import { Container, Box, Typography, Paper } from "@mui/material";
 import Grid from '@mui/material/Grid2';
 import React from 'react';
 import { formatDate } from '@/lib/utils';
+import { GetDomainByIdResponse } from '@/types/domains';
 
 
-type ApiResponse = NSDomain & {
-    environments?: NSDomainEnvironment[];
-}
-
-async function fetchDomain(id: string): Promise<ApiResponse | null> {
+async function fetchDomain(id: string): Promise<GetDomainByIdResponse | null> {
 
     const res = await fetch(`/api/domains/${id}`);
     if (!res.ok) return null;
@@ -62,7 +58,7 @@ const RenderDomainProperties = ({ properties }: { properties: Record<string, Ren
 export default function DomainPage() {
     const { id } = useParams() as { id: string };
 
-    const [domain, setDomain] = React.useState<ApiResponse | null>(null);
+    const [domain, setDomain] = React.useState<GetDomainByIdResponse | null>(null);
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -75,22 +71,39 @@ export default function DomainPage() {
         });
     }, [id]);
 
-    const domainProperties: Record<string, RenderProperty> = {
-        Domain: domain?.domain || "",
-        Active: domain?.active ? ["Yes", "green"] : ["No", "red"],
-        Title: domain?.title || "",
-        'Data source': domain?.enable.indexOf("bridge") !== -1 ?
-            "Dexcom" : domain?.enable.indexOf("mmconnect") !== -1 ? ["Medtronic", "red"] : "API",
-        "API Secret": domain?.apiSecret || "",
+    const domainProperties: Record<string, RenderProperty> = domain == null ? {} : {
+        "Subdomain name": domain.domain || "",
+        "Owner": domain.authUser?.email || ["Unknown", "red"],
+        Active: domain.active ? ["Yes", "green"] : ["No", "red"],
+        "Initialized (should be)": domain.dbExists ? ["Yes", "green"] : ["No", "red"],
+        "Initialized (actual)": domain.dbInitialized ? ["Yes", "green"] : ["No", "red"],
+        Status: domain.status === "not running" ?
+            ["Not running", "red"] : domain.status === "online" ?
+                ["Online", "green"] : domain.status || ["error", "red"],
+        Title: domain.title || "",
+        'Data source': domain.enable.indexOf("bridge") !== -1 ?
+            "Dexcom" : domain.enable.indexOf("mmconnect") !== -1 ? ["Medtronic", "red"] : "API",
+        "API Secret": domain.apiSecret || "",
         Created: formatDate(domain?.created),
         "Last updated": formatDate(domain?.lastUpdated),
+        Enable: domain.enable || "",
     };
 
     let variables = {};
-    if (domain?.environments) {
-        domain?.environments.sort((a, b) => a.variable.localeCompare(b.variable)).forEach((env) => {
-            variables = { ...variables, [env.variable]: env.value };
-        });
+
+    if (domain != null) {
+        if (domain.enable.indexOf("bridge") !== -1) {
+            domainProperties["Dexcom Server"] = domain.bridgeServer || "";
+            domainProperties["Dexcom Username"] = domain.bridgeUsername || "";
+            domainProperties["Dexcom Password"] = domain.bridgePassword || "";
+        }
+
+        if (domain.environments) {
+            domain.environments.sort((a, b) =>
+                a.variable.localeCompare(b.variable)).forEach((env) => {
+                    variables = { ...variables, [env.variable]: env.value };
+                });
+        }
     }
 
 

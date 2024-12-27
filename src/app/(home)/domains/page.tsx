@@ -5,7 +5,7 @@ import { Box, Chip } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
-import { NSDomain, User } from '.prisma/client';
+import { NSDomain, User } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { formatDate } from '../../../lib/utils';
 

@@ -1,7 +1,7 @@
 'use client';
 import { notFound, useParams } from 'next/navigation';
 
-import { Container, Box, Typography, Paper } from "@mui/material";
+import { Container, Box, Typography, Paper, Button } from "@mui/material";
 import Grid from '@mui/material/Grid2';
 import React from 'react';
 import { formatDate } from '@/lib/utils';
@@ -113,6 +113,10 @@ export default function DomainPage() {
                 <Typography variant="h6">
                     <a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
                 </Typography>
+                <br />
+                <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
+                    Edit Domain
+                </Button>
                 <br />
                 <Typography variant="h6">
                     Basic data

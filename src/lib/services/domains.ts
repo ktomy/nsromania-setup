@@ -64,3 +64,18 @@ export async function createNSDomain(data: NSDomain) {
 
     return domain;
 }
+
+export async function updateNSDomain(id: number, data: Partial<NSDomain>) {
+    try {
+        const updatedDomain = await prisma.nSDomain.update({
+            where: { id },
+            data,
+        });
+        return updatedDomain;
+    } catch (error) {
+        console.error('Error updating NSDomain:', error);
+        throw error;
+    } finally {
+        await prisma.$disconnect();
+    }
+}

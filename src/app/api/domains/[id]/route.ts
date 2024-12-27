@@ -1,5 +1,5 @@
 // /src/app/api/domains/[id]/route.ts
-import { getNSDomainById } from '@/lib/services/domains';
+import { getNSDomainById, updateNSDomain } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
 import { GetDomainByIdResponse } from '@/types/domains';
@@ -61,4 +61,36 @@ export async function GET(req: Request, props: Props) {
         );
     }
 
+}
+
+export async function PUT(req: Request, props: Props) {
+    const params = await props.params;
+    const { id } = await params;
+    const session = await auth();
+
+    if (!session || !session.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    try {
+        const body = await req.json();
+        const updatedDomain = await updateNSDomain(parseInt(id), body.domain);
+
+        return new Response(JSON.stringify(updatedDomain), {
+            headers: { "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "An error occurred";
+        console.error("Error updating NS domain:" + message);
+        return new Response(
+            JSON.stringify({ error: "Failed to update NS domain" }),
+            {
+                status: 500,
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+    }
 }

@@ -1,4 +1,5 @@
 import { prisma } from '../prisma'
+import { NSDomain } from '@prisma/client'
 
 
 export async function getAllNSDomains() {
@@ -39,4 +40,18 @@ export async function getNSDomainsByUserId(id: string) {
     });
 
     return domains;
+}
+
+export async function createNSDomain(data: NSDomain) {
+    const domain = prisma.nSDomain.create({
+        data: {
+            ...data
+        },
+        include: {
+            environments: true,
+        }
+
+    });
+
+    return domain;
 }

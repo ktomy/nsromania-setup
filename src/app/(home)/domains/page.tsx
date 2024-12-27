@@ -5,7 +5,7 @@ import { Box, Chip } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
-import { NSDomain } from '.prisma/client';
+import { NSDomain, User } from '.prisma/client';
 import { redirect } from 'next/navigation';
 import { formatDate } from '../../../lib/utils';
 
@@ -132,9 +132,11 @@ export default function DomainsPage() {
         },
     ];
 
+    const user = session.user as User;
+
 
     return <Box>
-        <Typography>Welcome to Nightscout Romania, {session?.user?.name || 'User'} ({session?.user?.id || "Unknown ID"})!</Typography>
+        <Typography>Welcome to Nightscout Romania, {user.name} ({user.id || "Unknown ID"}). Role: {user.role || "Unknown"}</Typography>
         <DataGrid
             rows={rows}
             columns={columns}

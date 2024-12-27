@@ -2,12 +2,10 @@ import * as React from 'react';
 import { AppProvider } from '@toolpad/core/nextjs';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import { auth } from '../auth';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { bgBG } from '@mui/x-data-grid/locales';
+import { Domain, DomainAdd } from '@mui/icons-material';
 
 const NAVIGATION: Navigation = [
     {
@@ -22,8 +20,13 @@ const NAVIGATION: Navigation = [
         segment: 'domains',
         title: 'Domains',
         pattern: 'domains{/:id}*',
-        icon: <ShoppingCartIcon />,
+        icon: <Domain />,
     },
+    {
+        title: "New domain",
+        segment: "newdomain",
+        icon: <DomainAdd />,
+    }
 ];
 
 const BRANDING = {
@@ -35,15 +38,6 @@ const AUTHENTICATION = {
     signIn,
     signOut,
 };
-
-// const THEME = createTheme(
-//     {
-//         palette: {
-//             primary: { main: '#1976d2' },
-//         },
-//     },
-//     bgBG,
-// );
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
     const session = await auth();

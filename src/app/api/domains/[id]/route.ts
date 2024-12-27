@@ -2,7 +2,7 @@
 import { getNSDomainById, updateNSDomain } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
-import { GetDomainByIdResponse } from '@/types/domains';
+import { GetDomainByIdResponse, UpdateDomainRequest } from '@/types/domains';
 import { getProcessesList } from '@/lib/services/nsruntime';
 import { checkMongoDatabaseAndUser } from '@/lib/services/nsdata';
 
@@ -76,8 +76,9 @@ export async function PUT(req: Request, props: Props) {
     }
 
     try {
-        const body = await req.json();
-        const updatedDomain = await updateNSDomain(parseInt(id), body.domain);
+        const body = await req.json() as UpdateDomainRequest;
+        console.log("Body:", body);
+        const updatedDomain = await updateNSDomain(parseInt(id), body);
 
         return new Response(JSON.stringify(updatedDomain), {
             headers: { "Content-Type": "application/json" },

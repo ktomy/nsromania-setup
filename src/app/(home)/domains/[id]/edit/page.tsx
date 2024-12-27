@@ -7,17 +7,25 @@ import {
     Checkbox,
     FormControlLabel,
     Button, MenuItem,
-    Select, InputLabel,
+    Select,
     FormControl,
     Box,
     Typography,
     SelectChangeEvent,
     Alert,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    Snackbar,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { NSDomain } from '@prisma/client';
+import { NSDomain, NSDomainEnvironment } from '@prisma/client';
 import { useParams } from 'next/navigation';
-import { GetDomainByIdResponse } from '@/types/domains';
+import { GetDomainByIdResponse, UpdateDomainRequest } from '@/types/domains';
 
 export default function EditDomainPage() {
     const { id } = useParams() as { id: string };
@@ -33,6 +41,12 @@ export default function EditDomainPage() {
     const [showPlugins, setShowPlugins] = useState('cob iob sage cage careportal');
     const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
     const [loading, setLoading] = useState(true);
+    const [environments, setEnvironments] = useState<NSDomainEnvironment[]>([]);
+    const [newEnvKey, setNewEnvKey] = useState('');
+    const [newEnvValue, setNewEnvValue] = useState('');
+    const [snackOpen, setSnackOpen] = useState(false);
+    const [snackMessage, setSnackMessage] = useState('');
+    const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
 
     useEffect(() => {
         if (id) {
@@ -50,6 +64,7 @@ export default function EditDomainPage() {
                     setDexcomPassword(data.bridgePassword ?? '');
                     setEnable(data.enable ?? '');
                     setShowPlugins(data.showPlugins ?? '');
+                    setEnvironments(data.environments ?? []);
                     setLoading(false);
                 })
                 .catch(error => {
@@ -59,9 +74,40 @@ export default function EditDomainPage() {
         }
     }, [id]);
 
+    const handleAddEnvironment = () => {
+        if (!newEnvKey || !newEnvValue) {
+            openSnack('Variable and value are required', "error");
+            return;
+        }
+
+        setEnvironments([...environments, {
+            id: 0,
+            variable: newEnvKey,
+            value: newEnvValue,
+            nsDomainId: parseInt(id),
+        }]);
+        setNewEnvKey('');
+        setNewEnvValue('');
+    };
+
+    const handleRemoveEnvironment = (index: number) => {
+        openSnack('Environment variable removed', 'info');
+        setEnvironments(environments.filter((_, i) => i !== index));
+    };
+
+    const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
+        setSnackMessage(message);
+        setSnackKind(kind);
+        setSnackOpen(true);
+    };
+
+    const handleSnackClose = () => {
+        setSnackOpen(false);
+    };
+
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        const updatedDomain: Omit<NSDomain, 'id' | 'created' | 'lastUpdated' | 'authUserId' | 'authUser' | 'environments'> = {
+        const updatedDomain: UpdateDomainRequest = {
             domain,
             title,
             apiSecret,
@@ -78,11 +124,12 @@ export default function EditDomainPage() {
             port: 0,
             dbPassword: null,
             nsversion: null,
+            environments: environments,
         };
 
         try {
             setAlert(null);
-            const body = JSON.stringify({ domain: updatedDomain });
+            const body = JSON.stringify(updatedDomain);
             const response = await fetch(`/api/domains/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -115,6 +162,10 @@ export default function EditDomainPage() {
         }
     };
 
+    const handleNewEnvKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setNewEnvKey(e.target.value);
+    };
+
     return (
         (loading || !domain) ? <Typography>Loading...</Typography> :
             <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -123,16 +174,18 @@ export default function EditDomainPage() {
                         <Typography variant="h6">Domain Name</Typography>
                     </Grid>
                     <Grid size={8}>
-                        <TextField
-                            value={domain}
-                            onChange={(e) => setDomain(e.target.value)}
-                            required
-                            error={domain.length > 0 && !/^[a-z0-9-]{2,20}$/.test(domain)}
-                            size="small"
-                            disabled
-                        />
+                        <Box sx={{ display: 'flex' }} alignItems="center">
+                            <TextField
+                                value={domain}
+                                onChange={(e) => setDomain(e.target.value)}
+                                required
+                                error={domain.length > 0 && !/^[a-z0-9-]{2,20}$/.test(domain)}
+                                size="small"
+                                disabled
+                            />
+                            <Typography sx={{ marginLeft: 1 }}>.nsromania.info</Typography>
+                        </Box>
                     </Grid>
-
                     <Grid size={4}>
                         <Typography variant="h6">Title</Typography>
                     </Grid>
@@ -245,16 +298,88 @@ export default function EditDomainPage() {
                         />
                     </Grid>
 
+                    <Grid size={12}>
+                        <Typography variant="h6">Environments</Typography>
+                    </Grid>
+                    <Grid size={12}>
+                        <TableContainer component={Paper}>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Variable</TableCell>
+                                        <TableCell>Value</TableCell>
+                                        <TableCell>Actions</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {environments.map((env, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>{env.variable}</TableCell>
+                                            <TableCell>{env.value}</TableCell>
+                                            <TableCell>
+                                                <Button onClick={() => handleRemoveEnvironment(index)}>Remove</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    <TableRow>
+                                        <TableCell>
+                                            <TextField
+                                                value={newEnvKey}
+                                                onChange={handleNewEnvKeyChange}
+                                                placeholder="Variable"
+                                                size="small"
+                                                fullWidth
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <TextField
+                                                value={newEnvValue}
+                                                onChange={(e) => setNewEnvValue(e.target.value)}
+                                                placeholder="Value"
+                                                size="small"
+                                                fullWidth
+                                                multiline={newEnvKey === "LOOP_APNS_KEY"}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button onClick={handleAddEnvironment}>Add</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Grid>
+
                 </Grid>
+                <Snackbar
+                    open={snackOpen}
+                    autoHideDuration={3000}
+                    onClose={handleSnackClose}
+                    message={snackMessage}
+                >
+                    <Alert
+                        onClose={handleSnackClose}
+                        severity={snackKind}
+                        variant="filled"
+                        sx={{ width: '100%' }}
+                    >
+                        {snackMessage}
+                    </Alert>
+                </Snackbar>
                 {alert && (
                     <Alert severity={alert.type} onClose={() => setAlert(null)}>
                         {alert.message}
                     </Alert>
                 )}
                 <Grid size={12}>
-                    <Button type="submit" variant="contained" color="primary">
-                        Save
-                    </Button>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                        <Button type="submit" variant="contained" color="primary">
+                            Save
+                        </Button>
+                        <Button variant="outlined" color="primary" onClick={() => window.history.back()}>
+                            Cancel
+                        </Button>
+                    </Box>
                 </Grid>
             </Box>
     );

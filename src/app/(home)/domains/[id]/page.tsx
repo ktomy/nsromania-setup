@@ -110,14 +110,18 @@ export default function DomainPage() {
     return (
         (loading || !domain) ? <Typography>Loading...</Typography> :
             <Box>
-                <Typography variant="h6">
-                    <a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
-                </Typography>
-                <br />
-                <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
-                    Edit Domain
-                </Button>
-                <br />
+                <Grid size={12} direction={"row"} container>
+                    <Grid size={10}>
+                        <Typography variant="h6">
+                            <a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
+                        </Typography>
+                    </Grid>
+                    <Grid size={2}>
+                        <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
+                            Edit Domain
+                        </Button>
+                    </Grid>
+                </Grid>
                 <Typography variant="h6">
                     Basic data
                 </Typography>

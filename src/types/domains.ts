@@ -6,3 +6,7 @@ export interface GetDomainByIdResponse extends NSDomain {
     status: string,
     dbInitialized: boolean,
 }
+
+export interface UpdateDomainRequest extends Partial<NSDomain> {
+    environments?: Partial<NSDomainEnvironment>[];
+}

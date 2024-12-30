@@ -1,9 +1,9 @@
 'use client';
 import { notFound, useParams } from 'next/navigation';
 
-import { Container, Box, Typography, Paper, Button } from "@mui/material";
+import { Container, Box, Typography, Paper, Button, Snackbar, Alert } from "@mui/material";
 import Grid from '@mui/material/Grid2';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { GetDomainByIdResponse } from '@/types/domains';
 
@@ -58,10 +58,54 @@ const RenderDomainProperties = ({ properties }: { properties: Record<string, Ren
 export default function DomainPage() {
     const { id } = useParams() as { id: string };
 
-    const [domain, setDomain] = React.useState<GetDomainByIdResponse | null>(null);
-    const [loading, setLoading] = React.useState(true);
+    const [domain, setDomain] = useState<GetDomainByIdResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [snackOpen, setSnackOpen] = useState(false);
+    const [snackMessage, setSnackMessage] = useState('');
+    const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [actionInProgress, setActionInProgress] = useState(false);
 
-    React.useEffect(() => {
+    const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
+        setSnackMessage(message);
+        setSnackKind(kind);
+        setSnackOpen(true);
+    };
+
+    const handleSnackClose = () => {
+        setSnackOpen(false);
+    };
+
+    const handleStartStopDomain = async (id: string, action: "start" | "stop") => {
+        try {
+            setActionInProgress(true);
+            const res = await fetch(`/api/domains/${id}/${action}`, {
+                method: "POST",
+            });
+
+            if (res.ok) {
+                openSnack("Action successfull", "success");
+                // reload the domain
+                fetchDomain(id).then((domain) => {
+                    if (!domain) {
+                        notFound();
+                    }
+                    setDomain(domain);
+                    setActionInProgress(false);
+                });
+            } else {
+                console.error(`Failed to ${action} domain`, res);
+                openSnack(`Failed to ${action} domain`, "error");
+                setActionInProgress(false);
+            }
+        } catch (error) {
+            console.error(`Failed to ${action} domain`, error);
+            openSnack(`Failed to ${action} domain`, "error");
+            setActionInProgress(false);
+        }
+    }
+
+
+    useEffect(() => {
         fetchDomain(id).then((domain) => {
             if (!domain) {
                 notFound();
@@ -110,16 +154,56 @@ export default function DomainPage() {
     return (
         (loading || !domain) ? <Typography>Loading...</Typography> :
             <Box>
+                <Snackbar
+                    open={snackOpen}
+                    autoHideDuration={3000}
+                    onClose={handleSnackClose}
+                    message={snackMessage}
+                >
+                    <Alert
+                        onClose={handleSnackClose}
+                        severity={snackKind}
+                        variant="filled"
+                        sx={{ width: '100%' }}
+                    >
+                        {snackMessage}
+                    </Alert>
+                </Snackbar>
                 <Grid size={12} direction={"row"} container>
-                    <Grid size={10}>
+                    <Grid size={8}>
                         <Typography variant="h6">
                             <a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
                         </Typography>
                     </Grid>
-                    <Grid size={2}>
-                        <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
-                            Edit Domain
-                        </Button>
+                    <Grid size={4}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => handleStartStopDomain(id, "start")}
+                                disabled={
+                                    domain.status === "online" ||
+                                    domain.dbInitialized === false ||
+                                    actionInProgress
+                                }
+                            >
+                                Start
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={() => handleStartStopDomain(id, "stop")}
+                                disabled={
+                                    domain.status === "not running" ||
+                                    domain.dbInitialized === false ||
+                                    actionInProgress}
+                            >
+                                Stop
+                            </Button>
+                            <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
+                                Edit Domain
+                            </Button>
+                        </Box>
                     </Grid>
                 </Grid>
                 <Typography variant="h6">

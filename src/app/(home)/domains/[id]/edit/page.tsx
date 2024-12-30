@@ -25,7 +25,7 @@ import {
 import Grid from '@mui/material/Grid2';
 import { NSDomain, NSDomainEnvironment } from '@prisma/client';
 import { useParams } from 'next/navigation';
-import { GetDomainByIdResponse, UpdateDomainRequest } from '@/types/domains';
+import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 
 export default function EditDomainPage() {
     const { id } = useParams() as { id: string };
@@ -107,7 +107,7 @@ export default function EditDomainPage() {
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        const updatedDomain: UpdateDomainRequest = {
+        const updatedDomain: PartialNSDomainWithEnvironments = {
             domain,
             title,
             apiSecret,

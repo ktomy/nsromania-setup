@@ -1,6 +1,6 @@
-import { UpdateDomainRequest } from '@/types/domains';
+import { PartialNSDomainWithEnvironments } from '@/types/domains';
 import { prisma } from '../prisma'
-import { NSDomain } from '@prisma/client'
+import { NSDomain, User } from '@prisma/client'
 
 
 export async function getAllNSDomains() {
@@ -66,7 +66,25 @@ export async function createNSDomain(data: NSDomain) {
     return domain;
 }
 
-export async function updateNSDomain(id: number, data: UpdateDomainRequest) {
+export async function isMyDOmain(domainId: number, user: User) {
+    if (user == null) {
+        return false;
+    }
+    if (user.role === 'admin') {
+        return true;
+    }
+
+    const domain = await prisma.nSDomain.findFirst({
+        where: {
+            id: domainId,
+            authUserId: user.id,
+        },
+    });
+
+    return !!domain;
+}
+
+export async function updateNSDomain(id: number, data: PartialNSDomainWithEnvironments) {
     try {
         const updateData: Partial<NSDomain> = {};
 

@@ -37,4 +37,8 @@ export async function checkMongoDatabaseAndUser(dbName: string, userName: string
     }
 }
 
-// ...existing code...
+export async function createDatabaseAndUser(name: string, password: string) {
+
+
+}
+

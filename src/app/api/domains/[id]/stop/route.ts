@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getNSDomainById, isMyDOmain } from "@/lib/services/domains";
-import { tryStopDomain } from "@/lib/services/nsruntime";
+import { isDomainRunning, tryStopDomain } from "@/lib/services/nsruntime";
 import { User } from "@prisma/client";
 import { NextRequest } from "next/server";
 
@@ -38,6 +38,13 @@ export async function POST(req: NextRequest, props: Props) {
         });
     }
     try {
+        if (await isDomainRunning(domain.domain) === false) {
+            return new Response(JSON.stringify({ error: "Domain is not running" }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+
         const result = await tryStopDomain(domain);
         if (result === "ok") {
             return new Response(JSON.stringify({ message: "Domain started" }), {

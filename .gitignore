@@ -6,4 +6,5 @@ node_modules/
 .env.production
 !.env.example
 deploy/
+.private/
 

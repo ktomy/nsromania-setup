@@ -38,7 +38,57 @@ export async function checkMongoDatabaseAndUser(dbName: string, userName: string
 }
 
 export async function createDatabaseAndUser(name: string, password: string) {
+    if (!process.env.MONGO_URL) {
+        throw new Error('Missing environment variable "MONGO_URL"');
+    }
 
+    const client = new MongoClient(process.env.MONGO_URL);
+
+    try {
+        await client.connect();
+        const adminDb = client.db('admin').admin();
+
+        // Create database
+        await adminDb.command({ create: name });
+
+        // Create user
+        await adminDb.command({
+            createUser: name,
+            pwd: password,
+            roles: [{ role: 'readWrite', db: name }],
+        });
+    } catch (error) {
+        console.error('Error creating database and user:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+
+}
+
+export async function deleteDatabaseAndUser(name: string) {
+    if (!process.env.MONGO_URL) {
+        throw new Error('Missing environment variable "MONGO_URL"');
+    }
+
+    const client = new MongoClient(process.env.MONGO_URL);
+
+    try {
+        await client.connect();
+        const adminDb = client.db('admin').admin();
+
+        // Drop user
+        await adminDb.command({ dropUser: name });
+
+        // Drop database
+        await adminDb.command({ dropDatabase: 1 });
+
+
+    } catch (error) {
+        console.error('Error deleting database and user:', error);
+    } finally {
+        await client.close();
+    }
 
 }
 

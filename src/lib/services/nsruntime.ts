@@ -41,6 +41,11 @@ export async function getProcessesList(): Promise<ProcessInfo[]> {
     });
 }
 
+export async function isDomainRunning(domain: string): Promise<boolean> {
+    return (await getProcessesList()).some((proc) => proc.name.endsWith(`_${domain}`));
+}
+
+
 export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): Promise<string> {
     // connect to pm2 and start the domain
     const pm2 = await import('pm2');

@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import { createSubdomain } from "@/lib/services/dnsmanagement";
+import { createSubdomain, deleteSubdomain } from "@/lib/services/dnsmanagement";
 import { getNSDomainById, isMyDOmain, updateNSDomain } from "@/lib/services/domains";
-import { createVirtualHost } from "@/lib/services/nginxmanagement";
-import { createDatabaseAndUser } from "@/lib/services/nsdatbasea";
+import { createVirtualHost, deleteVirtualHost } from "@/lib/services/nginxmanagement";
+import { createDatabaseAndUser, deleteDatabaseAndUser } from "@/lib/services/nsdatbasea";
 import { tryStartDomain } from "@/lib/services/nsruntime";
 import { User } from "@prisma/client";
 import { NextRequest } from "next/server";
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest, props: Props) {
         });
     }
 
-    if (domain.active === 0) {
-        return new Response(JSON.stringify({ error: "Domain is not active, activate first" }), {
+    if (domain.active === 1) {
+        return new Response(JSON.stringify({ error: "Domain is active, deactivate first" }), {
             status: 400,
             headers: { "Content-Type": "application/json" },
         });
@@ -49,14 +49,14 @@ export async function POST(req: NextRequest, props: Props) {
 
     try {
 
-        if (domain.dbExists === 0) {
-            await createDatabaseAndUser(domain.domain, domain.apiSecret);
-            updateNSDomain(domain.id, { dbExists: 1 });
+        await deleteVirtualHost(domain.domain);
+
+        await deleteSubdomain(domain.domain);
+
+        if (domain.dbExists === 1) {
+            await deleteDatabaseAndUser(domain.domain);
+            updateNSDomain(domain.id, { dbExists: 0 });
         }
-
-        await createSubdomain(domain.domain);
-
-        await createVirtualHost(domain.domain, domain.id + 11000);
 
         return new Response(JSON.stringify("ok"), {
             status: 200,

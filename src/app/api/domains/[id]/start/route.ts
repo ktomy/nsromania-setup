@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getNSDomainById, isMyDOmain } from "@/lib/services/domains";
-import { tryStartDomain } from "@/lib/services/nsruntime";
+import { isDomainRunning, tryStartDomain } from "@/lib/services/nsruntime";
 import { User } from "@prisma/client";
 import { NextRequest } from "next/server";
 
@@ -37,6 +37,21 @@ export async function POST(req: NextRequest, props: Props) {
             headers: { "Content-Type": "application/json" },
         });
     }
+
+    if (domain.active === 0) {
+        return new Response(JSON.stringify({ error: "Domain is not active, activate first" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    if (await isDomainRunning(domain.domain)) {
+        return new Response(JSON.stringify({ error: "Domain is already running" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
     try {
         const result = await tryStartDomain(domain);
         if (result === "ok") {

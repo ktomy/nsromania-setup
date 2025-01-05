@@ -1,25 +1,61 @@
 'use client';
-import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { Box, Chip } from '@mui/material';
+import { Alert, Box, Button, Chip, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
+import Grid from '@mui/material/Grid2';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
 import { NSDomain, User } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { formatDate } from '../../../lib/utils';
+import { useState, useEffect } from 'react';
 
 type NSDomainExtended = NSDomain & {
     status: string;
 };
 
 export default function DomainsPage() {
-    const [rows, setRows] = React.useState<GridRowsProp>([]);
+    const [rows, setRows] = useState<GridRowsProp>([]);
     const { data: session, status } = useSession();
+    const [snackOpen, setSnackOpen] = useState(false);
+    const [snackMessage, setSnackMessage] = useState('');
+    const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [actionInProgress, setActionInProgress] = useState(false);
 
-    React.useEffect(() => {
-        if (!session) return;
+    const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
+        setSnackMessage(message);
+        setSnackKind(kind);
+        setSnackOpen(true);
+    };
 
+    const handleSnackClose = () => {
+        setSnackOpen(false);
+    };
+
+    const handleDomainsActions = async (action: "startall") => {
+        try {
+            setActionInProgress(true);
+            const res = await fetch(`/api/domains/${action}`, {
+                method: "POST",
+            });
+
+            if (res.ok) {
+                openSnack("Action successfull", "success");
+                fetchDomains();
+
+            } else {
+                console.error(`Failed to ${action} domain`, res);
+                openSnack(`Failed to ${action} domain`, "error");
+                setActionInProgress(false);
+            }
+        } catch (error) {
+            console.error(`Failed to ${action} domain`, error);
+            openSnack(`Failed to ${action} domain`, "error");
+            setActionInProgress(false);
+        }
+    }
+
+    const fetchDomains = () => {
         fetch(`/api/domains`).then((response) => {
             response.json().then((domains) => {
                 const rows: GridRowsProp = domains.map((domain: NSDomainExtended) => {
@@ -36,9 +72,16 @@ export default function DomainsPage() {
                     }
                 });
                 setRows(rows);
+                setActionInProgress(false);
             });
 
         });
+    }
+
+    useEffect(() => {
+        if (!session) return;
+        fetchDomains();
+
     }, [session]);
 
 
@@ -136,7 +179,43 @@ export default function DomainsPage() {
 
 
     return <Box>
-        <Typography>Welcome to Nightscout Romania, {user.name} ({user.id || "Unknown ID"}). Role: {user.role || "Unknown"}</Typography>
+        <Snackbar
+            open={snackOpen}
+            autoHideDuration={3000}
+            onClose={handleSnackClose}
+            message={snackMessage}
+        >
+            <Alert
+                onClose={handleSnackClose}
+                severity={snackKind}
+                variant="filled"
+                sx={{ width: '100%' }}
+            >
+                {snackMessage}
+            </Alert>
+        </Snackbar>
+        <Grid size={12} direction={"row"} container>
+            <Grid size={8}>
+                <Typography>Welcome to Nightscout Romania, {user.name} ({user.id || "Unknown ID"}). Role: {user.role || "Unknown"}</Typography>
+            </Grid>
+            <Grid size={4}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleDomainsActions("startall")}
+                        disabled={actionInProgress}
+                    >
+                        Start all active
+                    </Button>
+                    <Button variant="contained" color="primary" href={`/newdomain`}>
+                        New Domain
+                    </Button>
+                </Box>
+            </Grid>
+        </Grid>
+        <br />
         <DataGrid
             rows={rows}
             columns={columns}

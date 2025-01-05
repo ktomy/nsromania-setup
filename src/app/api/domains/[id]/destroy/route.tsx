@@ -3,7 +3,7 @@ import { createSubdomain, deleteSubdomain } from "@/lib/services/dnsmanagement";
 import { getNSDomainById, isMyDOmain, updateNSDomain } from "@/lib/services/domains";
 import { createVirtualHost, deleteVirtualHost } from "@/lib/services/nginxmanagement";
 import { createDatabaseAndUser, deleteDatabaseAndUser } from "@/lib/services/nsdatbasea";
-import { tryStartDomain } from "@/lib/services/nsruntime";
+import { isDomainRunning, tryStartDomain, tryStopDomain } from "@/lib/services/nsruntime";
 import { User } from "@prisma/client";
 import { NextRequest } from "next/server";
 
@@ -48,6 +48,10 @@ export async function POST(req: NextRequest, props: Props) {
     }
 
     try {
+
+        if (await isDomainRunning(domain.domain)) {
+            await tryStopDomain(domain);
+        }
 
         await deleteVirtualHost(domain.domain);
 

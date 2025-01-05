@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
             headers: { "Content-Type": "application/json" },
         });
     }
+
     const user = session.user as User;
     if (user.role !== "admin") {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {

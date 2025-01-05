@@ -75,7 +75,7 @@ export default function DomainPage() {
         setSnackOpen(false);
     };
 
-    const handleStartStopDomain = async (id: string, action: "start" | "stop") => {
+    const handleDomainActions = async (id: string, action: "start" | "stop" | 'initialize' | 'destroy') => {
         try {
             setActionInProgress(true);
             const res = await fetch(`/api/domains/${id}/${action}`, {
@@ -170,17 +170,29 @@ export default function DomainPage() {
                     </Alert>
                 </Snackbar>
                 <Grid size={12} direction={"row"} container>
-                    <Grid size={8}>
+                    <Grid size={6}>
                         <Typography variant="h6">
                             <a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
                         </Typography>
                     </Grid>
-                    <Grid size={4}>
+                    <Grid size={6}>
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                             <Button
                                 variant="contained"
+                                color="success"
+                                onClick={() => handleDomainActions(id, "initialize")}
+                                disabled={
+                                    domain.status === "online" ||
+                                    domain.dbInitialized === true ||
+                                    actionInProgress
+                                }
+                            >
+                                Initialize
+                            </Button>
+                            <Button
+                                variant="contained"
                                 color="primary"
-                                onClick={() => handleStartStopDomain(id, "start")}
+                                onClick={() => handleDomainActions(id, "start")}
                                 disabled={
                                     domain.status === "online" ||
                                     domain.dbInitialized === false ||
@@ -190,15 +202,26 @@ export default function DomainPage() {
                                 Start
                             </Button>
                             <Button
-                                variant="contained"
+                                variant="outlined"
                                 color="error"
-                                onClick={() => handleStartStopDomain(id, "stop")}
+                                onClick={() => handleDomainActions(id, "stop")}
                                 disabled={
                                     domain.status === "not running" ||
                                     domain.dbInitialized === false ||
                                     actionInProgress}
                             >
                                 Stop
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={() => handleDomainActions(id, "destroy")}
+                                disabled={
+                                    domain.status === "online" ||
+                                    domain.dbInitialized === false ||
+                                    actionInProgress}
+                            >
+                                Destroy
                             </Button>
                             <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
                                 Edit Domain

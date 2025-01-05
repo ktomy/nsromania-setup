@@ -67,6 +67,7 @@ export async function POST(req: NextRequest, props: Props) {
             headers: { "Content-Type": "application/json" },
         });
     } catch (error) {
+        console.error("Destroying domain error: ", error);
         return new Response(JSON.stringify({ error: "Failed to initialize domain" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

@@ -27,6 +27,8 @@ export async function createVirtualHost(domain: string, port: number) {
         throw new Error('Port must be between 11000 and 12000');
     }
 
+    console.log('Creating virtual host:', domain, 'on port:', port);
+
     // Create the virtual host configuration file
     const virtualHostFilePath = `/etc/nginx/sites-available/${domain}`;
     const virtualHostTemplateFIlePath = '/etc/nginx/sites-available/_template';
@@ -75,6 +77,8 @@ export async function deleteVirtualHost(domain: string) {
     if (!/^[a-z0-9-\.]+$/.test(domain)) {
         throw new Error('Domain name must only contain lowercase letters, numbers, dots and hyphens');
     }
+
+    console.log('Deleting virtual host:', domain);
 
     // Remove the virtual host configuration file
     const virtualHostFilePath = `/etc/nginx/sites-available/${domain}`;

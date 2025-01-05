@@ -34,6 +34,7 @@ export async function POST(req: NextRequest, props: Props) {
 
     const domain = await getNSDomainById(parseInt(id));
     if (!domain) {
+        console.error("Domain not found");
         return new Response(JSON.stringify({ error: "Something went really wrong" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest, props: Props) {
             headers: { "Content-Type": "application/json" },
         });
     } catch (error) {
+        console.error("Failed to initialize domain", error);
         return new Response(JSON.stringify({ error: "Failed to initialize domain" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

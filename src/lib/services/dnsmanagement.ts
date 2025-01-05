@@ -27,15 +27,17 @@ export async function createSubdomain(subdomain: string) {
         // Append the new subdomain entry to the zone file
         await fs.appendFile(zoneFilePath, newEntry);
 
-        // Reload BIND configuration using rndc
-        const { stderr } = await exec('rndc reload');
-
-        if (stderr) {
-            throw new Error(`Failed to reload DNS: ${stderr}`);
+        let lastErrorOutput: string | null = null;
+        try {
+            const { stdout, stderr } = await exec('rndc reload');
+            lastErrorOutput = stderr?.read();
+        } catch (error) {
+            throw new Error(`Failed to reload DNS: ${error}, ${lastErrorOutput}`);
         }
     } catch (error) {
         throw new Error(`Failed to create subdomain: ${error}`);
     }
+    console.log('Created subdomain:', subdomain);
 }
 
 export async function deleteSubdomain(subdomain: string) {
@@ -68,14 +70,18 @@ export async function deleteSubdomain(subdomain: string) {
 
 
         // Reload BIND configuration using rndc
-        const { stderr } = await exec('rndc reload');
-
-        if (stderr) {
-            throw new Error(`Failed to reload DNS: ${stderr}`);
+        let lastErrorOutput: string | null = null;
+        try {
+            const { stdout, stderr } = await exec('rndc reload');
+            lastErrorOutput = stderr?.read();
+        } catch (error) {
+            throw new Error(`Failed to reload DNS: ${error}, ${lastErrorOutput}`);
         }
+
     } catch (error) {
-        throw new Error(`Failed to create subdomain: ${error}`);
+        throw new Error(`Failed to delete subdomain: ${error}`);
     }
+    console.log('Deleted subdomain:', subdomain);
 }
 
 export async function listSubdomains() {

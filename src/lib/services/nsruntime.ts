@@ -60,18 +60,21 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
             let nsHome = process.env.NS_HOME
             if (process.env.NODE_ENV === 'production') {
                 if (domain.nsversion !== null) {
-                    nsHome += `/${domain.nsversion}/`
+                    nsHome += `/${domain.nsversion}/`;
+                }
+                else {
+                    nsHome += '/master/';
                 }
             }
 
             let nsEnvironment: { [key: string]: string; } = {};
             nsEnvironment.ENABLE = domain.enable || '';
             nsEnvironment.SHOW_PLUGINS = domain.showPlugins || '';
-            // domain.mmconnectUsername ? nsEnvironment.MMCONNECT_USERNAME = domain.mmconnectUsername : null;
+            // domain.mmconnectUsername ? nsEnvironment.MMCONNECT_USER_NAME = domain.mmconnectUsername : null;
             // domain.mmconnectPassword ? nsEnvironment.MMCONNECT_PASSWORD = domain.mmconnectPassword : null;
             // domain.mmconnectServer ? nsEnvironment.MMCONNECT_SERVER = domain.mmconnectServer : null;
             if (domain.enable?.indexOf('bridge') !== -1) {
-                domain.bridgeUsername ? nsEnvironment.BRIDGE_USERNAME = domain.bridgeUsername : null;
+                domain.bridgeUsername ? nsEnvironment.BRIDGE_USER_NAME = domain.bridgeUsername : null;
                 domain.bridgePassword ? nsEnvironment.BRIDGE_PASSWORD = domain.bridgePassword : null;
                 domain.bridgeServer ? nsEnvironment.BRIDGE_SERVER = domain.bridgeServer : null;
             }
@@ -83,15 +86,24 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
             nsEnvironment.THEME = 'colors';
             nsEnvironment.TIME_FORMAT = "24";
 
-            nsEnvironment.MONGODB_URI = `mongodb://${domain.domain}:${domain.apiSecret}@localhost:27017/${domain.domain}`;
+
+            let connectionStringInVariables = false;
 
             // add all the variables and values from domain.environments with variable as key and value as value
             domain.environments?.forEach((env) => {
                 if (env.variable && env.value) {
+                    if (env.variable === 'MONGODB_URI' || env.variable === 'MONGO_CONNECTION') {
+                        connectionStringInVariables = true;
+                    }
                     nsEnvironment[env.variable] = env.value;
                 }
             });
-            console.log("Environment", nsEnvironment);
+
+            if (!connectionStringInVariables) {
+                nsEnvironment.MONGODB_URI = `mongodb://${domain.domain}:${domain.apiSecret}@localhost:27017/${domain.domain}`;
+            }
+
+            // console.log("Environment", nsEnvironment);
 
             pm2.start({
                 name: `11${(domain.id || 999).toString().padStart(3, '0')}_${domain.domain}`,
@@ -106,6 +118,7 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
                     resolve('ok');
                 }
             });
+            console.log(`Started domain ${domain.domain}`);
         });
     });
 }
@@ -128,6 +141,7 @@ export async function tryStopDomain(domain: PartialNSDomainWithEnvironments): Pr
                     resolve('ok');
                 }
             });
+            console.log(`Stopped domain ${domain.domain}`);
         });
     });
 }

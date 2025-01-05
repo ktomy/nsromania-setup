@@ -46,23 +46,36 @@ export async function createDatabaseAndUser(name: string, password: string) {
 
     try {
         await client.connect();
-        const adminDb = client.db('admin').admin();
 
-        // Create database
-        await adminDb.command({ create: name });
-
-        // Create user
-        await adminDb.command({
+        const db = client.db(name);
+        await db.command({
             createUser: name,
             pwd: password,
             roles: [{ role: 'readWrite', db: name }],
         });
+
+        await db.collection('dummy').insertOne({ initialized: true });
+
+
+        // const adminDb = client.db('admin').admin();
+
+        // // Create database
+        // await adminDb.command({ create: name });
+
+        // // Create user
+        // await adminDb.command({
+        //     createUser: name,
+        //     pwd: password,
+        //     roles: [{ role: 'readWrite', db: name }],
+        // });
+
     } catch (error) {
         console.error('Error creating database and user:', error);
         throw error;
     } finally {
         await client.close();
     }
+    console.log(`Database and user created: ${name}`);
 
 }
 
@@ -75,20 +88,22 @@ export async function deleteDatabaseAndUser(name: string) {
 
     try {
         await client.connect();
-        const adminDb = client.db('admin').admin();
+        const userDb = client.db(name);
 
         // Drop user
-        await adminDb.command({ dropUser: name });
+        await userDb.command({ dropUser: name });
 
         // Drop database
-        await adminDb.command({ dropDatabase: 1 });
+        await userDb.dropDatabase();
 
 
     } catch (error) {
         console.error('Error deleting database and user:', error);
+        throw error;
     } finally {
         await client.close();
     }
+    console.log(`Database and user deleted: ${name}`);
 
 }
 

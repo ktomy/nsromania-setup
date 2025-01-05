@@ -90,7 +90,7 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
 
         if (data.domain) updateData.domain = data.domain;
         if (data.authUserId) updateData.authUserId = data.authUserId;
-        if (data.active !== undefined) updateData.active = data.active;
+        if (data.active) updateData.active = data.active;
         if (data.title) updateData.title = data.title;
         if (data.apiSecret) updateData.apiSecret = data.apiSecret;
         if (data.enable) updateData.enable = data.enable;
@@ -103,6 +103,7 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
         if (data.bridgeServer) updateData.bridgeServer = data.bridgeServer;
         if (data.dbPassword) updateData.dbPassword = data.dbPassword;
         if (data.nsversion) updateData.nsversion = data.nsversion;
+        if (data.dbExists) updateData.dbExists = data.dbExists;
 
         const updatedDomain = await prisma.nSDomain.update({
             where: { id },

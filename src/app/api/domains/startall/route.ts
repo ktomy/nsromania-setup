@@ -1,4 +1,4 @@
-import { getAllNSDomains, getNSDomainsByUserId, createNSDomain } from '@/lib/services/domains';
+import { getAllNSDomains, getNSDomainsByUserId, createNSDomain, getNSDomainById } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { NSDomain, User } from '@prisma/client';
 import { NextRequest } from 'next/server';
@@ -31,7 +31,13 @@ export async function POST(req: NextRequest) {
 
     await Promise.all(domainsWithStatus
         .filter(domain => domain.status === 'not running')
-        .map(domain => tryStartDomain(domain))
+        .map(async domain => {
+            const fullDomain = await getNSDomainById(domain.id);
+            if (fullDomain) {
+                return tryStartDomain(fullDomain);
+            }
+            return Promise.resolve();
+        })
     );
 
     return new Response(JSON.stringify({ success: true }), {

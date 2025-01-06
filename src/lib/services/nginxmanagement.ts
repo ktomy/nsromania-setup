@@ -99,3 +99,14 @@ export async function deleteVirtualHost(domain: string) {
     }
 }
 
+export async function getVirtualHosts() {
+    const sitesAvailableDir = '/etc/nginx/sites-available';
+    const files = await fs.readdir(sitesAvailableDir);
+
+    const virtualHosts = files
+        .filter(file => (file !== '_template' && file !== '00-default' && file !== 'setup'))
+        .map(file => file);
+
+    return virtualHosts;
+}
+

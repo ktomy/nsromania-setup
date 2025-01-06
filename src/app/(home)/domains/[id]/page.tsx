@@ -55,6 +55,20 @@ const RenderDomainProperties = ({ properties }: { properties: Record<string, Ren
     );
 };
 
+function formatBytes(bytes: number | null): string {
+    if (bytes === null) return "Unknown";
+    if (bytes === 0) return "0 Bytes";
+
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    const k = 1024; // Factor for conversion
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    const value = bytes / Math.pow(k, i);
+    const roundedValue = i === 0 ? value : Math.min(parseFloat(value.toFixed(2)), parseFloat(value.toFixed(0))); // Avoid decimals for "Bytes"
+
+    return `${roundedValue} ${sizes[i]}`;
+}
+
 export default function DomainPage() {
     const { id } = useParams() as { id: string };
 
@@ -128,9 +142,12 @@ export default function DomainPage() {
         'Data source': domain.enable.indexOf("bridge") !== -1 ?
             "Dexcom" : domain.enable.indexOf("mmconnect") !== -1 ? ["Medtronic", "red"] : "API",
         "API Secret": domain.apiSecret || "",
-        Created: formatDate(domain?.created),
-        "Last updated": formatDate(domain?.lastUpdated),
+        "Nightscout version": domain.nsversion || "<default>",
+        Created: formatDate(domain.created),
+        "Last updated": formatDate(domain.lastUpdated),
         Enable: domain.enable || "",
+        "Database size": formatBytes(domain.dbSize) || "",
+        "Last glucose entry": formatDate(domain.lastDbEntry) || "",
     };
 
     let variables = {};

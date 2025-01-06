@@ -5,6 +5,8 @@ export interface GetDomainByIdResponse extends NSDomain {
     authUser?: User;
     status: string,
     dbInitialized: boolean,
+    dbSize: number | null,
+    lastDbEntry: Date | null,
 }
 
 export interface PartialNSDomainWithEnvironments extends Partial<NSDomain> {

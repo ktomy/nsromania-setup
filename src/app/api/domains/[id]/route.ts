@@ -4,7 +4,8 @@ import { auth } from '@/auth';
 import { User } from '@prisma/client';
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { getProcessesList } from '@/lib/services/nsruntime';
-import { checkMongoDatabaseAndUser } from '@/lib/services/nsdatbasea';
+import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from '@/lib/services/nsdatbasea';
+import { get } from 'http';
 
 type Props = {
     params: Promise<{
@@ -43,8 +44,10 @@ export async function GET(req: Request, props: Props) {
         }
         const processList = await getProcessesList();
         // check if a process having the domain name is running and if yes, set "status" field to the process's status
-        nsDomain.status = processList.find(proc => proc.name.endsWith(nsDomain.domain))?.status || "not running";
+        nsDomain.status = processList.find(proc => proc.name.endsWith(`_${nsDomain.domain}`))?.status || "not running";
         nsDomain.dbInitialized = await checkMongoDatabaseAndUser(nsDomain.domain, nsDomain.domain);
+        nsDomain.lastDbEntry = await getLastDbEntry(nsDomain.domain);
+        nsDomain.dbSize = await getDbSize(nsDomain.domain);
 
         return new Response(JSON.stringify(nsDomain), {
             headers: { "Content-Type": "application/json" },

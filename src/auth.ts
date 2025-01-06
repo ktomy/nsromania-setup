@@ -53,6 +53,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return false; // Redirect unauthenticated users to login page
         },
         async signIn({ user, account, profile, email, credentials }) {
+            // console.log("SignIn arguments:\nuser: ", user,
+            //     "\naccount: ", account,
+            //     "\nprofile: ", profile,
+            //     "\nemail: ", email,
+            //     "\ncredentials: ", credentials);
 
             if (!user) {
                 return false;
@@ -60,6 +65,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             const dbUser = user as User;
             if (dbUser.loginAllowed === 1) {
+                console.log(`User ${dbUser.email} is logging in`);
+                return true;
+            }
+
+            // check for the first login
+            const newDbUser = await prisma.user.findFirst({
+                where: {
+                    email: user.email,
+                },
+            });
+
+            if (newDbUser && newDbUser.loginAllowed === 1) {
+                if (profile !== undefined && (
+                    newDbUser.image !== profile.image ||
+                    newDbUser.name !== profile.name
+                )) {
+                    await prisma.user.update({
+                        where: {
+                            email: user.email as string,
+                        },
+                        data: {
+                            image: profile.picture,
+                            name: profile.name,
+                        },
+                    });
+                }
+                console.log(`First login for ${user.email}, allowing`);
                 return true;
             }
 

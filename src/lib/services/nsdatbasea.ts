@@ -107,3 +107,79 @@ export async function deleteDatabaseAndUser(name: string) {
 
 }
 
+export async function getCollections(dbName: string) {
+    if (!process.env.MONGO_URL) {
+        throw new Error('Missing environment variable "MONGO_URL"');
+    }
+
+    const client = new MongoClient(process.env.MONGO_URL);
+
+    try {
+        await client.connect();
+        const collections = await client.db(dbName).listCollections().toArray();
+        return collections.map(collection => collection.name);
+    } catch (error) {
+        console.error('Error getting collections:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+}
+
+export async function getLastDbEntry(dbName: string) {
+    if (!process.env.MONGO_URL) {
+        throw new Error('Missing environment variable "MONGO_URL"');
+    }
+
+    if (!checkMongoDatabaseAndUser(dbName, dbName)) {
+        return null;
+    }
+
+    const client = new MongoClient(process.env.MONGO_URL);
+
+    try {
+        await client.connect();
+        // check if collection 'entries' exists
+        const collections = await client.db(dbName).listCollections().toArray();
+        if (!collections.some(collection => collection.name === 'entries')) {
+            return null;
+        }
+        // get one entry from 'entries' sorted by 'date' descending
+        const lastEntry = await client.db(dbName).collection('entries').find().sort({ date: -1 }).limit(1).toArray();
+        if (lastEntry.length === 0) {
+            return null;
+        }
+        return new Date(lastEntry[0].date);
+
+    } catch (error) {
+        console.error('Error getting last database entry:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+}
+
+export async function getDbSize(dbName: string) {
+    if (!process.env.MONGO_URL) {
+        throw new Error('Missing environment variable "MONGO_URL"');
+    }
+
+    if (!checkMongoDatabaseAndUser(dbName, dbName)) {
+        return null;
+    }
+
+    const client = new MongoClient(process.env.MONGO_URL);
+
+    try {
+        await client.connect();
+        const stats = await client.db(dbName).stats();
+        return stats.dataSize;
+
+    } catch (error) {
+        console.error('Error getting database size:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+}
+

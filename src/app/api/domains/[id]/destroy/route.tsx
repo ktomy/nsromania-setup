@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import { createSubdomain, deleteSubdomain } from "@/lib/services/dnsmanagement";
+import { createSubdomain, deleteSubdomain, listSubdomains } from "@/lib/services/dnsmanagement";
 import { getNSDomainById, isMyDOmain, updateNSDomain } from "@/lib/services/domains";
-import { createVirtualHost, deleteVirtualHost } from "@/lib/services/nginxmanagement";
-import { createDatabaseAndUser, deleteDatabaseAndUser } from "@/lib/services/nsdatbasea";
+import { createVirtualHost, deleteVirtualHost, getVirtualHosts } from "@/lib/services/nginxmanagement";
+import { checkMongoDatabaseAndUser, createDatabaseAndUser, deleteDatabaseAndUser } from "@/lib/services/nsdatbasea";
 import { isDomainRunning, tryStartDomain, tryStopDomain } from "@/lib/services/nsruntime";
 import { User } from "@prisma/client";
 import { NextRequest } from "next/server";
@@ -48,18 +48,32 @@ export async function POST(req: NextRequest, props: Props) {
     }
 
     try {
+        console.log("Destroying domain:", domain.domain);
 
         if (await isDomainRunning(domain.domain)) {
             await tryStopDomain(domain);
+        } else {
+            console.log("Domain is not running, nothing to stop");
         }
 
-        await deleteVirtualHost(domain.domain);
+        if ((await getVirtualHosts()).includes(domain.domain)) {
+            await deleteVirtualHost(domain.domain);
+        } else {
+            console.log("Virtual host does not exist, nothing to delete");
+        }
 
-        await deleteSubdomain(domain.domain);
+        if ((await listSubdomains()).includes(domain.domain)) {
+            await deleteSubdomain(domain.domain);
+        } else {
+            console.log("Subdomain does not exist, nothing to delete");
+        }
 
-        if (domain.dbExists === 1) {
+
+        if (await checkMongoDatabaseAndUser(domain.domain, domain.domain)) {
             await deleteDatabaseAndUser(domain.domain);
             updateNSDomain(domain.id, { dbExists: 0 });
+        } else {
+            console.log("Database does not exist, nothing to delete");
         }
 
         return new Response(JSON.stringify("ok"), {

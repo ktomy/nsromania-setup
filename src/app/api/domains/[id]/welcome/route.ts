@@ -39,10 +39,17 @@ export async function POST(req: NextRequest, props: Props) {
     }
 
     if (domain.authUser?.email) {
-        sendWelcomeEmail(domain.authUser.email, domain.domain, domain.apiSecret);
-        return new Response(JSON.stringify({ message: "Email sent" }), {
-            headers: { "Content-Type": "application/json" },
-        });
+        if (await sendWelcomeEmail(domain.authUser.email, domain.domain, domain.apiSecret)) {
+            return new Response(JSON.stringify({ message: "Email sent" }), {
+                headers: { "Content-Type": "application/json" },
+            });
+        } else {
+            return new Response(JSON.stringify({ error: "Email not sent" }), {
+                status: 500,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+
     } else {
         return new Response(JSON.stringify({ error: "No owner email address" }), {
             status: 400,

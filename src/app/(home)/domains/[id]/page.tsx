@@ -89,7 +89,7 @@ export default function DomainPage() {
         setSnackOpen(false);
     };
 
-    const handleDomainActions = async (id: string, action: "start" | "stop" | 'initialize' | 'destroy') => {
+    const handleDomainActions = async (id: string, action: "start" | "stop" | 'initialize' | 'destroy' | 'welcome') => {
         try {
             setActionInProgress(true);
             const res = await fetch(`/api/domains/${id}/${action}`, {
@@ -207,6 +207,18 @@ export default function DomainPage() {
                                 Initialize
                             </Button>
                             <Button
+                                variant="outlined"
+                                color="success"
+                                onClick={() => handleDomainActions(id, "welcome")}
+                                disabled={
+                                    domain.status !== "online" ||
+                                    domain.dbInitialized === false ||
+                                    actionInProgress
+                                }
+                            >
+                                Welcome
+                            </Button>
+                            <Button
                                 variant="contained"
                                 color="primary"
                                 onClick={() => handleDomainActions(id, "start")}
@@ -241,7 +253,7 @@ export default function DomainPage() {
                                 Destroy
                             </Button>
                             <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
-                                Edit Domain
+                                Edit
                             </Button>
                         </Box>
                     </Grid>

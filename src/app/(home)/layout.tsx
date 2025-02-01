@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 export default async function HomePagesLayout(props: { children: React.ReactNode }) {
     const session = await auth();
     if (session === null) {
-        redirect("/auth/signin");
+        redirect("/welcome");
     }
 
     return (

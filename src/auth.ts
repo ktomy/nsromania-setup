@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import type { Provider } from 'next-auth/providers';
 import Google from 'next-auth/providers/google';
+import Sendgrid from "next-auth/providers/sendgrid"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./lib/prisma"
 import { User } from '@prisma/client';
@@ -17,6 +18,12 @@ const providers: Provider[] = [
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         allowDangerousEmailAccountLinking: true,
     }),
+    Sendgrid({
+        apiKey: process.env.SENDGRID_API_KEY,
+        from: "NSRomania <login@nsromania.info>",
+        id: "nodemailer",
+        name: "Email",
+    }),
 ];
 
 if (!process.env.GITHUB_CLIENT_ID) {
@@ -29,8 +36,16 @@ if (!process.env.GITHUB_CLIENT_SECRET) {
 export const providerMap = providers.map((provider) => {
     if (typeof provider === 'function') {
         const providerData = provider();
+        if (providerData.id === 'sendgrid') {
+            return { id: "nodemailer", name: "Email" };
+        }
         return { id: providerData.id, name: providerData.name };
     }
+
+    if (provider.id === 'sendgrid') {
+        return { id: "nodemailer", name: "Email" };
+    }
+
     return { id: provider.id, name: provider.name };
 });
 

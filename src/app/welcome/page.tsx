@@ -18,18 +18,20 @@ export default function WelcomePage() {
 
             </Typography>
             <table cellPadding={10}>
-                <tr>
-                    <td>
-                        <Button variant="contained" color="primary" component={Link} href="/auth/signin">
-                            Sign In
-                        </Button>
-                    </td>
-                    <td>
-                        <Button variant="contained" color="primary" component={Link} href="/welcome/register">
-                            Register
-                        </Button>
-                    </td>
-                </tr>
+                <tbody>
+                    <tr>
+                        <td>
+                            <Button variant="contained" color="primary" component={Link} href="/auth/signin">
+                                Sign In
+                            </Button>
+                        </td>
+                        <td>
+                            <Button variant="contained" color="primary" component={Link} href="/welcome/register">
+                                Register
+                            </Button>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
             <Typography variant="body1">
                 If you have any questions, please contact us at <a href="mailto:artiom@gmail.com">artiom@gmail.com</a>

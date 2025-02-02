@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { SignInPage, type AuthProvider } from '@toolpad/core/SignInPage';
+import { AuthResponse, SignInPage, type AuthProvider } from '@toolpad/core/SignInPage';
 import { AuthError } from 'next-auth';
 import { providerMap, signIn } from '@/auth';
 
@@ -7,7 +7,8 @@ export default function SignIn() {
     return (
         <SignInPage
             providers={providerMap}
-            signIn={async (provider: AuthProvider, formData: FormData, callbackUrl?: string) => {
+            slotProps={{ emailField: { autoFocus: false } }}
+            signIn={async (provider: AuthProvider, formData: FormData, callbackUrl?: string): Promise<AuthResponse> => {
                 'use server';
                 try {
                     return await signIn(provider.id, {
@@ -25,12 +26,15 @@ export default function SignIn() {
                         throw error;
                     }
                     // Handle Auth.js errors
+
                     if (error instanceof AuthError) {
                         return {
                             error:
                                 error.type === 'CredentialsSignin'
                                     ? 'Invalid credentials.'
-                                    : 'An error with Auth.js occurred.',
+                                    : error.type === 'AccessDenied' ?
+                                        "Unknown email address"
+                                        : 'An error with Auth.js occurred.',
                             type: error.type,
                         };
                     }

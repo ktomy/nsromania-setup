@@ -50,7 +50,7 @@
     "add": "Adaugă",
     "save": "Salvează",
     "cancel": "Anulează",
-    "owner": "Proprietar"
+    "owner": "Owner"
   },
   "DomainsPage": {
     "loading": "Se încarcă...",
@@ -70,6 +70,17 @@
     "status": "Stare",
     "details": "Detalii"
   },
+  "DomainPage": {
+    "loading": "Loading...",
+    "basicData": "Basic data",
+    "advancedSettings": "Advanced settings (environment variables)",
+    "edit": "Edit",
+    "destroy": "Destroy",
+    "stop": "Stop",
+    "start": "Start",
+    "welcome": "Great",
+    "initialize": "Initialize"
+  },
   "NewDomainPage": {
     "domainName": "Nume domeniu",
     "title": "Titlu",
@@ -87,18 +98,7 @@
     "enable": "Activează",
     "showPlugins": "Afișează pluginuri",
     "create": "Creează",
-    "domainOwner": "Adresa de email a proprietatului",
-    "domainOwnerName": "Numele proprietarului"
-  },
-  "DomainPage": {
-    "loading": "Se încarcă...",
-    "basicData": "Date de bază",
-    "advancedSettings": "Setări avansate (variabile de mediu)",
-    "edit": "Editare",
-    "destroy": "Distruge",
-    "stop": "Opreste",
-    "start": "Porneste",
-    "welcome": "Saluta",
-    "initialize": "Initializeaza"
+    "domainOwner": "Owner's email",
+    "domainOwnerName": "Owner's name"
   }
 }

@@ -6,6 +6,9 @@ import type { Navigation } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import { auth } from '../auth';
 import { Domain, DomainAdd } from '@mui/icons-material';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+import { headers } from 'next/headers';
 
 const NAVIGATION: Navigation = [
     {
@@ -40,22 +43,39 @@ const AUTHENTICATION = {
 };
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
+    const myHeaders = await headers();
+    const userLang1 = myHeaders.get('X-User-Language') || 'none';
+    console.log("User language from headers: ", userLang1);
+    var userLang = navigator.language || 'none';
+    console.log("User language: ", userLang);
+    var langs = navigator.languages;
+    console.log("User languages: ", langs);
+
     const session = await auth();
 
+    const locale = await getLocale();
+    console.log("Locale: ", locale);
+
+    // Providing all messages to the client
+    // side is the easiest way to get started
+    const messages = await getMessages();
+
     return (
-        <html lang="en" data-toolpad-color-scheme="light">
+        <html lang={locale} data-toolpad-color-scheme="light">
             <body>
                 <SessionProvider session={session}>
                     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                        <AppProvider
-                            navigation={NAVIGATION}
-                            branding={BRANDING}
-                            session={session}
-                            authentication={AUTHENTICATION}
-                        // theme={THEME}
-                        >
-                            {props.children}
-                        </AppProvider>
+                        <NextIntlClientProvider messages={messages}>
+                            <AppProvider
+                                navigation={NAVIGATION}
+                                branding={BRANDING}
+                                session={session}
+                                authentication={AUTHENTICATION}
+                            // theme={THEME}
+                            >
+                                {props.children}
+                            </AppProvider>
+                        </NextIntlClientProvider>
                     </AppRouterCacheProvider>
                 </SessionProvider>
             </body>

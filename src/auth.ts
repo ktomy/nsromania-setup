@@ -23,6 +23,7 @@ const providers: Provider[] = [
         from: "NSRomania <login@nsromania.info>",
         id: "nodemailer",
         name: "Email",
+        //allowDangerousEmailAccountLinking: true,
     }),
 ];
 

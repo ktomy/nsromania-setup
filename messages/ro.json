@@ -1,0 +1,25 @@
+{
+    "HomePage": {
+        "title": "Salut, lume!"
+    },
+    "WelcomePage": {
+        "welcomeTitle": "Bine ați venit la NSRomania",
+        "welcomeMessage1": "Acesta este un serviciu de găzduire Nightscout condus de comunitate.",
+        "welcomeMessage2": "Acest serviciu este oferit pentru îngrijitorii persoanelor cu diabet de tip 1.",
+        "welcomeMessage3": "Acesta este un server comunitar gestionat de voluntari.",
+        "welcomeMessage4": "Vă rugăm să-l folosiți cu grijă și respect.",
+        "signIn": "Autentificare",
+        "register": "Înregistrare",
+        "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la"
+    },
+    "LocaleSwitcher": {
+        "label": "Limba",
+        "en": "English",
+        "ro": "Română"
+    },
+    "SignOutComponent": {
+        "alreadySignedIn": "Sunteti deja logat(a).",
+        "signOut": "Iesire",
+        "home": "Acasa"
+    }
+}

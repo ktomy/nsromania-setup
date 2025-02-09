@@ -1,0 +1,25 @@
+{
+    "HomePage": {
+        "title": "Hello world!"
+    },
+    "WelcomePage": {
+        "welcomeTitle": "Welcome to NSRomania",
+        "welcomeMessage1": "This is a community-driven Nightscout hosting service.",
+        "welcomeMessage2": "This service is offered for caretakers of people with type 1 diabetes.",
+        "welcomeMessage3": "This is a community server managed by volunteers.",
+        "welcomeMessage4": "Please use it with care and respect.",
+        "signIn": "Sign In",
+        "register": "Register",
+        "contactMessage": "If you have any questions, please contact us at"
+    },
+    "LocaleSwitcher": {
+        "label": "Language",
+        "en": "English",
+        "ro": "Română"
+    },
+    "SignOutComponent": {
+        "alreadySignedIn": "You are already signed in.",
+        "signOut": "Sign Out",
+        "home": "Home"
+    }
+}

@@ -2,39 +2,43 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { Box, Button } from '@mui/material';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import LocaleSwitcher from '@/lib/components/LocaleSwitcher';
 
 export default function WelcomePage() {
+    const t = useTranslations('WelcomePage');
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 4 }}>
-            <Typography variant="h4">Welcome to NSRomania</Typography>
+            <LocaleSwitcher />
+            <Typography variant="h4">{t('welcomeTitle')}</Typography>
             <Typography variant="body1">
-                This is a community-driven Nightscout hosting service.
+                {t('welcomeMessage1')}
                 <br />
-                This service is offered for caretakers of people with type 1 diabetes.
+                {t('welcomeMessage2')}
                 <br />
-                This is a community server managed by volunteers.
+                {t('welcomeMessage3')}
                 <br />
-                Please use it with care and respect.
-
+                {t('welcomeMessage4')}
             </Typography>
             <table cellPadding={10}>
                 <tbody>
                     <tr>
                         <td>
                             <Button variant="contained" color="primary" component={Link} href="/auth/signin">
-                                Sign In
+                                {t('signIn')}
                             </Button>
                         </td>
                         <td>
                             <Button variant="contained" color="primary" component={Link} href="/welcome/register">
-                                Register
+                                {t('register')}
                             </Button>
                         </td>
                     </tr>
                 </tbody>
             </table>
             <Typography variant="body1">
-                If you have any questions, please contact us at <a href="mailto:artiom@gmail.com">artiom@gmail.com</a>
+                {t('contactMessage')} <a href="mailto:artiom@gmail.com">artiom@gmail.com</a>
             </Typography>
         </Box>
     );

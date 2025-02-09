@@ -26,9 +26,12 @@ import Grid from '@mui/material/Grid2';
 import { NSDomain, NSDomainEnvironment } from '@prisma/client';
 import { useParams } from 'next/navigation';
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function EditDomainPage() {
     const { id } = useParams() as { id: string };
+    const t = useTranslations('EditDomainPage');
+    const locale = useLocale();
     const [domain, setDomain] = useState('');
     const [title, setTitle] = useState('');
     const [apiSecret, setApiSecret] = useState('');
@@ -167,11 +170,11 @@ export default function EditDomainPage() {
     };
 
     return (
-        (loading || !domain) ? <Typography>Loading...</Typography> :
+        (loading || !domain) ? <Typography>{t('loading')}</Typography> :
             <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Grid container spacing={1}>
                     <Grid size={4}>
-                        <Typography variant="h6">Domain Name</Typography>
+                        <Typography variant="h6">{t('domainName')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <Box sx={{ display: 'flex' }} alignItems="center">
@@ -187,7 +190,7 @@ export default function EditDomainPage() {
                         </Box>
                     </Grid>
                     <Grid size={4}>
-                        <Typography variant="h6">Title</Typography>
+                        <Typography variant="h6">{t('title')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <TextField
@@ -199,7 +202,7 @@ export default function EditDomainPage() {
                     </Grid>
 
                     <Grid size={4}>
-                        <Typography variant="h6">API Secret</Typography>
+                        <Typography variant="h6">{t('apiSecret')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <TextField
@@ -212,7 +215,7 @@ export default function EditDomainPage() {
                     </Grid>
 
                     <Grid size={4}>
-                        <Typography variant="h6">Active</Typography>
+                        <Typography variant="h6">{t('active')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <FormControlLabel
@@ -222,7 +225,7 @@ export default function EditDomainPage() {
                     </Grid>
 
                     <Grid size={4}>
-                        <Typography variant="h6">Data Source</Typography>
+                        <Typography variant="h6">{t('dataSource')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <FormControl fullWidth size='small'>
@@ -237,7 +240,7 @@ export default function EditDomainPage() {
                     {(dataSource === 'Dexcom' || dataSource === 'Custom') && (
                         <>
                             <Grid size={4}>
-                                <Typography variant="h6">Dexcom Server</Typography>
+                                <Typography variant="h6">{t('dexcomServer')}</Typography>
                             </Grid>
                             <Grid size={8}>
                                 <FormControl fullWidth size='small'>
@@ -249,7 +252,7 @@ export default function EditDomainPage() {
                             </Grid>
 
                             <Grid size={4}>
-                                <Typography variant="h6">Dexcom Username</Typography>
+                                <Typography variant="h6">{t('dexcomUsername')}</Typography>
                             </Grid>
                             <Grid size={8}>
                                 <TextField
@@ -261,7 +264,7 @@ export default function EditDomainPage() {
                             </Grid>
 
                             <Grid size={4}>
-                                <Typography variant="h6">Dexcom Password</Typography>
+                                <Typography variant="h6">{t('dexcomPassword')}</Typography>
                             </Grid>
                             <Grid size={8}>
                                 <TextField
@@ -275,7 +278,7 @@ export default function EditDomainPage() {
                     )}
 
                     <Grid size={4}>
-                        <Typography variant="h6">Enable</Typography>
+                        <Typography variant="h6">{t('enable')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <TextField
@@ -287,7 +290,7 @@ export default function EditDomainPage() {
                     </Grid>
 
                     <Grid size={4}>
-                        <Typography variant="h6">Show Plugins</Typography>
+                        <Typography variant="h6">{t('showPlugins')}</Typography>
                     </Grid>
                     <Grid size={8}>
                         <TextField
@@ -299,16 +302,16 @@ export default function EditDomainPage() {
                     </Grid>
 
                     <Grid size={12}>
-                        <Typography variant="h6">Environments</Typography>
+                        <Typography variant="h6">{t('environments')}</Typography>
                     </Grid>
                     <Grid size={12}>
                         <TableContainer component={Paper}>
                             <Table>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>Variable</TableCell>
-                                        <TableCell>Value</TableCell>
-                                        <TableCell>Actions</TableCell>
+                                        <TableCell>{t('variable')}</TableCell>
+                                        <TableCell>{t('value')}</TableCell>
+                                        <TableCell>{t('actions')}</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -317,7 +320,7 @@ export default function EditDomainPage() {
                                             <TableCell>{env.variable}</TableCell>
                                             <TableCell>{env.value}</TableCell>
                                             <TableCell>
-                                                <Button onClick={() => handleRemoveEnvironment(index)}>Remove</Button>
+                                                <Button onClick={() => handleRemoveEnvironment(index)}>{t('remove')}</Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -326,7 +329,7 @@ export default function EditDomainPage() {
                                             <TextField
                                                 value={newEnvKey}
                                                 onChange={handleNewEnvKeyChange}
-                                                placeholder="Variable"
+                                                placeholder={t('variable')}
                                                 size="small"
                                                 fullWidth
                                             />
@@ -335,14 +338,14 @@ export default function EditDomainPage() {
                                             <TextField
                                                 value={newEnvValue}
                                                 onChange={(e) => setNewEnvValue(e.target.value)}
-                                                placeholder="Value"
+                                                placeholder={t('value')}
                                                 size="small"
                                                 fullWidth
                                                 multiline={newEnvKey === "LOOP_APNS_KEY"}
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Button onClick={handleAddEnvironment}>Add</Button>
+                                            <Button onClick={handleAddEnvironment}>{t('add')}</Button>
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -374,10 +377,10 @@ export default function EditDomainPage() {
                 <Grid size={12}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                         <Button type="submit" variant="contained" color="primary">
-                            Save
+                            {t('save')}
                         </Button>
                         <Button variant="outlined" color="primary" onClick={() => window.history.back()}>
-                            Cancel
+                            {t('cancel')}
                         </Button>
                     </Box>
                 </Grid>

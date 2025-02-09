@@ -2,11 +2,12 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { Box, Button } from '@mui/material';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import LocaleSwitcher from '@/lib/components/LocaleSwitcher';
 
 export default function WelcomePage() {
     const t = useTranslations('WelcomePage');
+    const locale = useLocale();
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 4 }}>

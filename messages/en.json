@@ -1,6 +1,7 @@
 {
     "HomePage": {
-        "title": "Hello world!"
+        "title": "Hello world!",
+        "welcomeMessage": "Welcome to Nightscout Romania, {name} ({id})!"
     },
     "WelcomePage": {
         "welcomeTitle": "Welcome to NSRomania",
@@ -21,5 +22,69 @@
         "alreadySignedIn": "You are already signed in.",
         "signOut": "Sign Out",
         "home": "Home"
+    },
+    "RegisterPage": {
+        "registrationTitle": "Registration",
+        "registrationUnavailable": "Registration is not available at this time.",
+        "registrationPrompt": "If you still want to register, please fill in",
+        "registrationForm": "this form",
+        "contactMessage": "If you have any questions, please contact us at"
+    },
+    "EditDomainPage": {
+        "loading": "Loading...",
+        "domainName": "Domain Name",
+        "title": "Title",
+        "apiSecret": "API Secret",
+        "active": "Active",
+        "dataSource": "Data Source",
+        "dexcomServer": "Dexcom Server",
+        "dexcomUsername": "Dexcom Username",
+        "dexcomPassword": "Dexcom Password",
+        "enable": "Enable",
+        "showPlugins": "Show Plugins",
+        "environments": "Environments",
+        "variable": "Variable",
+        "value": "Value",
+        "actions": "Actions",
+        "remove": "Remove",
+        "add": "Add",
+        "save": "Save",
+        "cancel": "Cancel"
+    },
+    "DomainsPage": {
+        "loading": "Loading...",
+        "notSignedIn": "You are not signed in. Please sign in to access this page.",
+        "welcomeMessage": "Welcome to Nightscout Romania, {name} ({id}). Role: {role}",
+        "actionSuccess": "Action successful",
+        "actionFailed": "Action failed",
+        "startAllActive": "Start all active",
+        "newDomain": "New Domain",
+        "id": "ID",
+        "active": "Active",
+        "subdomain": "Subdomain",
+        "dataSource": "Data Source",
+        "title": "Title",
+        "created": "Created",
+        "updated": "Updated",
+        "status": "Status",
+        "details": "Details"
+    },
+    "NewDomainPage": {
+        "domainName": "Domain Name",
+        "title": "Title",
+        "apiSecret": "API Secret",
+        "active": "Active",
+        "dataSource": "Data Source",
+        "dexcom": "Dexcom",
+        "api": "API (xDrip/Libre/640GConnect)",
+        "custom": "Custom",
+        "dexcomServer": "Dexcom Server",
+        "eu": "EU",
+        "us": "US",
+        "dexcomUsername": "Dexcom Username",
+        "dexcomPassword": "Dexcom Password",
+        "enable": "Enable",
+        "showPlugins": "Show Plugins",
+        "create": "Create"
     }
 }

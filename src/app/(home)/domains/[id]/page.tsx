@@ -6,7 +6,7 @@ import Grid from '@mui/material/Grid2';
 import React, { useEffect, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { GetDomainByIdResponse } from '@/types/domains';
-
+import { useTranslations, useLocale } from 'next-intl';
 
 async function fetchDomain(id: string): Promise<GetDomainByIdResponse | null> {
 
@@ -71,6 +71,8 @@ function formatBytes(bytes: number | null): string {
 
 export default function DomainPage() {
     const { id } = useParams() as { id: string };
+    const t = useTranslations('DomainPage');
+    const locale = useLocale();
 
     const [domain, setDomain] = useState<GetDomainByIdResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -169,7 +171,7 @@ export default function DomainPage() {
 
 
     return (
-        (loading || !domain) ? <Typography>Loading...</Typography> :
+        (loading || !domain) ? <Typography>{t('loading')}</Typography> :
             <Box>
                 <Snackbar
                     open={snackOpen}
@@ -204,7 +206,7 @@ export default function DomainPage() {
                                     actionInProgress
                                 }
                             >
-                                Initialize
+                                {t('initialize')}
                             </Button>
                             <Button
                                 variant="outlined"
@@ -216,7 +218,7 @@ export default function DomainPage() {
                                     actionInProgress
                                 }
                             >
-                                Welcome
+                                {t('welcome')}
                             </Button>
                             <Button
                                 variant="contained"
@@ -228,7 +230,7 @@ export default function DomainPage() {
                                     actionInProgress
                                 }
                             >
-                                Start
+                                {t('start')}
                             </Button>
                             <Button
                                 variant="outlined"
@@ -239,7 +241,7 @@ export default function DomainPage() {
                                     domain.dbInitialized === false ||
                                     actionInProgress}
                             >
-                                Stop
+                                {t('stop')}
                             </Button>
                             <Button
                                 variant="contained"
@@ -250,20 +252,20 @@ export default function DomainPage() {
                                     domain.dbInitialized === false ||
                                     actionInProgress}
                             >
-                                Destroy
+                                {t('destroy')}
                             </Button>
                             <Button variant="contained" color="primary" href={`/domains/${id}/edit`}>
-                                Edit
+                                {t('edit')}
                             </Button>
                         </Box>
                     </Grid>
                 </Grid>
                 <Typography variant="h6">
-                    Basic data
+                    {t('basicData')}
                 </Typography>
                 <RenderDomainProperties properties={domainProperties} />
                 <Typography variant="h6">
-                    Advanced settings (environment variables)
+                    {t('advancedSettings')}
                 </Typography>
                 {Object.keys(variables).length === 0 ? (
                     <RenderDomainProperties properties={{ "None defined": "" }} />

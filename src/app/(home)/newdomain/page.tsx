@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { NSDomain } from '@prisma/client';
+import { useTranslations } from 'next-intl';
 
 export default function NewDomainPage() {
     const [domain, setDomain] = useState('');
@@ -29,6 +30,7 @@ export default function NewDomainPage() {
     const [enable, setEnable] = useState('careportal iob cob rawbg cors dbsize bridge');
     const [showPlugins, setShowPlugins] = useState('cob iob sage cage careportal');
     const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+    const t = useTranslations("NewDomainPage");
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -93,7 +95,7 @@ export default function NewDomainPage() {
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={1}>
                 <Grid size={4}>
-                    <Typography variant="h6">Domain Name</Typography>
+                    <Typography variant="h6">{t('domainName')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <TextField
@@ -106,7 +108,7 @@ export default function NewDomainPage() {
                 </Grid>
 
                 <Grid size={4}>
-                    <Typography variant="h6">Title</Typography>
+                    <Typography variant="h6">{t('title')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <TextField
@@ -118,7 +120,7 @@ export default function NewDomainPage() {
                 </Grid>
 
                 <Grid size={4}>
-                    <Typography variant="h6">API Secret</Typography>
+                    <Typography variant="h6">{t('apiSecret')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <TextField
@@ -131,7 +133,7 @@ export default function NewDomainPage() {
                 </Grid>
 
                 <Grid size={4}>
-                    <Typography variant="h6">Active</Typography>
+                    <Typography variant="h6">{t('active')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <FormControlLabel
@@ -141,14 +143,14 @@ export default function NewDomainPage() {
                 </Grid>
 
                 <Grid size={4}>
-                    <Typography variant="h6">Data Source</Typography>
+                    <Typography variant="h6">{t('dataSource')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <FormControl fullWidth size='small'>
                         <Select value={dataSource} onChange={handleDataSourceChange}>
-                            <MenuItem value="Dexcom">Dexcom</MenuItem>
-                            <MenuItem value="API">API (xDrip/Libre/640GConnect)</MenuItem>
-                            <MenuItem value="Custom">Custom</MenuItem>
+                            <MenuItem value="Dexcom">{t('dexcom')}</MenuItem>
+                            <MenuItem value="API">{t('api')}</MenuItem>
+                            <MenuItem value="Custom">{t('custom')}</MenuItem>
                         </Select>
                     </FormControl>
                 </Grid>
@@ -156,19 +158,19 @@ export default function NewDomainPage() {
                 {(dataSource === 'Dexcom' || dataSource === 'Custom') && (
                     <>
                         <Grid size={4}>
-                            <Typography variant="h6">Dexcom Server</Typography>
+                            <Typography variant="h6">{t('dexcomServer')}</Typography>
                         </Grid>
                         <Grid size={8}>
                             <FormControl fullWidth size='small'>
                                 <Select value={dexcomServer} onChange={(e) => setDexcomServer(e.target.value)}>
-                                    <MenuItem value="EU">EU</MenuItem>
-                                    <MenuItem value="US">US</MenuItem>
+                                    <MenuItem value="EU">{t('eu')}</MenuItem>
+                                    <MenuItem value="US">{t('us')}</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>
 
                         <Grid size={4}>
-                            <Typography variant="h6">Dexcom Username</Typography>
+                            <Typography variant="h6">{t('dexcomUsername')}</Typography>
                         </Grid>
                         <Grid size={8}>
                             <TextField
@@ -180,7 +182,7 @@ export default function NewDomainPage() {
                         </Grid>
 
                         <Grid size={4}>
-                            <Typography variant="h6">Dexcom Password</Typography>
+                            <Typography variant="h6">{t('dexcomPassword')}</Typography>
                         </Grid>
                         <Grid size={8}>
                             <TextField
@@ -194,7 +196,7 @@ export default function NewDomainPage() {
                 )}
 
                 <Grid size={4}>
-                    <Typography variant="h6">Enable</Typography>
+                    <Typography variant="h6">{t('enable')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <TextField
@@ -206,7 +208,7 @@ export default function NewDomainPage() {
                 </Grid>
 
                 <Grid size={4}>
-                    <Typography variant="h6">Show Plugins</Typography>
+                    <Typography variant="h6">{t('showPlugins')}</Typography>
                 </Grid>
                 <Grid size={8}>
                     <TextField
@@ -225,7 +227,7 @@ export default function NewDomainPage() {
             )}
             <Grid size={12}>
                 <Button type="submit" variant="contained" color="primary">
-                    Create
+                    {t('create')}
                 </Button>
             </Grid>
         </Box>

@@ -7,14 +7,16 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { useSession } from 'next-auth/react';
 import { NSDomain, User } from '@prisma/client';
 import { redirect } from 'next/navigation';
-import { formatDate } from '../../../lib/utils';
+import { formatDate } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 type NSDomainExtended = NSDomain & {
     status: string;
 };
 
 export default function DomainsPage() {
+    const t = useTranslations('DomainsPage');
     const [rows, setRows] = useState<GridRowsProp>([]);
     const { data: session, status } = useSession();
     const [snackOpen, setSnackOpen] = useState(false);
@@ -23,7 +25,7 @@ export default function DomainsPage() {
     const [actionInProgress, setActionInProgress] = useState(false);
 
     const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
-        setSnackMessage(message);
+        setSnackMessage(t(message));
         setSnackKind(kind);
         setSnackOpen(true);
     };
@@ -40,17 +42,17 @@ export default function DomainsPage() {
             });
 
             if (res.ok) {
-                openSnack("Action successfull", "success");
+                openSnack("actionSuccess", "success");
                 fetchDomains();
 
             } else {
                 console.error(`Failed to ${action} domain`, res);
-                openSnack(`Failed to ${action} domain`, "error");
+                openSnack("actionFailed", "error");
                 setActionInProgress(false);
             }
         } catch (error) {
             console.error(`Failed to ${action} domain`, error);
-            openSnack(`Failed to ${action} domain`, "error");
+            openSnack("actionFailed", "error");
             setActionInProgress(false);
         }
     }
@@ -86,11 +88,11 @@ export default function DomainsPage() {
 
 
     if (status === 'loading') {
-        return <p>Loading...</p>;
+        return <p>{t('loading')}</p>;
     }
 
     if (!session) {
-        return <p>You are not signed in. Please sign in to access this page.</p>;
+        return <p>{t('notSignedIn')}</p>;
     }
 
     const redirectToDetails = (id: GridRowId) => () => {
@@ -101,49 +103,49 @@ export default function DomainsPage() {
     const columns: GridColDef[] = [
         {
             field: 'id',
-            headerName: 'ID',
+            headerName: t('id'),
             type: 'number',
             width: 50,
         },
         {
             field: 'active',
-            headerName: 'Active',
+            headerName: t('active'),
             type: 'boolean',
             width: 70,
         },
         {
             field: 'domain',
-            headerName: 'Subdomain',
+            headerName: t('subdomain'),
             type: 'string',
             flex: 1,
         },
         {
             field: 'data_source',
-            headerName: 'Data Source',
+            headerName: t('dataSource'),
             type: 'string',
             width: 100,
         },
         {
             field: 'title',
-            headerName: 'Title',
+            headerName: t('title'),
             type: 'string',
             flex: 1,
         },
         {
             field: 'created',
-            headerName: 'Created',
+            headerName: t('created'),
             type: 'string',
             flex: 1,
         },
         {
             field: 'last_updated',
-            headerName: 'Updated',
+            headerName: t('updated'),
             type: 'string',
             flex: 1,
         },
         {
             field: 'status',
-            headerName: 'Status',
+            headerName: t('status'),
             type: 'string',
             width: 120,
             renderCell: (params) => {
@@ -168,7 +170,7 @@ export default function DomainsPage() {
                 <GridActionsCellItem
                     key={1}
                     icon={<SettingsIcon />}
-                    label="Details"
+                    label={t('details')}
                     onClick={redirectToDetails(params.id)}
                 />,
             ],
@@ -196,7 +198,7 @@ export default function DomainsPage() {
         </Snackbar>
         <Grid size={12} direction={"row"} container>
             <Grid size={8}>
-                <Typography>Welcome to Nightscout Romania, {user.name} ({user.id || "Unknown ID"}). Role: {user.role || "Unknown"}</Typography>
+                <Typography>{t('welcomeMessage', { name: user.name, id: user.id || "Unknown ID", role: user.role || "Unknown" })}</Typography>
             </Grid>
             <Grid size={4}>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
@@ -207,10 +209,10 @@ export default function DomainsPage() {
                         onClick={() => handleDomainsActions("startall")}
                         disabled={actionInProgress}
                     >
-                        Start all active
+                        {t('startAllActive')}
                     </Button>
                     <Button variant="contained" color="primary" href={`/newdomain`}>
-                        New Domain
+                        {t('newDomain')}
                     </Button>
                 </Box>
             </Grid>

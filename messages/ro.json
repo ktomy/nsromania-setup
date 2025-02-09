@@ -1,6 +1,7 @@
 {
     "HomePage": {
-        "title": "Salut, lume!"
+        "title": "Salut, lume!",
+        "welcomeMessage": "Bine ați venit la Nightscout Romania, {name} ({id})!"
     },
     "WelcomePage": {
         "welcomeTitle": "Bine ați venit la NSRomania",
@@ -21,5 +22,69 @@
         "alreadySignedIn": "Sunteti deja logat(a).",
         "signOut": "Iesire",
         "home": "Acasa"
+    },
+    "RegisterPage": {
+        "registrationTitle": "Înregistrare",
+        "registrationUnavailable": "Înregistrarea nu este disponibilă în acest moment.",
+        "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",
+        "registrationForm": "acest formular",
+        "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la"
+    },
+    "EditDomainPage": {
+        "loading": "Se încarcă...",
+        "domainName": "Nume domeniu",
+        "title": "Titlu",
+        "apiSecret": "Secret API",
+        "active": "Activ",
+        "dataSource": "Sursă de date",
+        "dexcomServer": "Server Dexcom",
+        "dexcomUsername": "Nume utilizator Dexcom",
+        "dexcomPassword": "Parolă Dexcom",
+        "enable": "Activează",
+        "showPlugins": "Afișează pluginuri",
+        "environments": "Mediu",
+        "variable": "Variabilă",
+        "value": "Valoare",
+        "actions": "Acțiuni",
+        "remove": "Elimină",
+        "add": "Adaugă",
+        "save": "Salvează",
+        "cancel": "Anulează"
+    },
+    "DomainsPage": {
+        "loading": "Se încarcă...",
+        "notSignedIn": "Nu sunteți autentificat. Vă rugăm să vă autentificați pentru a accesa această pagină.",
+        "welcomeMessage": "Bine ați venit la Nightscout Romania, {name} ({id}). Rol: {role}",
+        "actionSuccess": "Acțiunea a fost realizată cu succes",
+        "actionFailed": "Acțiunea a eșuat",
+        "startAllActive": "Pornește toate active",
+        "newDomain": "Domeniu nou",
+        "id": "ID",
+        "active": "Activ",
+        "subdomain": "Subdomeniu",
+        "dataSource": "Sursă de date",
+        "title": "Titlu",
+        "created": "Creat",
+        "updated": "Actualizat",
+        "status": "Stare",
+        "details": "Detalii"
+    },
+    "NewDomainPage": {
+        "domainName": "Nume domeniu",
+        "title": "Titlu",
+        "apiSecret": "Secret API",
+        "active": "Activ",
+        "dataSource": "Sursă de date",
+        "dexcom": "Dexcom",
+        "api": "API (xDrip/Libre/640GConnect)",
+        "custom": "Personalizat",
+        "dexcomServer": "Server Dexcom",
+        "eu": "EU",
+        "us": "US",
+        "dexcomUsername": "Nume utilizator Dexcom",
+        "dexcomPassword": "Parolă Dexcom",
+        "enable": "Activează",
+        "showPlugins": "Afișează pluginuri",
+        "create": "Creează"
     }
 }

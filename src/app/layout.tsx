@@ -43,21 +43,11 @@ const AUTHENTICATION = {
 };
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
-    const myHeaders = await headers();
-    const userLang1 = myHeaders.get('X-User-Language') || 'none';
-    console.log("User language from headers: ", userLang1);
-    var userLang = navigator.language || 'none';
-    console.log("User language: ", userLang);
-    var langs = navigator.languages;
-    console.log("User languages: ", langs);
 
     const session = await auth();
 
     const locale = await getLocale();
-    console.log("Locale: ", locale);
 
-    // Providing all messages to the client
-    // side is the easiest way to get started
     const messages = await getMessages();
 
     return (

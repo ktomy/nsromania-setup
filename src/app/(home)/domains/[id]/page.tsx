@@ -1,12 +1,13 @@
 'use client';
 import { notFound, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Container, Box, Typography, Paper, Button, Snackbar, Alert } from "@mui/material";
 import Grid from '@mui/material/Grid2';
 import React, { useEffect, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { GetDomainByIdResponse } from '@/types/domains';
-import { useTranslations, useLocale } from 'next-intl';
+
 
 async function fetchDomain(id: string): Promise<GetDomainByIdResponse | null> {
 
@@ -70,9 +71,8 @@ function formatBytes(bytes: number | null): string {
 }
 
 export default function DomainPage() {
-    const { id } = useParams() as { id: string };
     const t = useTranslations('DomainPage');
-    const locale = useLocale();
+    const { id } = useParams() as { id: string };
 
     const [domain, setDomain] = useState<GetDomainByIdResponse | null>(null);
     const [loading, setLoading] = useState(true);

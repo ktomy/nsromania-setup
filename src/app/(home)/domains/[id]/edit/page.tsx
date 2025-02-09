@@ -50,6 +50,7 @@ export default function EditDomainPage() {
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [owner, setOwner] = useState('');
 
     useEffect(() => {
         if (id) {
@@ -69,6 +70,7 @@ export default function EditDomainPage() {
                     setShowPlugins(data.showPlugins ?? '');
                     setEnvironments(data.environments ?? []);
                     setLoading(false);
+                    setOwner(data.authUser?.email ?? '?');
                 })
                 .catch(error => {
                     console.error('Error fetching domain:', error);
@@ -188,6 +190,16 @@ export default function EditDomainPage() {
                             />
                             <Typography sx={{ marginLeft: 1 }}>.nsromania.info</Typography>
                         </Box>
+                    </Grid>
+                    <Grid size={4}>
+                        <Typography variant="h6">{t('owner')}</Typography>
+                    </Grid>
+                    <Grid size={8}>
+                        <TextField
+                            disabled
+                            value={owner}
+                            size='small'
+                        />
                     </Grid>
                     <Grid size={4}>
                         <Typography variant="h6">{t('title')}</Typography>

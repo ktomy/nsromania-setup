@@ -23,12 +23,6 @@ import { CreateDomainRequest } from '@/types/domains';
 export default function NewDomainPage() {
     const session = useSession();
 
-    if (!session) {
-        return null;
-    }
-
-
-
     const [domain, setDomain] = useState('');
     const [title, setTitle] = useState('');
     const [apiSecret, setApiSecret] = useState('');
@@ -44,6 +38,10 @@ export default function NewDomainPage() {
     // Owner is an email address
     const [ownerEmail, setOwnerEmail] = useState('');
     const [ownerName, setOwnerName] = useState('');
+
+    if (!session.data?.user) {
+        return null;
+    }
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();

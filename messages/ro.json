@@ -1,10 +1,10 @@
 {
     "HomePage": {
         "title": "Salut, lume!",
-        "welcomeMessage": "Bine ați venit la Nightscout Romania, {name} ({id})!"
+        "welcomeMessage": "Bine ați venit la Nightscout România, {name} ({id}). Rol!"
     },
     "WelcomePage": {
-        "welcomeTitle": "Bine ați venit la NSRomania",
+        "welcomeTitle": "Bun venit la NSRomânia",
         "welcomeMessage1": "Acesta este un serviciu de găzduire Nightscout condus de comunitate.",
         "welcomeMessage2": "Acest serviciu este oferit pentru îngrijitorii persoanelor cu diabet de tip 1.",
         "welcomeMessage3": "Acesta este un server comunitar gestionat de voluntari.",
@@ -15,13 +15,13 @@
     },
     "LocaleSwitcher": {
         "label": "Limba",
-        "en": "English",
-        "ro": "Română"
+        "en": "Engleza",
+        "ro": "Romana"
     },
     "SignOutComponent": {
-        "alreadySignedIn": "Sunteti deja logat(a).",
+        "alreadySignedIn": "Sunteți deja logat(a).",
         "signOut": "Iesire",
-        "home": "Acasa"
+        "home": "Acasă"
     },
     "RegisterPage": {
         "registrationTitle": "Înregistrare",
@@ -55,12 +55,12 @@
     "DomainsPage": {
         "loading": "Se încarcă...",
         "notSignedIn": "Nu sunteți autentificat. Vă rugăm să vă autentificați pentru a accesa această pagină.",
-        "welcomeMessage": "Bine ați venit la Nightscout Romania, {name} ({id}). Rol: {role}",
+        "welcomeMessage": "Bine ați venit la Nightscout România, {name} ({id}). Rol: {role}",
         "actionSuccess": "Acțiunea a fost realizată cu succes",
         "actionFailed": "Acțiunea a eșuat",
         "startAllActive": "Pornește toate active",
         "newDomain": "Domeniu nou",
-        "id": "ID",
+        "id": "Id",
         "active": "Activ",
         "subdomain": "Subdomeniu",
         "dataSource": "Sursă de date",

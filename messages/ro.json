@@ -28,7 +28,22 @@
     "registrationUnavailable": "Înregistrarea nu este disponibilă în acest moment.",
     "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",
     "registrationForm": "acest formular",
-    "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la"
+    "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
+    "ownerEmail": "E-mail",
+    "ownerName": "Nume si prenume",
+    "emailValidateionCode": "Codul de validare",
+    "subDomain": "Subdomeniu",
+    "validateEmail": "Validare",
+    "apiSecret": "API Secret",
+    "dataSource": "Sursa de date",
+    "dexcom": "Dexcom",
+    "anythingElse": "Orice altceva",
+    "eu": "UE",
+    "us": "SUA",
+    "dexcomServer": "Regiunea serverului Dexcom",
+    "dexcomUsername": "Nume de utilizator Dexcom",
+    "dexcomPassword": "Parola Dexcom",
+    "register": "Inregistrare"
   },
   "EditDomainPage": {
     "loading": "Se încarcă...",

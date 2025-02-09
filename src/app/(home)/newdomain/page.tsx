@@ -17,8 +17,18 @@ import {
 import Grid from '@mui/material/Grid2';
 import { NSDomain } from '@prisma/client';
 import { useTranslations } from 'next-intl';
+import { useSession } from 'next-auth/react';
+import { CreateDomainRequest } from '@/types/domains';
 
 export default function NewDomainPage() {
+    const session = useSession();
+
+    if (!session) {
+        return null;
+    }
+
+
+
     const [domain, setDomain] = useState('');
     const [title, setTitle] = useState('');
     const [apiSecret, setApiSecret] = useState('');
@@ -31,10 +41,13 @@ export default function NewDomainPage() {
     const [showPlugins, setShowPlugins] = useState('cob iob sage cage careportal');
     const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
     const t = useTranslations("NewDomainPage");
+    // Owner is an email address
+    const [ownerEmail, setOwnerEmail] = useState('');
+    const [ownerName, setOwnerName] = useState('');
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        const newDomain: Omit<NSDomain, 'id' | 'created' | 'lastUpdated' | 'authUserId' | 'authUser' | 'environments'> = {
+        const newDomain: Omit<CreateDomainRequest, 'id' | 'created' | 'lastUpdated' | 'authUserId' | 'authUser' | 'environments'> = {
             domain,
             title,
             apiSecret,
@@ -51,6 +64,8 @@ export default function NewDomainPage() {
             port: 0,
             dbPassword: null,
             nsversion: null,
+            ownerEmail,
+            ownerName,
         };
 
         try {
@@ -94,6 +109,36 @@ export default function NewDomainPage() {
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={1}>
+                {session.data?.user?.role === 'admin' && (
+                    <>
+                        <Grid size={4}>
+                            <Typography variant="h6">{t('domainOwner')}</Typography>
+                        </Grid>
+                        <Grid size={8}>
+                            <TextField
+                                value={ownerEmail}
+                                onChange={(e) => setOwnerEmail(e.target.value)}
+                                required
+                                error={ownerEmail.length > 0 && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid size={4}>
+                            <Typography variant="h6">{t('domainOwnerName')}</Typography>
+                        </Grid>
+                        <Grid size={8}>
+                            {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
+                            <TextField
+                                value={ownerName}
+                                onChange={(e) => setOwnerName(e.target.value)}
+                                required
+                                error={ownerName.length > 0 && !/^[a-zA-Z0-9\s]{1,64}$/.test(ownerName)}
+                                size="small"
+                            />
+                        </Grid>
+                    </>
+                )}
+
                 <Grid size={4}>
                     <Typography variant="h6">{t('domainName')}</Typography>
                 </Grid>
@@ -220,16 +265,18 @@ export default function NewDomainPage() {
                 </Grid>
 
             </Grid>
-            {alert && (
-                <Alert severity={alert.type} onClose={() => setAlert(null)}>
-                    {alert.message}
-                </Alert>
-            )}
+            {
+                alert && (
+                    <Alert severity={alert.type} onClose={() => setAlert(null)}>
+                        {alert.message}
+                    </Alert>
+                )
+            }
             <Grid size={12}>
                 <Button type="submit" variant="contained" color="primary">
                     {t('create')}
                 </Button>
             </Grid>
-        </Box>
+        </Box >
     );
 }

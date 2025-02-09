@@ -12,3 +12,8 @@ export interface GetDomainByIdResponse extends NSDomain {
 export interface PartialNSDomainWithEnvironments extends Partial<NSDomain> {
     environments?: Partial<NSDomainEnvironment>[];
 }
+
+export interface CreateDomainRequest extends PartialNSDomainWithEnvironments {
+    ownerEmail: string;
+    ownerName: string;
+}

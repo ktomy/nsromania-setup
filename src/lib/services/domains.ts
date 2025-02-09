@@ -1,4 +1,4 @@
-import { PartialNSDomainWithEnvironments } from '@/types/domains';
+import { CreateDomainRequest, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { prisma } from '../prisma'
 import { NSDomain, User } from '@prisma/client'
 
@@ -43,7 +43,23 @@ export async function getNSDomainsByUserId(id: string) {
     return domains;
 }
 
-export async function createNSDomain(data: NSDomain) {
+export async function createNSDomain(data: CreateDomainRequest) {
+    if (data.ownerEmail == null) {
+        throw new Error('Owner is required');
+    }
+    if (data.domain == null) {
+        throw new Error('SubDomain is required');
+    }
+    if (data.apiSecret == null) {
+        throw new Error('API Secret is required');
+    }
+    if (data.enable == null) {
+        throw new Error('Enable field is required');
+    }
+    if (data.showPlugins == null) {
+        throw new Error('Show Plugins field is required');
+    }
+
     const existingDomain = await prisma.nSDomain.findUnique({
         where: {
             domain: data.domain,
@@ -54,9 +70,51 @@ export async function createNSDomain(data: NSDomain) {
         throw new Error('Domain name already exists');
     }
 
+    let user = await prisma.user.findUnique({
+        where: {
+            email: data.ownerEmail,
+        },
+    });
+
+    if (!user) {
+        // create new user record with email and name
+        const newUser = await prisma.user.create({
+            data: {
+                email: data.ownerEmail,
+                name: data.ownerName,
+                role: 'user',
+                loginAllowed: 1,
+            },
+        });
+        user = newUser
+
+    }
+
     const domain = prisma.nSDomain.create({
         data: {
-            ...data
+            domain: data.domain,
+            authUserId: user.id,
+            port: data.port ?? 0,
+            title: data.title || 'Nightscout',
+            apiSecret: data.apiSecret,
+            enable: data.enable,
+            showPlugins: data.showPlugins,
+            mmconnectUsername: data.mmconnectUsername,
+            mmconnectPassword: data.mmconnectPassword,
+            mmconnectServer: data.mmconnectServer,
+            bridgeUsername: data.bridgeUsername,
+            bridgePassword: data.bridgePassword,
+            bridgeServer: data.bridgeServer,
+            dbPassword: data.dbPassword,
+            nsversion: data.nsversion,
+            active: data.active,
+            dbExists: data.dbExists,
+            environments: data.environments ? {
+                create: data.environments.map(env => ({
+                    variable: env.variable || '',
+                    value: env.value || null
+                }))
+            } : undefined,
         },
         include: {
             environments: true,

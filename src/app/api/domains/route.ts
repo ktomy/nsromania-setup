@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { NSDomain, User } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { getProcessesList } from '@/lib/services/nsruntime';
+import { CreateDomainRequest } from '@/types/domains';
 
 export async function GET(req: NextRequest) {
     const session = await auth();
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const { domain } = await req.json() as { domain: NSDomain };;
+        const { domain } = await req.json() as { domain: CreateDomainRequest };;
         console.log("Domain:", domain);
         domain.dbExists = 0;
 

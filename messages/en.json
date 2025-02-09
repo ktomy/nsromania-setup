@@ -97,6 +97,8 @@
     "dexcomPassword": "Dexcom Password",
     "enable": "Enable",
     "showPlugins": "Show Plugins",
-    "create": "Create"
+    "create": "Create",
+    "domainOwner": "Owner's email",
+    "domainOwnerName": "Owner's name"
   }
 }

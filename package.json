@@ -37,6 +37,7 @@
         "@types/react-dom": "^18",
         "eslint": "^8",
         "eslint-config-next": "^15",
+        "google-recaptcha": "^1.1.0",
         "prisma": "^6.1.0",
         "typescript": "^5"
     }

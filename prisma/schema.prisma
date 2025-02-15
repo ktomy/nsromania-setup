@@ -128,13 +128,6 @@ model Authenticator {
   @@map("auth_authenticator")
 }
 
-model environment {
-  id       Int     @id @default(autoincrement())
-  user_id  Int
-  variable String  @db.VarChar(128)
-  value    String? @db.VarChar(4096)
-}
-
 model register_email_validation {
   id              Int      @id @default(autoincrement())
   email_address   String   @db.VarChar(128)
@@ -162,24 +155,3 @@ model register_request {
   @@index([chnged_by], map: "registe_rqus_auth_user_id_fk")
 }
 
-model users {
-  id                 Int       @id @default(autoincrement()) @db.UnsignedInt
-  active             Int       @default(1) @db.TinyInt
-  title              String    @db.VarChar(128)
-  domain             String    @unique(map: "users__domain") @db.VarChar(64)
-  port               Int       @db.UnsignedInt
-  db_exists          Int       @default(0) @db.TinyInt
-  api_secret         String    @db.VarChar(32)
-  enable             String    @db.VarChar(1024)
-  show_plugins       String    @db.VarChar(1024)
-  mmconnect_username String?   @db.VarChar(32)
-  mmconnect_password String?   @db.VarChar(32)
-  mmconnect_server   String?   @default("EU") @db.Char(2)
-  bridge_username    String?   @db.VarChar(32)
-  bridge_password    String?   @db.VarChar(32)
-  bridge_server      String?   @default("EU") @db.Char(2)
-  created            DateTime  @default(now()) @db.Timestamp(0)
-  last_updated       DateTime? @default(now()) @db.Timestamp(0)
-  db_password        String?   @db.VarChar(64)
-  nsversion          String?   @db.VarChar(50)
-}

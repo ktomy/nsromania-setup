@@ -44,7 +44,16 @@
     "dexcomServer": "Dexcom server region",
     "dexcomUsername": "Dexcom username",
     "dexcomPassword": "Dexcom Password",
-    "register": "Register"
+    "register": "Register",
+    "sendingValidationEmail": "Sending validation email, please check our inbox and spam folders",
+    "emailValidated": "E-mail address validated successfully",
+    "registrationFailed": "Registration failed, please check your data",
+    "registrationSuccess": "Registration successful",
+    "checkValidationCode": "Check validation code",
+    "validationEmailFailed": "Vailed to initiate email validation",
+    "title": "Site title",
+    "emailValidationCodeInvalid": "Email validation code is invalid",
+    "emailVerificationCodeValidated": "Successfully validated email address"
   },
   "EditDomainPage": {
     "loading": "Se încarcă...",

@@ -23,12 +23,6 @@ import { CreateDomainRequest } from '@/types/domains';
 export default function NewDomainPage() {
     const session = useSession();
 
-    if (!session) {
-        return null;
-    }
-
-
-
     const [domain, setDomain] = useState('');
     const [title, setTitle] = useState('');
     const [apiSecret, setApiSecret] = useState('');
@@ -44,6 +38,10 @@ export default function NewDomainPage() {
     // Owner is an email address
     const [ownerEmail, setOwnerEmail] = useState('');
     const [ownerName, setOwnerName] = useState('');
+
+    if (!session.data?.user) {
+        return null;
+    }
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -109,35 +107,31 @@ export default function NewDomainPage() {
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={1}>
-                {session.data?.user?.role === 'admin' && (
-                    <>
-                        <Grid size={4}>
-                            <Typography variant="h6">{t('domainOwner')}</Typography>
-                        </Grid>
-                        <Grid size={8}>
-                            <TextField
-                                value={ownerEmail}
-                                onChange={(e) => setOwnerEmail(e.target.value)}
-                                required
-                                error={ownerEmail.length > 0 && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)}
-                                size="small"
-                            />
-                        </Grid>
-                        <Grid size={4}>
-                            <Typography variant="h6">{t('domainOwnerName')}</Typography>
-                        </Grid>
-                        <Grid size={8}>
-                            {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
-                            <TextField
-                                value={ownerName}
-                                onChange={(e) => setOwnerName(e.target.value)}
-                                required
-                                error={ownerName.length > 0 && !/^[a-zA-Z0-9\s]{1,64}$/.test(ownerName)}
-                                size="small"
-                            />
-                        </Grid>
-                    </>
-                )}
+                <Grid size={4}>
+                    <Typography variant="h6">{t('domainOwner')}</Typography>
+                </Grid>
+                <Grid size={8}>
+                    <TextField
+                        value={ownerEmail}
+                        onChange={(e) => setOwnerEmail(e.target.value)}
+                        required
+                        error={ownerEmail.length > 0 && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)}
+                        size="small"
+                    />
+                </Grid>
+                <Grid size={4}>
+                    <Typography variant="h6">{t('domainOwnerName')}</Typography>
+                </Grid>
+                <Grid size={8}>
+                    {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
+                    <TextField
+                        value={ownerName}
+                        onChange={(e) => setOwnerName(e.target.value)}
+                        required
+                        error={ownerName.length > 0 && !/^[a-zA-Z0-9\s]{1,64}$/.test(ownerName)}
+                        size="small"
+                    />
+                </Grid>
 
                 <Grid size={4}>
                     <Typography variant="h6">{t('domainName')}</Typography>

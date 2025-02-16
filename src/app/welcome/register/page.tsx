@@ -1,26 +1,16 @@
+'use client';
 import * as React from 'react';
-import Typography from '@mui/material/Typography';
-import { Box, Button } from '@mui/material';
-import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
+
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+import RegisterForm from './RegisterForm';
 
 export default function RegisterPage() {
-    const t = useTranslations('RegisterPage');
-    const locale = useLocale();
+    console.log("reCaptchaKey:", process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY);
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 4 }}>
-            <Typography variant="h4">{t('registrationTitle')}</Typography>
-            <Typography variant="body1">
-                {t('registrationUnavailable')}
-                <br />
-                {t('registrationPrompt')}
-                <a target='_blank' href="https://www.facebook.com/groups/noisidiabetul/posts/3015947701975505/">{t('registrationForm')}</a>
-            </Typography>
+        <GoogleReCaptchaProvider reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}>
 
-            <Typography variant="body1">
-                {t('contactMessage')} <a href="mailto:artiom@gmail.com">artiom@gmail.com</a>
-            </Typography>
-        </Box>
+            <RegisterForm />
+        </GoogleReCaptchaProvider>
     );
 }

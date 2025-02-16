@@ -49,20 +49,21 @@ model NSDomainEnvironment {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  username      String?         @unique
-  email         String?         @unique
-  emailVerified DateTime?       @map("email_verified")
-  image         String?
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-  loginAllowed  Int?            @map("login_allowed") @db.TinyInt
-  role          String?         @db.VarChar(16)
-  accounts      Account[]
-  Authenticator Authenticator[]
-  sessions      Session[]
-  nsDomains     NSDomain[]
+  id               String             @id @default(cuid())
+  name             String?
+  username         String?            @unique
+  email            String?            @unique
+  emailVerified    DateTime?          @map("email_verified")
+  image            String?
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @default(dbgenerated("(now(3))")) @updatedAt @map("updated_at")
+  loginAllowed     Int?               @map("login_allowed") @db.TinyInt
+  role             String?            @db.VarChar(16)
+  accounts         Account[]
+  Authenticator    Authenticator[]
+  sessions         Session[]
+  nsDomains        NSDomain[]
+  register_request register_request[]
 
   @@map("auth_user")
 }
@@ -126,3 +127,31 @@ model Authenticator {
   @@id([userId, credentialID])
   @@map("auth_authenticator")
 }
+
+model register_email_validation {
+  id              Int      @id @default(autoincrement())
+  email_address   String   @db.VarChar(128)
+  validation_code String   @db.VarChar(16)
+  sent_at         DateTime @default(dbgenerated("(now())")) @db.Timestamp(0)
+}
+
+model register_request {
+  id              Int       @id @default(autoincrement())
+  owner_name      String    @db.VarChar(128)
+  owner_email     String    @db.VarChar(128)
+  subdomain       String    @db.VarChar(32)
+  api_secret      String    @db.VarChar(64)
+  title           String?   @db.VarChar(128)
+  data_source     String    @db.VarChar(32)
+  dexcom_server   String?   @db.VarChar(2)
+  dexcom_username String?   @db.VarChar(128)
+  dexcom_password String?   @db.VarChar(128)
+  status          String    @default("pending") @db.VarChar(16)
+  requested_at    DateTime  @default(now()) @db.Timestamp(0)
+  chnged_at       DateTime? @default(now()) @db.Timestamp(0)
+  chnged_by       String?
+  auth_user       User?     @relation(fields: [chnged_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "registe_rqus_auth_user_id_fk")
+
+  @@index([chnged_by], map: "registe_rqus_auth_user_id_fk")
+}
+

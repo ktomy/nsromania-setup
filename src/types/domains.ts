@@ -17,3 +17,17 @@ export interface CreateDomainRequest extends PartialNSDomainWithEnvironments {
     ownerEmail: string;
     ownerName: string;
 }
+
+export interface RegisterDomainRequest {
+    domain: string;
+    title: string;
+    apiSecret: string;
+    ownerEmail: string;
+    ownerName: string;
+    dataSource: string;
+    dexcomUsername: string;
+    dexcomPassword: string;
+    dexcomServer: string;
+    emailVerificationToken: string;
+    reCAPTCHAToken: string;
+}

@@ -132,16 +132,16 @@
     "domains": "Domains",
     "newDomain": "New domain",
     "myDomains": "My domains",
-    "requests": "Registration requests"
+    "requests": "Cereri de înregistrare"
   },
   "RequestsPage": {
     "approve": "Approve",
     "reject": "Reject",
     "actionSuccess": "Action successful",
     "actionFailed": "Action failed",
-    "loading": "Loading...",
-    "notSignedIn": "Please sign in first",
-    "domain": "Subdomain",
+    "loading": "Se încarcă...",
+    "notSignedIn": "Te rugăm să te autentifici mai întâi",
+    "domain": "Subdomeniu",
     "dataSource": "Data source",
     "ownerName": "Owner",
     "ownerEmail": "Email",

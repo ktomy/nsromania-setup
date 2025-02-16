@@ -125,5 +125,30 @@
     "start": "Porneste",
     "welcome": "Saluta",
     "initialize": "Initializeaza"
+  },
+  "App": {
+    "menu": "Meniu",
+    "home": "Acasa",
+    "domains": "Site-uri",
+    "newDomain": "Site nou",
+    "myDomains": "Site-urile mele",
+    "requests": "Cereri de inregistrare"
+  },
+  "RequestsPage": {
+    "approve": "Aproba",
+    "reject": "Refuza",
+    "actionSuccess": "Acțiunea a fost realizată cu succes",
+    "actionFailed": "Acțiunea a eșuat",
+    "loading": "Se incarca...",
+    "notSignedIn": "Va rugam sa va autentificati",
+    "domain": "Subdomeniu",
+    "dataSource": "Sursa de date",
+    "ownerName": "Proprietar",
+    "ownerEmail": "E-mail",
+    "status": "Status",
+    "createdAt": "Data inregistrarii",
+    "actionedAt": "Data deciziei",
+    "actions": "Actiuni",
+    "welcomeMessage": "Mai jos este lista de cererilor de inregistrare, aveti grija cand le actionati"
   }
 }

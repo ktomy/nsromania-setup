@@ -125,5 +125,30 @@
     "create": "Create",
     "domainOwner": "Owner's email",
     "domainOwnerName": "Owner's name"
+  },
+  "App": {
+    "menu": "Menu",
+    "home": "Home",
+    "domains": "Domains",
+    "newDomain": "New domain",
+    "myDomains": "My domains",
+    "requests": "Registration requests"
+  },
+  "RequestsPage": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "actionSuccess": "Action successful",
+    "actionFailed": "Action failed",
+    "loading": "Loading...",
+    "notSignedIn": "Please sign in first",
+    "domain": "Subdomain",
+    "dataSource": "Data source",
+    "ownerName": "Owner",
+    "ownerEmail": "Email",
+    "status": "Status",
+    "createdAt": "Requested at",
+    "actionedAt": "Actioned at",
+    "actions": "Actions",
+    "welcomeMessage": "Here are the registration request, please be minful when evaluating"
   }
 }

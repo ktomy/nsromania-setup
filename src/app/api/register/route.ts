@@ -1,7 +1,9 @@
 import { validateCaptcha } from "@/lib/services/recaptcha";
-import { createRegistrationRequest, validateEmail } from "@/lib/services/registration";
+import { createRegistrationRequest, getAllRegistrationRequests, validateEmail } from "@/lib/services/registration";
 import { RegisterDomainRequest } from "@/types/domains";
 import { NextResponse } from "next/server";
+import { auth } from '@/auth';
+import { User, register_request } from '@prisma/client';
 
 export async function POST(req: Request) {
 
@@ -52,4 +54,30 @@ export async function POST(req: Request) {
             headers: { "Content-Type": "application/json" },
         });
     }
+}
+
+export async function GET(req: Request) {
+    const session = await auth();
+
+    if (!session || !session.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    const user = session.user as User;
+    if (user.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+
+    const registrationRequests = await getAllRegistrationRequests();
+    
+    return new Response(JSON.stringify(registrationRequests), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+    });
 }

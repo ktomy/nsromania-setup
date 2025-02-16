@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caut voluntari pentru Proiect Open-Source</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        ul {
+            margin-bottom: 10px;
+        }
+
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Caut voluntari pentru proiect Open-Source</h1>
+    <h2>TL;DR</h2>
+    <p>Caut un (sau mai mulți) front-end/full-stack dev / UX designer (junior) voluntar pentru a participa la un proiect
+        open-source existent de dezvoltare a unei platforme de web hosting specializat.</p>
+
+    <h2>Versiunea completă</h2>
+    <p>Salutare! Caut un (sau mai mulți) front-end/full-stack developer sau UX designer (poate începător sau în
+        devenire) care să fie interesat(ă) să participe la un proiect open-source (existent și relativ matur) și să își
+        adauge acest proiect la portofoliu (proiectele open-source arată bine pe CV). Cred că poate deveni și un proiect
+        de licență sau un alt tip de proiect educațional. În loc să mai faceți încă un template de e-commerce care nu va
+        ajunge niciodată live, mai bine participați la un proiect real.</p>
+    <p>Nu se câștigă bani din proiect, este vorba de voluntariat - nici eu nu obțin niciun beneficiu financiar din el.
+        Ești interesat(ă) sau crezi că cineva din rețeaua ta ar putea fi? Citește mai departe sau dă share.</p>
+
+    <h2>Context</h2>
+    <p>Dacă ai un copil cu diabet de tip 1, trebuie să-i monitorizezi glicemia. Asta se face printr-un sistem de
+        monitorizare continuă a glicemiei (CGM), o tehnologie deja consacrată. Valorile glicemiei sunt colectate de un
+        dispozitiv (sunt mai mulți vendori care le produc), transmise prin Bluetooth la telefonul copilului, trimise pe
+        serverele vendorului dispozitivului, iar apoi pot fi colectate de acolo (toți vendorii au API-uri) de un sistem
+        open-source care permite monitorizarea la distanță. Există și astfel de sisteme produse de fabricanții de
+        CGM-uri, dar mulți preferă varianta open-source din diverse motive (despre care nu voi vorbi aici). Dacă sunteți
+        curioși, sistemul se numește Nightscout.
+    </p>
+    <p>
+        Problema este că acest sistem trebuie găzduit undeva, fiind de fapt o aplicație web scrisă în Node.js. Totul e
+        bine până aici, dar apar câteva impedimente:
+    </p>
+    <ul>
+        <li>
+            Pentru a-ți găzdui singur aplicația trebuie să ai cunoștințe tehnice – trebuie clonat un repository, creat
+            un cont la un provider de hosting, făcut deploy, instanțiat baza de date, configurată aplicația etc.
+        </li>
+        <li>
+            Hostingurile gratuite sunt din ce în ce mai rare. Pentru unii, să plătească 5-10 euro la Google Cloud,
+            Heroku sau Azure nu e o problemă, dar pentru alții este un lux.
+        </li>
+        <li>
+            Chiar dacă există manuale pas cu pas, dificultatea tehnică rămâne o barieră majoră pentru mulți utilizatori
+            (mai
+            mulți decât te-ai aștepta).
+        </li>
+    </ul>
+    <p>
+        Există câteva soluții pentru aceste probleme. Sunt firme care oferă hosting specializat pentru Nightscout în
+        schimbul unui abonament lunar. Proiectul pentru care caut voluntari este o astfel de platformă de hosting
+        specializat, însă cu o diferență: toate cele existente sunt contra cost, iar eu cred în spiritul open-source și
+        în puterea comunității, prin urmare cred că se poate și fără sa cerem bani de la “abonați”
+    </p>
+    <p>
+        În prezent, aproximativ 300 de site-uri Nightscout sunt găzduite pe un server oferit gratuit de o companie de
+        hosting din România. De fapt în momentul scrierii acestui text sunt 387, iar numărul lor crește cu 2-3
+        săptămânal. Pentru că managementul acestor site-uri nu poate fi făcut complet manual, construiesc o platformă de
+        management. Cred că, atunci când va fi completă și scalabilă, alți oameni din diverse țări sau comunități vor
+        putea să o instaleze și să o folosească, făcând astfel sistemul mai accesibil.
+    </p>
+    <hr />
+    <h2>Despre proiect</h2>
+    <ul>
+        <li>
+            Este acum în stadiul de MVP, adică sunt implementate funcționalitățile principale.
+        </li>
+        <li>
+            Se bazează pe <b>Next.js</b> cu <b>TypeScript</b> și <b>MySQL</b> (dar are un ORM, deci tipul bazei de date
+            nu are importanță).
+        </li>
+        <li>
+            Front-end-ul folosește componente <b>Material UI</b>.
+        </li>
+        <li>
+            L-am scris eu, în timpul liber (puteți vedea <a href="https://github.com/ktomy">profilul</a> meu de GitHub
+            pentru a estima cât efort am depus).
+        </li>
+    </ul>
+
+    <h2>Ce lipsuri are și unde am nevoie de ajutor</h2>
+    <ul>
+        <li>
+            Front-end-ul arată rău. Sunt back-ender convins, iar CSS pentru mine e chineză. Ar fi grozav ca cineva să
+            îmbunătățească interfața – sau măcar să nu mai arate atât de prost.
+        </li>
+        <li>
+            Trebuie să fie mobile-friendly. Momentan nu e utilizabil de pe telefon, iar de multe ori modificările
+            trebuie făcute „acum” - nu e ideal să trebuiască să caut un calculator doar ca să mă loghez.
+        </li>
+        <li>
+            Vreau să-l fac scalabil, astfel încât alții să îl poată instala pe propriul server și să funcționeze
+            „out-of-the-box”.
+        </li>
+        <li>
+            Trebuie îmbunătățită partea de self-service. Utilizatorii ar trebui să poată face modificări fără să
+            necesite intervenția unui admin. În prezent, se poate într-o anumită măsură, dar e loc de mult mai bine.
+        </li>
+        <li>
+            UX-ul general poate fi îmbunătățit.
+        </li>
+        <li>
+            Trebuie îmbunătățit environment-ul și prezentarea proiectului pe GitHub.
+        </li>
+    </ul>
+
+    <h2>De ce să te alături?</h2>
+    <ul>
+        <li>
+            Pentru sentimentul că ajuti omenirea.
+        </li>
+        <li>
+            Pentru începători: ca să prindeți experiență într-un mediu real. E un fel de oportunitate de mentorship, dar
+            gratuită. Am vreo 20 de ani de experiență în programare, vreo 10 în conducerea echipelor și proiectelor,
+            știu să ajut alți oameni sa crească
+        </li>
+        <li>
+            Pentru studenți: poate fi un proiect de licență sau alt proiect academic. Între un proiect teoretic care nu
+            va fi folosit niciodată și unul real, de ce să nu alegi varianta reală?
+        </li>
+        <li>
+            Pentru batranii peste 30 de ani: oportunitate de a lucra cu tehnologii noi, mai ales dacă la job aveți de-a
+            face cu Cobol, VB6 etc.
+        </li>
+    </ul>
+
+    <h2>Ce fel de oameni caut?</h2>
+    <ul>
+        <li>
+            Cineva care are ceva cunoștințe de front-end (și posibil back-end), nu neapărat cu experiență.
+        </li>
+        <li>
+            Cineva dispus să petreacă 1-2 zile pe lună (preferabil împărțite în sesiuni mai mici) lucrand la proiect.
+        </li>
+        <li>
+            Cineva care se poate ține de proiect măcar câteva luni.
+        </li>
+    </ul>
+
+    <p>Dacă ești interesat(ă), trimite-mi un mesaj!</p>
+
+    <hr />
+    <p>📌 <strong>Proiectul este aici:</strong> <a href="https://github.com/ktomy/nsromania-setup">GitHub</a></p>
+<br />
+    <table cellpadding="0">
+        <tbody>
+            <tr>
+                <td>
+                    <strong>Artiom Kenibasov</strong>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Email: <a href="mailto:artiom@gmail.com">artiom@gmail.com</a>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <a href="https://www.linkedin.com/in/artiom-kenibasov-2397433/">LinkedIn</a>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <a href="https://www.facebook.com/artem.kenibasov/">Facebook</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+
+</html>

@@ -28,32 +28,32 @@
     "registrationUnavailable": "Înregistrarea nu este disponibilă în acest moment.",
     "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",
     "registrationForm": "acest formular",
-    "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
-    "ownerEmail": "E-mail",
-    "ownerName": "Nume si prenume",
-    "emailValidateionCode": "Codul de validare",
-    "subDomain": "Subdomeniu",
-    "validateEmail": "Validare",
-    "apiSecret": "API Secret",
-    "dataSource": "Sursa de date",
-    "dexcom": "Dexcom",
     "anythingElse": "Orice altceva",
-    "eu": "UE",
-    "us": "SUA",
-    "dexcomServer": "Regiunea serverului Dexcom",
-    "dexcomUsername": "Nume de utilizator Dexcom",
-    "dexcomPassword": "Parola Dexcom",
-    "register": "Inregistrare",
-    "registrationDescription": "Please fill in this form in order to request creation of a Nightscout site on NSRomania.info. Once the form is filled in, it will be reviewed and potentially approved by the administration team. Once this happens, you will receive an email and a Nightscout swebsite will be created on your behalf",
-    "sendingValidationEmail": "Am trimis email de validare, verificati casuta de mail si spam",
+    "apiSecret": "Secret API",
+    "checkValidationCode": "Verificarea codului de validare",
+    "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
+    "dataSource": "Sursă de date",
+    "dexcom": "Dexcom",
+    "dexcomPassword": "Parolă Dexcom",
+    "dexcomServer": "Regiune server Dexcom",
+    "dexcomUsername": "Nume utilizator Dexcom",
     "emailValidated": "Adresa de mail a fost validata cu succes",
+    "emailValidateionCode": "Cod validare e-mail",
+    "emailValidationCodeInvalid": "Codeul de validare este gresit",
+    "emailVerificationCodeValidated": "Adresa de email validata cu succes",
+    "eu": "UE",
+    "ownerEmail": "E-mail",
+    "ownerName": "Nume",
+    "register": "Inregistrare",
+    "registrationDescription": "Vă rugăm să completați acest formular pentru a solicita crearea unui site Nightscout pe NSRomânia.info. Odată completat, formularul va fi verificat şi probabil aprobat de echipa de administrare. Odată ce se va întâmpla acest lucru, veți primi un e-mail și un site Nightscout va fi creat în numele dvs.",
     "registrationFailed": "Inregistrarea a esuat, verificati datele introduse",
     "registrationSuccess": "Inregistrarea a reusit",
-    "checkValidationCode": "Verificarea codului de validare",
-    "validationEmailFailed": "Nu am reusit sa validez adresa de email",
+    "sendingValidationEmail": "Am trimis email de validare, verificati casuta de mail si spam",
+    "subDomain": "Subdomeniu",
     "title": "Titlul de pe site",
-    "emailValidationCodeInvalid": "Codeul de validare este gresit",
-    "emailVerificationCodeValidated": "Adresa de email validata cu succes"
+    "us": "SUA",
+    "validateEmail": "Validează",
+    "validationEmailFailed": "Nu am reusit sa validez adresa de email"
   },
   "EditDomainPage": {
     "loading": "Se încarcă...",
@@ -75,7 +75,7 @@
     "add": "Adaugă",
     "save": "Salvează",
     "cancel": "Anulează",
-    "owner": "Proprietar"
+    "owner": "Owner"
   },
   "DomainsPage": {
     "loading": "Se încarcă...",
@@ -95,6 +95,17 @@
     "status": "Stare",
     "details": "Detalii"
   },
+  "DomainPage": {
+    "loading": "Se încarcă...",
+    "basicData": "Date de bază",
+    "advancedSettings": "Setări avansate (variabile de mediu)",
+    "edit": "Editare",
+    "destroy": "Distruge",
+    "stop": "Opreste",
+    "start": "Porneste",
+    "welcome": "Saluta",
+    "initialize": "Initializeaza"
+  },
   "NewDomainPage": {
     "domainName": "Nume domeniu",
     "title": "Titlu",
@@ -112,19 +123,8 @@
     "enable": "Activează",
     "showPlugins": "Afișează pluginuri",
     "create": "Creează",
-    "domainOwner": "Adresa de email a proprietatului",
-    "domainOwnerName": "Numele proprietarului"
-  },
-  "DomainPage": {
-    "loading": "Se încarcă...",
-    "basicData": "Date de bază",
-    "advancedSettings": "Setări avansate (variabile de mediu)",
-    "edit": "Editare",
-    "destroy": "Distruge",
-    "stop": "Opreste",
-    "start": "Porneste",
-    "welcome": "Saluta",
-    "initialize": "Initializeaza"
+    "domainOwner": "Owner's email",
+    "domainOwnerName": "Owner's name"
   },
   "App": {
     "menu": "Meniu",
@@ -132,23 +132,23 @@
     "domains": "Site-uri",
     "newDomain": "Site nou",
     "myDomains": "Site-urile mele",
-    "requests": "Cereri de inregistrare"
+    "requests": "Cereri de înregistrare"
   },
   "RequestsPage": {
     "approve": "Aproba",
     "reject": "Refuza",
     "actionSuccess": "Acțiunea a fost realizată cu succes",
     "actionFailed": "Acțiunea a eșuat",
-    "loading": "Se incarca...",
-    "notSignedIn": "Va rugam sa va autentificati",
+    "loading": "Se încarcă...",
+    "notSignedIn": "Te rugăm să te autentifici mai întâi",
     "domain": "Subdomeniu",
     "dataSource": "Sursa de date",
     "ownerName": "Proprietar",
     "ownerEmail": "E-mail",
     "status": "Status",
-    "createdAt": "Data inregistrarii",
-    "actionedAt": "Data deciziei",
+    "createdAt": "Solicitat la",
+    "actionedAt": "Acționat la",
     "actions": "Actiuni",
-    "welcomeMessage": "Mai jos este lista de cererilor de inregistrare, aveti grija cand le actionati"
+    "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați"
   }
 }

@@ -1,5 +1,5 @@
 {
-    "name": "Next.js Dev Environment",
+    "name": "NSRomania",
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspace",

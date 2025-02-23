@@ -22,6 +22,7 @@ const AUTHENTICATION = {
 export default async function RootLayout(props: { children: React.ReactNode }) {
 
     const session = await auth();
+    // console.log("(Home) Session: ", session);
 
     const locale = await getLocale();
 

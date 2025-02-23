@@ -9,6 +9,9 @@ export async function initiateEmailValidation(email: string) {
 
 
     const validationCode = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`Validation code for ${email}: ${validationCode}`);
+    }
     const result = await prisma.register_email_validation.create({
         data: {
             email_address: email,
@@ -16,7 +19,9 @@ export async function initiateEmailValidation(email: string) {
         }
     });
 
-    sendValidationEmail(email, validationCode);
+    if (process.env.NODE_ENV !== 'development') {
+        await sendValidationEmail(email, validationCode);
+    }
 
     return true;
 }

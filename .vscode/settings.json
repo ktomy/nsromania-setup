@@ -3,5 +3,7 @@
         "messages",
         "src/i18n"
     ],
-    "i18n-ally.keystyle": "nested"
+    "i18n-ally.keystyle": "nested",
+    "git.autofetch": true,
+    "git.autoStash": true
 }

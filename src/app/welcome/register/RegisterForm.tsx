@@ -36,7 +36,8 @@ export default function RegisterForm() {
             return;
         }
 
-        const token = await executeRecaptcha("email_validation");
+        const token = process.env.NODE_ENV === 'development' ? "1234567890"
+            : await executeRecaptcha("email_validation");
 
         const res = await fetch("/api/register/validate-email", {
             method: "POST",
@@ -61,7 +62,8 @@ export default function RegisterForm() {
             return;
         }
 
-        const token = await executeRecaptcha("email_code_validation");
+        const token = process.env.NODE_ENV === 'development' ? "1234567890"
+            : await executeRecaptcha("email_code_validation");
 
         const res = await fetch("/api/register/validate-verification-code", {
             method: "POST",
@@ -78,7 +80,7 @@ export default function RegisterForm() {
 
         openSnack(t('emailVerificationCodeValidated'), 'success');
         setEmailValidated(true);
-    }
+    };
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -88,7 +90,8 @@ export default function RegisterForm() {
             return;
         }
 
-        const token = await executeRecaptcha("register");
+        const token = process.env.NODE_ENV === 'development' ? "1234567890"
+            : await executeRecaptcha("register");
 
         const registerRequest: RegisterDomainRequest = {
             domain: subDomain,
@@ -251,7 +254,7 @@ export default function RegisterForm() {
                                     fullWidth
                                     size="small"
                                 />
-                            </Grid>                            
+                            </Grid>
                             <Grid size={4}>
                                 <Typography variant="h6">{t('apiSecret')}</Typography>
                             </Grid>

@@ -1,25 +1,35 @@
 services:
-    app:
-        image: mcr.microsoft.com/devcontainers/typescript-node:latest
-        volumes:
-            - ..:/workspace:cached
-        command: sleep infinity
-        depends_on:
-            - db
-        environment:
-            DATABASE_URL: mysql://user:password@db:3306/mydb
+  app:
+    image: mcr.microsoft.com/devcontainers/typescript-node:latest
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    depends_on:
+      - db
+    # environment:
+    #   DATABASE_URL: mysql://user:password@db:3306/nightscout
 
-    db:
-        image: mysql:8
-        restart: always
-        environment:
-            MYSQL_ROOT_PASSWORD: rootpassword
-            MYSQL_DATABASE: nightscout
-            MYSQL_USER: user
-            MYSQL_PASSWORD: password
-        ports:
-            - "3306:3306"
-        volumes:
-            - ../seed-data:/docker-entrypoint-initdb.d
+  db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: nightscout
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../seed-data:/docker-entrypoint-initdb.d
+  mongo:
+    image: mongo:6
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: nightscout
+    ports:
+      - "27017:27017"
+    # volumes:
+    #   - mongo_data:/data/db
 
-#      - ../mysql-data:/var/lib/mysql

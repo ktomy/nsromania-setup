@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    if (!await validateCaptcha(token)) {
+    if (process.env.NODE_ENV !== 'development' && !await validateCaptcha(token)) {
         return new Response(JSON.stringify({ message: "Failed to verify" }), {
             status: 405,
         });

@@ -28,7 +28,7 @@ export async function POST(req: Request) {
         !["Dexcom", "API"].includes(registrationRequest.dataSource) ||
         !registrationRequest.ownerEmail.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ||
         registrationRequest.reCAPTCHAToken.length < 10 ||
-        !validateCaptcha(registrationRequest.reCAPTCHAToken)
+        !(process.env.NODE_ENV === "development" ? true : await validateCaptcha(registrationRequest.reCAPTCHAToken))
     ) {
         return new Response(JSON.stringify({ error: "Invalid input parameters" }), {
             status: 400,
@@ -75,7 +75,7 @@ export async function GET(req: Request) {
     }
 
     const registrationRequests = await getAllRegistrationRequests();
-    
+
     return new Response(JSON.stringify(registrationRequests), {
         status: 200,
         headers: { "Content-Type": "application/json" },

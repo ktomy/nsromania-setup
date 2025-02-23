@@ -48,7 +48,7 @@ const providers: Provider[] = [
                 ? { id: testUser.id, name: testUser.name, email: testUser.email }
                 : null;
         },
-    }) : [],
+    }) : null,
 ] as Provider[];
 
 if (!process.env.GITHUB_CLIENT_ID) {
@@ -58,7 +58,7 @@ if (!process.env.GITHUB_CLIENT_SECRET) {
     console.warn('Missing environment variable "GITHUB_CLIENT_SECRET"');
 }
 
-export const providerMap = providers.map((provider) => {
+export const providerMap = providers.filter((provider) => provider !== null).map((provider) => {
     if (typeof provider === 'function') {
         const providerData = provider();
         if (providerData.id === 'sendgrid') {
@@ -75,7 +75,7 @@ export const providerMap = providers.map((provider) => {
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    providers,
+    providers: providers.filter((provider) => provider !== null),
     secret: process.env.AUTH_SECRET,
     pages: {
         signIn: '/auth/signin',

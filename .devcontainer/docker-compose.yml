@@ -1,0 +1,25 @@
+services:
+    app:
+        image: mcr.microsoft.com/devcontainers/typescript-node:latest
+        volumes:
+            - ..:/workspace:cached
+        command: sleep infinity
+        depends_on:
+            - db
+        environment:
+            DATABASE_URL: mysql://user:password@db:3306/mydb
+
+    db:
+        image: mysql:8
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpassword
+            MYSQL_DATABASE: nightscout
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+        ports:
+            - "3306:3306"
+        volumes:
+            - ../seed-data:/docker-entrypoint-initdb.d
+
+#      - ../mysql-data:/var/lib/mysql

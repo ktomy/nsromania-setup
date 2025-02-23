@@ -17,7 +17,12 @@ Open the cloned repository
 Accept to switch to Dev Container
 Wait for the containers creation and post-creation scripts to finish execution
 
-In the VS Code terminal type
+Copy the example environment variables to the main environment file: in the VS Code terminal type
+```
+cp .env.example .env
+```
+
+To run the project, in the VS Code terminal type
 ```
 pnpm run dev
 ```

@@ -37,6 +37,8 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.5",
+    "@mdx-js/loader": "^3.1.0",
+    "@storybook/addon-docs": "^8.6.2",
     "@storybook/addon-essentials": "^8.6.1",
     "@storybook/addon-interactions": "^8.6.1",
     "@storybook/addon-onboarding": "^8.6.1",

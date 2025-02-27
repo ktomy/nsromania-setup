@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
+import NSButton from "../general/NSButton";
 export type GenericFunction = (...args: any[]) => any | Promise<any>;
 
 export interface ActionsMenuItem {
@@ -11,7 +12,7 @@ export interface ActionsMenuItem {
 	action?: GenericFunction;
 	label: string;
 	disabled?: boolean;
-	icon?: React.ReactElement<SvgIconProps>;
+	icon: React.ReactNode;
 }
 
 export interface ActionsMenuProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -29,6 +30,20 @@ const handleActionFunction = async (action: ActionsMenuItem, setLoadingId: (newV
 	}
 };
 
+/**
+ * Documentation:
+ * - https://mui.com/components/buttons/
+ * - https://mui.com/components/menu/
+ * - https://mui.com/components/button-group/
+ *
+ * This component is used to display a list of actions in a menu or button group.
+ * It will display a menu button if the screen width is less than 960px, otherwise it will display a button group.
+ * Idf the screen width is less than the 'md' value set in the theme a dropdown menu will show the actions.
+ * If the screen width is greater than the 'md' value set in the theme a button group will show the actions.
+ * @param actionsButtonLabel
+ * @param actions
+ * @returns a menu or button group with the actions
+ */
 export default function ActionsMenu({ actionsButtonLabel, actions, children, ...props }: ActionsMenuProps) {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [loadingId, setLoadingId] = useState<null | string>(null);
@@ -83,19 +98,18 @@ export default function ActionsMenu({ actionsButtonLabel, actions, children, ...
 				<ButtonGroup>
 					{actions.map((action, index) => {
 						return (
-							<Button
+							<NSButton
 								key={`${action.id}-${index}`}
 								onClick={async () => {
 									handleActionFunction(action, setLoadingId);
 								}}
+								endIcon={action.icon}
 								disabled={action.disabled}
 								loading={loadingId === action.id}
-								sx={{
-									gap: 1,
-								}}>
-								{action.icon ? action.icon : null}
-								{matchMd ? <span>{action.label}</span> : null}
-							</Button>
+								color="primary"
+								>
+								{action.label}
+							</NSButton>
 						);
 					})}
 				</ButtonGroup>

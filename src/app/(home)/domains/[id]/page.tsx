@@ -27,7 +27,6 @@ const RenderDomainProperties = ({ properties }: { properties: Record<string, Ren
                 sx={{
                     p: 3,
                     borderRadius: 2,
-                    backgroundColor: "whitesmoke",
                 }}
             >
                 <Grid container spacing={2} alignItems="center">

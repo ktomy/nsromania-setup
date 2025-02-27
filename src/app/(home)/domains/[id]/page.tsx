@@ -184,50 +184,45 @@ export default function DomainPage() {
 	const adminActions: ActionsMenuItem[] = [
 		{
 			label: t("initialize"),
-            id: "initialize",
+			id: "initialize",
 			action: async () => await handleDomainActions(id, "initialize"),
 			icon: <SettingsInputComponentRoundedIcon />,
 			disabled: domain?.status === "online" || domain?.dbInitialized === true || actionInProgress,
-            loading: actionInProgress
 		},
 		{
 			label: t("start"),
-            id: "start",
+			id: "start",
 			action: async () => await handleDomainActions(id, "start"),
 			icon: <PlayArrowRoundedIcon />,
 			disabled: domain?.status === "online" || domain?.dbInitialized === false || actionInProgress,
-            loading: actionInProgress
 		},
 		{
 			label: t("stop"),
-            id: "stop",
+			id: "stop",
 			action: async () => await handleDomainActions(id, "stop"),
 			icon: <StopRoundedIcon />,
 			disabled: domain?.status === "not running" || domain?.dbInitialized === false || actionInProgress,
 		},
 		{
 			label: t("welcome"),
-            id: "welcome",
+			id: "welcome",
 			action: async () => await handleDomainActions(id, "welcome"),
 			icon: <WavingHandRoundedIcon />,
 			disabled: domain?.status === "online" || domain?.dbInitialized === false || actionInProgress,
-            loading: actionInProgress
 		},
 		{
 			label: t("edit"),
-            id: "edit",
+			id: "edit",
 			action: async () => await router.push(`/domains/${id}/edit`),
 			icon: <EditRoundedIcon />,
 			disabled: domain?.status === "online" || domain?.dbInitialized === false || actionInProgress,
-            loading: actionInProgress
 		},
 		{
 			label: t("destroy"),
-            id: "destroy",
+			id: "destroy",
 			action: async () => await handleDomainActions(id, "destroy"),
 			icon: <DeleteForeverRoundedIcon />,
 			disabled: domain?.status === "online" || domain?.dbInitialized === false || actionInProgress,
-            loading: actionInProgress
 		},
 	];
 

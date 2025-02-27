@@ -12,7 +12,6 @@ export interface ActionsMenuItem {
 	label: string;
 	disabled?: boolean;
 	icon?: React.ReactElement<SvgIconProps>;
-	loading?: boolean;
 }
 
 export interface ActionsMenuProps extends React.HTMLAttributes<HTMLDivElement> {

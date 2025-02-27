@@ -151,6 +151,7 @@ export default function NewDomainPage() {
                 </Grid>
                 <Grid size={8}>
                     <TextField
+                        label={t('title')}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         error={title.length > 0 && title.length > 32}

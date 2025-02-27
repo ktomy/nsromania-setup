@@ -16,7 +16,8 @@
     "loading": "Loading...",
     "start": "Start",
     "stop": "Stop",
-    "welcome": "Greet"
+    "welcome": "Greet",
+    "actionsButtonLabel": "Options"
   },
   "DomainsPage": {
     "actionFailed": "Action failed",

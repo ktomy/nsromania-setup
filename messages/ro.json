@@ -16,7 +16,8 @@
     "loading": "Se încarcă...",
     "start": "Porniți",
     "stop": "Opriți",
-    "welcome": "Greet"
+    "welcome": "Greet",
+    "actionsButtonLabel": "Opțiuni"
   },
   "DomainsPage": {
     "actionFailed": "Acțiunea a eșuat",

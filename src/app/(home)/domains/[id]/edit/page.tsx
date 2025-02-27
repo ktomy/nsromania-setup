@@ -30,8 +30,8 @@ import { useParams } from "next/navigation";
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from "@/types/domains";
 import { useTranslations, useLocale } from "next-intl";
 import EditableInput from "@/lib/components/ModalEdit/EditableInput";
-import NSButton from '@/lib/components/general/NSButton';
-import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
+import NSButton from "@/lib/components/general/NSButton";
+import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 
 export default function EditDomainPage() {
 	const { id } = useParams() as { id: string };
@@ -315,6 +315,8 @@ export default function EditDomainPage() {
 												onEdit={(value) => {
 													setEnvironments(environments.map((e, i) => (i === index ? { ...e, value } : e)));
 												}}
+												placeholder={t("value")}
+												label={t("value")}
 											/>
 										</TableCell>
 										<TableCell>
@@ -329,18 +331,12 @@ export default function EditDomainPage() {
 										<TextField value={newEnvKey} onChange={handleNewEnvKeyChange} placeholder={t("variable")} size="small" fullWidth />
 									</TableCell>
 									<TableCell>
-										<EditableInput value={newEnvValue} onEdit={(value) => setNewEnvValue(value ?? "")} placeholder={t('value')} label={t('value')}/>
-										{/* <TextField
-                                                value={newEnvValue}
-                                                onChange={(e) => setNewEnvValue(e.target.value)}
-                                                placeholder={t('value')}
-                                                size="small"
-                                                fullWidth
-                                                multiline={newEnvKey === "LOOP_APNS_KEY"}
-                                            /> */}
+										<EditableInput value={newEnvValue} onEdit={(value) => setNewEnvValue(value ?? "")} placeholder={t("value")} label={t("value")} />
 									</TableCell>
 									<TableCell>
-										<NSButton color="primary" startIcon={<AddCircleOutlineRoundedIcon />} onClick={handleAddEnvironment}>{t("add")}</NSButton>
+										<NSButton color="primary" endIcon={<AddCircleOutlineRoundedIcon />} onClick={handleAddEnvironment}>
+											{t("add")}
+										</NSButton>
 									</TableCell>
 								</TableRow>
 							</TableBody>

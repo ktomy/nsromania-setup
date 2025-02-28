@@ -6,6 +6,7 @@ import "@fontsource/material-icons";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { withThemeFromJSXProvider } from "@storybook/addon-themes";
 import type { Preview } from "@storybook/react";
+import { withNextIntl } from "./decorators/WithNextIntl";
 const lightTheme = createTheme({
 	palette: {
 		mode: "light",
@@ -17,6 +18,7 @@ const darkTheme = createTheme({
 		mode: "dark",
 	},
 });
+
 export const decorators = [
 	withThemeFromJSXProvider({
 		themes: {
@@ -27,7 +29,24 @@ export const decorators = [
 		Provider: ThemeProvider,
 		GlobalStyles: CssBaseline,
 	}),
+	withNextIntl,
 ];
+
+export const globalTypes = {
+	locale: {
+			name: "Locale",
+			description: "Internationalization locale",
+			defaultValue: "en",
+			toolbar: {
+					icon: "globe",
+					items: [
+							{ value: "en", right: "🇺🇸", title: "English" },
+							{ value: "ro", right: "🇷🇴", title: "Romana" },
+							// Add more locales here
+					],
+			},
+	},
+};
 
 const preview: Preview = {
 	parameters: {

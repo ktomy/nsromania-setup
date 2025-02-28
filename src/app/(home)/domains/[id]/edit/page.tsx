@@ -22,6 +22,7 @@ import {
 	TableRow,
 	Paper,
 	Snackbar,
+	InputLabel,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -29,9 +30,10 @@ import { NSDomainEnvironment } from "@prisma/client";
 import { useParams } from "next/navigation";
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from "@/types/domains";
 import { useTranslations, useLocale } from "next-intl";
-import EditableInput from "@/lib/components/ModalEdit/EditableInput";
+import NSInput from "@/lib/components/ModalEdit/NSInput";
 import NSButton from "@/lib/components/general/NSButton";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
+import Divider from "@mui/material/Divider";
 
 export default function EditDomainPage() {
 	const { id } = useParams() as { id: string };
@@ -185,15 +187,13 @@ export default function EditDomainPage() {
 		<Typography>{t("loading")}</Typography>
 	) : (
 		<Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-			<Grid container spacing={1}>
-				<Grid size={3}>
-					<Typography variant="h6">{t("domainName")}</Typography>
-				</Grid>
-				<Grid size={8}>
+			<Grid container spacing={2}>
+				<Grid size={{ xs: 12, md: 4 }}>
 					<Box sx={{ display: "flex" }} alignItems="center">
-						<TextField
+						<NSInput
 							value={domain}
-							onChange={(e) => setDomain(e.target.value)}
+							label={t("domainName")}
+							onEdit={(e) => setDomain(e ?? "")}
 							required
 							error={domain.length > 0 && !/^[a-z0-9-]{2,20}$/.test(domain)}
 							size="small"
@@ -202,24 +202,24 @@ export default function EditDomainPage() {
 						<Typography sx={{ marginLeft: 1 }}>.nsromania.info</Typography>
 					</Box>
 				</Grid>
-				<Grid size={4}>
-					<Typography variant="h6">{t("owner")}</Typography>
-				</Grid>
-				<Grid size={8}>
-					<TextField disabled value={owner} size="small" />
-				</Grid>
-				<Grid size={4}>
-					<Typography variant="h6">{t("title")}</Typography>
-				</Grid>
-				<Grid size={8}>
-					<TextField value={title} onChange={(e) => setTitle(e.target.value)} error={title.length > 0 && title.length > 32} size="small" />
-				</Grid>
 
-				<Grid size={4}>
-					<Typography variant="h6">{t("apiSecret")}</Typography>
+				<Grid size={{ xs: 12, md: 4 }}>
+					<NSInput fullWidth disabled value={owner} label={t("owner")} size="small" />
 				</Grid>
-				<Grid size={8}>
-					<TextField
+				<Grid size={{ xs: 12, md: 4 }}>
+					<NSInput
+						fullWidth
+						value={title}
+						label={t("title")}
+						onChange={(e) => setTitle(e.target.value)}
+						error={title.length > 0 && title.length > 32}
+						size="small"
+					/>
+				</Grid>
+				<Grid size={{ xs: 12, md: 4 }}>
+					<NSInput
+						label={t("apiSecret")}
+						fullWidth
 						value={apiSecret}
 						onChange={(e) => setApiSecret(e.target.value)}
 						required
@@ -228,19 +228,10 @@ export default function EditDomainPage() {
 					/>
 				</Grid>
 
-				<Grid size={4}>
-					<Typography variant="h6">{t("active")}</Typography>
-				</Grid>
-				<Grid size={8}>
-					<FormControlLabel control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />} label="" />
-				</Grid>
-
-				<Grid size={4}>
-					<Typography variant="h6">{t("dataSource")}</Typography>
-				</Grid>
-				<Grid size={8}>
+				<Grid size={{ xs: 12, md: 4 }}>
 					<FormControl fullWidth size="small">
-						<Select value={dataSource} onChange={handleDataSourceChange}>
+						<InputLabel id="data-source">{t("dataSource")}</InputLabel>
+						<Select labelId="data-source" value={dataSource} onChange={handleDataSourceChange} label={t("dataSource")} color="primary">
 							<MenuItem value="Dexcom">Dexcom</MenuItem>
 							<MenuItem value="API">API (xDrip/Libre/640GConnect)</MenuItem>
 							<MenuItem value="Custom">Custom</MenuItem>
@@ -248,48 +239,67 @@ export default function EditDomainPage() {
 					</FormControl>
 				</Grid>
 
+				<Grid size={{ xs: 12, md: 4 }}>
+					<FormControlLabel control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />} label={t("active")} />
+				</Grid>
 				{(dataSource === "Dexcom" || dataSource === "Custom") && (
 					<>
-						<Grid size={4}>
-							<Typography variant="h6">{t("dexcomServer")}</Typography>
-						</Grid>
-						<Grid size={8}>
+						<Grid size={{ xs: 12, md: 4 }}>
 							<FormControl fullWidth size="small">
-								<Select value={dexcomServer} onChange={(e) => setDexcomServer(e.target.value)}>
+								<InputLabel id="dexcom-server">{t("dexcomServer")}</InputLabel>
+								<Select labelId="dexcom-server" label={t("dexcomServer")} value={dexcomServer} onChange={(e) => setDexcomServer(e.target.value)}>
 									<MenuItem value="EU">EU</MenuItem>
 									<MenuItem value="US">US</MenuItem>
 								</Select>
 							</FormControl>
 						</Grid>
 
-						<Grid size={4}>
-							<Typography variant="h6">{t("dexcomUsername")}</Typography>
+						<Grid size={{ xs: 12, md: 4 }}>
+							<NSInput
+								fullWidth
+								value={dexcomUsername}
+								label={t("dexcomUsername")}
+								onChange={(e) => setDexcomUsername(e.target.value)}
+								required={dataSource === "Dexcom"}
+								size="small"
+							/>
 						</Grid>
-						<Grid size={8}>
-							<TextField value={dexcomUsername} onChange={(e) => setDexcomUsername(e.target.value)} required={dataSource === "Dexcom"} size="small" />
-						</Grid>
-
-						<Grid size={4}>
-							<Typography variant="h6">{t("dexcomPassword")}</Typography>
-						</Grid>
-						<Grid size={8}>
-							<TextField value={dexcomPassword} onChange={(e) => setDexcomPassword(e.target.value)} required={dataSource === "Dexcom"} size="small" />
+						<Grid size={{ xs: 12, md: 4 }}>
+							<NSInput
+								fullWidth
+								value={dexcomPassword}
+								label={t("dexcomPassword")}
+								onChange={(e) => setDexcomPassword(e.target.value)}
+								required={dataSource === "Dexcom"}
+								size="small"
+							/>
 						</Grid>
 					</>
 				)}
 
-				<Grid size={4}>
-					<Typography variant="h6">{t("enable")}</Typography>
+				<Grid size={{ xs: 12, md: 6 }}>
+					<NSInput
+						value={enable}
+						label={t("enable")}
+						modal
+						onEdit={(e) => {
+							setEnable(e ?? "");
+						}}
+						onChange={(e) => setEnable(e.target.value)}
+						disabled={dataSource !== "Custom"}
+						fullWidth
+					/>
 				</Grid>
-				<Grid size={8}>
-					<TextField value={enable} onChange={(e) => setEnable(e.target.value)} disabled={dataSource !== "Custom"} fullWidth />
-				</Grid>
-
-				<Grid size={4}>
-					<Typography variant="h6">{t("showPlugins")}</Typography>
-				</Grid>
-				<Grid size={8}>
-					<TextField value={showPlugins} onChange={(e) => setShowPlugins(e.target.value)} disabled={dataSource !== "Custom"} fullWidth />
+				<Grid size={{ xs: 12, md: 6 }}>
+					<NSInput
+						modal
+						onEdit={(val) => setShowPlugins(val ?? "")}
+						value={showPlugins}
+						onChange={(e) => setShowPlugins(e.target.value)}
+						disabled={dataSource !== "Custom"}
+						fullWidth
+						label={t("showPlugins")}
+					/>
 				</Grid>
 
 				<Grid size={12}>
@@ -310,13 +320,16 @@ export default function EditDomainPage() {
 									<TableRow key={index}>
 										<TableCell>{env.variable}</TableCell>
 										<TableCell>
-											<EditableInput
+											<NSInput
+												modal
 												value={env.value}
 												onEdit={(value) => {
 													setEnvironments(environments.map((e, i) => (i === index ? { ...e, value } : e)));
 												}}
 												placeholder={t("value")}
 												label={t("value")}
+												modalSaveLabel={t("save")}
+												modalCancelLabel={t("cancel")}
 											/>
 										</TableCell>
 										<TableCell>
@@ -331,7 +344,7 @@ export default function EditDomainPage() {
 										<TextField value={newEnvKey} onChange={handleNewEnvKeyChange} placeholder={t("variable")} size="small" fullWidth />
 									</TableCell>
 									<TableCell>
-										<EditableInput value={newEnvValue} onEdit={(value) => setNewEnvValue(value ?? "")} placeholder={t("value")} label={t("value")} />
+										<NSInput modal value={newEnvValue} onEdit={(value) => setNewEnvValue(value ?? "")} placeholder={t("value")} label={t("value")} />
 									</TableCell>
 									<TableCell>
 										<NSButton color="primary" endIcon={<AddCircleOutlineRoundedIcon />} onClick={handleAddEnvironment}>

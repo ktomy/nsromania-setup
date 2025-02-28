@@ -1,11 +1,12 @@
 "use client";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-import { Container, Box, Typography, Paper, Button, Snackbar, Alert, ButtonGroup } from "@mui/material";
+import { Box, Typography, Paper, Button, Snackbar, Alert, ButtonGroup, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import React, { useEffect, useState } from "react";
-import { formatDate } from "@/lib/utils";
+import { formatBytes, formatDate } from "@/lib/utils";
 import { GetDomainByIdResponse } from "@/types/domains";
 import ActionsMenu, { ActionsMenuItem } from "@/lib/components/ActionsMenu/ActionsMenu";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
@@ -23,57 +24,38 @@ async function fetchDomain(id: string): Promise<GetDomainByIdResponse | null> {
 type RenderProperty = string | [string, string];
 interface RenderDomainPropertiesProps {
 	properties: Record<string, RenderProperty>;
-	title: string;
+	title?: string;
 }
+
 const RenderDomainProperties = ({ properties, title }: RenderDomainPropertiesProps) => {
 	return (
-		<Container maxWidth="lg">
-			<Typography variant="h6">{title}</Typography>
-			<Paper
-				elevation={2}
-				sx={{
-					p: 3,
-					borderRadius: 2,
-				}}>
-				<Grid container spacing={2} alignItems="center">
-					{Object.entries(properties).map(([key, value]) => {
-						const displayValue = typeof value === "string" ? value : value[0];
-						const color = typeof value === "string" ? "inherit" : value[1];
+		<>
+			{title && <Typography variant="h6">{title}</Typography>}
 
-						return (
-							<React.Fragment key={key}>
-								<Grid size={{ xs: 12, sm: 4 }}>
-									<Typography variant="body1" fontWeight="bold">
-										{key}:
-									</Typography>
-								</Grid>
-								<Grid size={{ xs: 12, sm: 8 }}>
-									<Typography variant="body1" noWrap maxHeight={100} sx={{ color }}>
-										{displayValue}
-									</Typography>
-								</Grid>
-							</React.Fragment>
-						);
-					})}
-				</Grid>
-			</Paper>
-		</Container>
+			<Grid container spacing={2} alignItems="center">
+				{Object.entries(properties).map(([key, value]) => {
+					const displayValue = typeof value === "string" ? value : value[0];
+					const color = typeof value === "string" ? "inherit" : value[1];
+
+					return (
+						<React.Fragment key={key}>
+							<Grid size={{ xs: 12, sm: 4 }}>
+								<Typography variant="body1" fontWeight="bold">
+									{key}:
+								</Typography>
+							</Grid>
+							<Grid size={{ xs: 12, sm: 8 }}>
+								<Typography variant="body1" noWrap maxHeight={100} sx={{ color }}>
+									{displayValue}
+								</Typography>
+							</Grid>
+						</React.Fragment>
+					);
+				})}
+			</Grid>
+		</>
 	);
 };
-
-function formatBytes(bytes: number | null): string {
-	if (bytes === null) return "Unknown";
-	if (bytes === 0) return "0 Bytes";
-
-	const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-	const k = 1024; // Factor for conversion
-	const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-	const value = bytes / Math.pow(k, i);
-	const roundedValue = i === 0 ? value : Math.min(parseFloat(value.toFixed(2)), parseFloat(value.toFixed(0))); // Avoid decimals for "Bytes"
-
-	return `${roundedValue} ${sizes[i]}`;
-}
 
 export default function DomainPage() {
 	const router = useRouter();
@@ -100,6 +82,7 @@ export default function DomainPage() {
 	const handleDomainActions = async (id: string, action: "start" | "stop" | "initialize" | "destroy" | "welcome") => {
 		try {
 			if (action === "destroy") {
+				//TODO: Add a modal to confirm the action (Good first issue)
 				if (!confirm("Are you sure you want to destroy this domain?")) {
 					return;
 				}
@@ -235,23 +218,45 @@ export default function DomainPage() {
 					{snackMessage}
 				</Alert>
 			</Snackbar>
-			<Grid size={12} direction={"row"} container>
-				<Grid size={6}>
+			<Grid
+				size={12}
+				direction={"row"}
+				container
+				sx={{
+					justifyContent: "space-between",
+					alignItems: "center",
+				}}>
+				<Grid size="auto">
 					<Typography variant="h6">
 						<a href={`https://${domain?.domain}.nsromania.info`}>{domain?.domain}.nsromania.info</a>
 					</Typography>
 				</Grid>
-				<Grid size={{ xs: 6, sm: 6 }} sx={{ display: "flex", justifyContent: "flex-end" }}>
-					{/* Start - Main action buttons */}
-					<ActionsMenu actionsButtonLabel={t("actionsButtonLabel")} actions={adminActions}></ActionsMenu>
+				<Grid size="auto">
+					<ActionsMenu asSpeedDial actionsButtonLabel={t("actionsButtonLabel")} actions={adminActions}></ActionsMenu>
+				</Grid>
+				<Grid size={12} sx={{ mt: 2 }}>
+					<Accordion defaultExpanded={true}>
+						<AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1-content" id="panel1-header">
+							<Typography variant='h6'>{t("basicData")}</Typography>
+						</AccordionSummary>
+						<AccordionDetails>
+							<RenderDomainProperties properties={domainProperties} />
+						</AccordionDetails>
+					</Accordion>
+					<Accordion defaultExpanded={true}>
+						<AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1-content" id="panel1-header">
+							<Typography variant='h6'>{t("advancedSettings")}</Typography>
+						</AccordionSummary>
+						<AccordionDetails>
+							{Object.keys(variables).length === 0 ? (
+								<RenderDomainProperties properties={{ "None defined": "" }} />
+							) : (
+								<RenderDomainProperties properties={variables} />
+							)}
+						</AccordionDetails>
+					</Accordion>
 				</Grid>
 			</Grid>
-			<RenderDomainProperties title={t("basicData")} properties={domainProperties} />
-			{Object.keys(variables).length === 0 ? (
-				<RenderDomainProperties title={t("advancedSettings")} properties={{ "None defined": "" }} />
-			) : (
-				<RenderDomainProperties title={t("advancedSettings")} properties={variables} />
-			)}
 		</Box>
 	);
 }

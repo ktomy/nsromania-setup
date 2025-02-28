@@ -21,7 +21,7 @@ const meta = {
 		endIcon: { control: "object", disable: true },
 		startIcon: { control: "object", disable: true },
 		disabled: { control: "boolean" },
-		loading: { control: "boolean",  },
+		loading: { control: "boolean" },
 	},
 	// Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args
 	args: {

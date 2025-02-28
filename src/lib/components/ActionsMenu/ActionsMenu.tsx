@@ -3,8 +3,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import SvgIcon, { SvgIconProps } from "@mui/material/SvgIcon";
+import SpeedDial from "@mui/material/SpeedDial";
+import SpeedDialAction from "@mui/material/SpeedDialAction";	
+import SpeedDialIcon from "@mui/material/SpeedDialIcon";
+
 import NSButton from "../general/NSButton";
+import { KeyboardArrowUp } from '@mui/icons-material';
 export type GenericFunction = (...args: any[]) => any | Promise<any>;
 
 export interface ActionsMenuItem {
@@ -19,6 +23,7 @@ export interface ActionsMenuProps extends React.HTMLAttributes<HTMLDivElement> {
 	actions: ActionsMenuItem[];
 	actionsButtonLabel: string;
 	children?: React.ReactNode;
+	asSpeedDial?: boolean;
 }
 
 const handleActionFunction = async (action: ActionsMenuItem, setLoadingId: (newVal: string | null) => void) => {
@@ -47,17 +52,48 @@ const handleActionFunction = async (action: ActionsMenuItem, setLoadingId: (newV
 export default function ActionsMenu({ actionsButtonLabel, actions, children, ...props }: ActionsMenuProps) {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [loadingId, setLoadingId] = useState<null | string>(null);
+	const [speedDialOpen, setSpeedDialOpen] = useState(false);
 	const menuOpen = Boolean(anchorEl);
 	const theme = useTheme();
 	const matchMedia = useMediaQuery(theme.breakpoints.down("md"));
-	const matchMd = useMediaQuery(theme.breakpoints.up(1350));
+
 	const handleMenuButtonClick = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorEl(event.currentTarget);
 	};
+
 	const handleClose = () => {
+		setSpeedDialOpen(false);
 		setAnchorEl(null);
 	};
 	if (matchMedia) {
+		if (props.asSpeedDial) {
+			
+			return (
+				<SpeedDial
+					ariaLabel={actionsButtonLabel}
+					icon={<SpeedDialIcon icon={<KeyboardArrowUp />} openIcon={<KeyboardArrowDownIcon />} />}
+					sx={{ position: "absolute", bottom: 16, right: 16 }}
+					onClose={handleClose}
+					onOpen={(e)=> {
+						setSpeedDialOpen(true);
+					}}
+					open={speedDialOpen}>
+					{actions.map((action, index) => {
+						return (
+							<SpeedDialAction
+								key={`${action.id}-${index}`}
+								icon={<SpeedDialIcon icon={action.icon} />}
+								tooltipTitle={action.label}
+								onClick={async () => {
+									handleClose();
+									handleActionFunction(action, setLoadingId);
+								}}
+							/>
+						);
+					})}
+				</SpeedDial>
+			);
+		}
 		return (
 			<div>
 				<Button
@@ -106,8 +142,7 @@ export default function ActionsMenu({ actionsButtonLabel, actions, children, ...
 								endIcon={action.icon}
 								disabled={action.disabled}
 								loading={loadingId === action.id}
-								color="primary"
-								>
+								color="primary">
 								{action.label}
 							</NSButton>
 						);

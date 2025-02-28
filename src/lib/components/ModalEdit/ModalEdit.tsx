@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, TextFieldProps } from "@mui/material";
+import { useTranslations } from "next-intl";
 
-interface ModalEditProps {
-	isOpen: boolean;
+export type ModalEditProps = {
+isOpen: boolean;
 	onClose: () => void;
 	onEdit: (value: string | null) => void;
 	value: string | null;
 	label?: React.ReactNode;
-}
+	modalSaveLabel?: string;
+	modalCancelLabel?: string;
+	modalTitle?: string | React.ReactNode;
+} & TextFieldProps;
 
 const checkMultiline = (value: string | null) => {
 	if (value === null) return false;
@@ -15,8 +19,9 @@ const checkMultiline = (value: string | null) => {
 	return multilineRegex.test(value);
 };
 
-export default function ModalEdit({ isOpen, onClose, onEdit, value, ...props }: ModalEditProps) {
+export default function ModalEdit({ isOpen, onClose, onEdit, value, modalSaveLabel, modalCancelLabel, modalTitle, ...props }: ModalEditProps) {
 	const [editedValue, setEditedValue] = useState(value);
+	const t = useTranslations("EditDomainPage");
 	const [multiline, setMultiline] = useState(checkMultiline(value));
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setEditedValue(e.target.value);
@@ -30,10 +35,10 @@ export default function ModalEdit({ isOpen, onClose, onEdit, value, ...props }: 
 	const checkMultilineRealtime = (value: string | null) => {
 		setMultiline(checkMultiline(value));
 	};
-
+	console.log(modalSaveLabel);
 	return (
 		<Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
-			<DialogTitle>Edit Value</DialogTitle>
+			{modalTitle ?? <DialogTitle>{modalTitle}</DialogTitle>}
 			<DialogContent>
 				<TextField
 					{...props}
@@ -56,10 +61,10 @@ export default function ModalEdit({ isOpen, onClose, onEdit, value, ...props }: 
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={onClose} color="primary">
-					Cancel
+					{modalCancelLabel ?? t("cancel")}
 				</Button>
-				<Button onClick={handleSave} color="primary">
-					Save
+				<Button onClick={handleSave} color="primary" disabled={props.disabled}>
+					{modalSaveLabel ?? t("save")}
 				</Button>
 			</DialogActions>
 		</Dialog>

@@ -2,12 +2,13 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import WavingHandRoundedIcon from "@mui/icons-material/WavingHandRounded";
 
-import ActionsMenu from "../lib/components/ActionsMenu/ActionsMenu";
+import NSInput from '@/lib/components/ModalEdit/NSInput';
+// import ModalEdit from '@/lib/components/ModalEdit/ModalEdit';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-	title: "Example/ActionMenu",
-	component: ActionsMenu,
+	title: "UI/NSInput",
+	component: NSInput,
 	parameters: {
 		// Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
 		layout: "centered",
@@ -16,43 +17,23 @@ const meta = {
 	tags: ["autodocs"],
 	// More on argTypes: https://storybook.js.org/docs/api/argtypes
 	argTypes: {
-		actionsButtonLabel: { control: "text" },
-		asSpeedDial: { control: "boolean" },
-		actions: {
-			control: {
-				type: "object",
-			},
-		},
+		label: { control: "text" },
+    variant: { control: "inline-radio", options: ["standard", "outlined", "filled"] },
+    color: { control: "inline-radio", options: ["primary", "secondary", "warning", "info", "error"] },
+    error: { control: "boolean" },
 	},
 	// Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args
 	args: {
-		actionsButtonLabel: "Options",
-		asSpeedDial: true,
-		actions: [
-			{
-				label: "Label 1",
-				id: "label-1",
-				action: fn(),
-				disabled: false,
-				icon: <WavingHandRoundedIcon />,
-			},
-			{
-				label: "Label 2",
-				id: "label-2",
-				action: async () => console.log("Hello 2"),
-				disabled: true,
-				icon: <WavingHandRoundedIcon />,
-			},
-			{
-				label: "Label 3 - (1.5s)",
-				id: "label-3",
-				action: async () => new Promise((resolve) => setTimeout(resolve, 1500)),
-				disabled: false,
-				icon: <WavingHandRoundedIcon />,
-			},
-		],
+		label: "Input label",
+		color: "primary",
+		variant: "outlined",
+		disabled: false,
+    value: "Input value",
+    modal: true,
+    size: "small",
+    fullWidth: true,
 	},
-} satisfies Meta<typeof ActionsMenu>;
+} satisfies Meta<typeof NSInput>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

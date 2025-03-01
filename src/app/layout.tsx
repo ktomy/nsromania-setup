@@ -11,7 +11,6 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
 const BRANDING = {
     title: 'NSRomania',
-
 };
 
 const AUTHENTICATION = {
@@ -20,7 +19,6 @@ const AUTHENTICATION = {
 };
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
-
     const session = await auth();
     // console.log("(Home) Session: ", session);
 
@@ -72,7 +70,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     }
 
     return (
-        <html lang={locale} data-toolpad-color-scheme="light">
+        <html lang={locale} data-toolpad-color-scheme="light" suppressHydrationWarning={true}>
             <body>
                 <SessionProvider session={session}>
                     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
@@ -82,7 +80,6 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                                 branding={BRANDING}
                                 session={session}
                                 authentication={AUTHENTICATION}
-                            // theme={THEME}
                             >
                                 {props.children}
                             </NextAppProvider>

@@ -124,7 +124,12 @@
     "actionSuccess": "Action successful",
     "actionedAt": "Actioned at",
     "actions": "Actions",
+    "details": "Details",
     "approve": "Approve",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "pending": "Pending",
+    "visit": "Visit",
     "createdAt": "Requested at",
     "dataSource": "Data source",
     "domain": "Subdomain",
@@ -134,7 +139,10 @@
     "ownerName": "Owner",
     "reject": "Reject",
     "status": "Status",
-    "welcomeMessage": "Here are the registration request, please be minful when evaluating"
+    "welcomeMessage": "Here are the registration request, please be mindful when evaluating"
+  },
+  "RequestPage": {
+
   },
   "SignOutComponent": {
     "alreadySignedIn": "You are already signed in.",

@@ -124,7 +124,12 @@
     "actionSuccess": "Acțiunea a fost realizată cu succes",
     "actionedAt": "Acționat la",
     "actions": "Acțiuni",
+    "details": "Detalii",
     "approve": "Aprobă",
+    "approved": "Aprobat",
+    "rejected": "Refuzat",
+    "visit": "Vizitează",
+    "pending": "În așteptare",
     "createdAt": "Solicitat la",
     "dataSource": "Sursa de date",
     "domain": "Subdomeniu",
@@ -135,6 +140,9 @@
     "reject": "Refuză",
     "status": "Status",
     "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați"
+  },
+  "RequestPage": {
+
   },
   "SignOutComponent": {
     "alreadySignedIn": "Sunteți deja logat(a).",

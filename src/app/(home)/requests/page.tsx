@@ -1,25 +1,61 @@
 'use client';
 
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Button, Chip, Snackbar } from '@mui/material';
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
+import { Alert, Box, Chip, Snackbar } from '@mui/material';
+import { DataGrid, GridActionsCellItem, GridColDef, GridRowsProp } from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid2';
-import { Settings } from '@mui/icons-material';
+import {Settings, ThumbUp, ThumbDown, Info, OpenInNew, PendingActions, Check, Close} from '@mui/icons-material';
 import { useSession } from 'next-auth/react';
-import { register_request, User } from '@prisma/client';
-import { redirect } from 'next/navigation';
+import { register_request } from '@prisma/client';
 import { formatDate } from '@/lib/utils';
-import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useState, useEffect, JSX, Key, MouseEventHandler, ReactElement} from 'react';
+import {useTranslations} from 'next-intl';
+import {useRouter} from 'next/navigation'
+
+// Helper function to get status chip configuration
+function getStatusChipProps(statusValue: string, t: (key: string) => string) {
+        switch(statusValue.toLowerCase()) {
+            case 'pending':
+                return {
+                    label: t('pending'),
+                    color: 'warning' as const,
+                    icon: <PendingActions fontSize="small" />,
+                    variant: 'filled' as const
+                };
+            case 'approved':
+                return {
+                    label: t('approved'),
+                    color: 'success' as const,
+                    icon: <Check fontSize="small" />,
+                    variant: 'filled' as const
+                };
+            case 'denied':
+            case 'rejected':
+                return {
+                    label: t('rejected'),
+                    color: 'error' as const,
+                    icon: <Close fontSize="small" />,
+                    variant: 'filled' as const
+                };
+            default:
+                return {
+                    label: statusValue,
+                    color: 'default' as const,
+                    icon: null,
+                    variant: 'outlined' as const
+                };
+        }
+}
 
 export default function RequestsPage() {
     const t = useTranslations('RequestsPage');
     const [rows, setRows] = useState<GridRowsProp>([]);
-    const { data: session, status } = useSession();
+    const {data: session, status} = useSession();
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
-    const [actionInProgress, setActionInProgress] = useState(false);
+    const [, setActionInProgress] = useState(false);
+    const router = useRouter();
 
     const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
         setSnackMessage(t(message));
@@ -54,10 +90,60 @@ export default function RequestsPage() {
         }
     }
 
+    const navigateToDetails = (id: number) => {
+        router.push(`/requests/${id}`);
+    };
+
+    const visitWebsite = (subdomain: string) => {
+        window.open(`https://${subdomain}.nsromania.info/`, '_blank');
+    };
+
     const fetchRequests = () => {
         fetch(`/api/register`).then((response) => {
             response.json().then((domains) => {
                 const rows: GridRowsProp = domains.map((request: register_request) => {
+                    let actions: { icon: JSX.Element; label: string; onClick: () => void; }[] = [];
+                    if (request.status === "pending") {
+                        actions = [
+                            {
+                                icon: <ThumbUp color="success"/>,
+                                label: t('approve'),
+                                onClick: () => handleRequestsActions(request.id, "approve"),
+                            },
+                            {
+                                icon: <ThumbDown color="error"/>,
+                                label: t('reject'),
+                                onClick: () => handleRequestsActions(request.id, "reject"),
+                            },
+                            {
+                                icon: <Info color="primary"/>,
+                                label: t('details'),
+                                onClick: () => navigateToDetails(request.id),
+                            }
+                        ];
+                    } else if (request.status === "approved") {
+                        actions = [
+                            {
+                                icon: <Info color="primary"/>,
+                                label: t('details'),
+                                onClick: () => navigateToDetails(request.id),
+                            },
+                            {
+                                icon: <OpenInNew/>,
+                                label: t('visit'),
+                                onClick: () => visitWebsite(request.subdomain),
+                            }
+                        ];
+                    } else if (request.status === "denied" || request.status === "rejected") {
+                        actions = [
+                            {
+                                icon: <Info color="primary"/>,
+                                label: t('details'),
+                                onClick: () => navigateToDetails(request.id),
+                            }
+                        ];
+                    }
+
                     return {
                         id: request.id,
                         domain: request.subdomain,
@@ -66,20 +152,10 @@ export default function RequestsPage() {
                         ownerEmail: request.owner_email,
                         apiSecret: request.api_secret,
                         status: request.status,
+                        statusProps: getStatusChipProps(request.status, t),
                         createdAt: formatDate(request.requested_at),
                         actionedAt: formatDate(request.chnged_at),
-                        actions: request.status === "pending" ? [
-                            {
-                                icon: (<Settings />),
-                                label: t('approve'),
-                                onClick: handleRequestsActions.bind(null, request.id, "approve"),
-                            },
-                            {
-                                icon: (<Settings />),
-                                label: t('reject'),
-                                onClick: handleRequestsActions.bind(null, request.id, "reject"),
-                            },
-                        ] : [],
+                        actions: actions,
                     }
                 });
                 setRows(rows);
@@ -104,31 +180,54 @@ export default function RequestsPage() {
         return <p>{t('notSignedIn')}</p>;
     }
 
-    const redirectToDetails = (id: GridRowId) => () => {
-        console.log('Redirecting to domain details:', id);
-        redirect(`/requests/${id}`);
-    };
-
     const columns: GridColDef[] = [
-        { field: 'domain', headerName: t('domain'), width: 200 },
-        { field: 'dataSource', headerName: t('dataSource'), width: 150 },
-        { field: 'ownerName', headerName: t('ownerName'), width: 200 },
-        { field: 'ownerEmail', headerName: t('ownerEmail'), width: 200 },
-        // { field: 'apiSecret', headerName: t('apiSecret'), width: 200 },
-        { field: 'status', headerName: t('status'), width: 200 },
-        // { field: 'createdAt', headerName: t('createdAt'), width: 200 },
-        // { field: 'actionedAt', headerName: t('actionedAt'), width: 200 },
+        {field: 'domain', headerName: t('domain'), width: 200},
+        {field: 'dataSource', headerName: t('dataSource'), width: 150},
+        {field: 'ownerName', headerName: t('ownerName'), width: 200},
+        {field: 'ownerEmail', headerName: t('ownerEmail'), width: 200},
+        {
+            field: 'status',
+            headerName: t('status'),
+            width: 150,
+            renderCell: (params) => {
+                const { label, color, icon, variant } = params.row.statusProps;
+                return (
+                    <Chip
+                        label={label}
+                        color={color}
+                        icon={icon}
+                        variant={variant}
+                        size="small"
+                        sx={{
+                            fontWeight: 'medium',
+                            minWidth: '90px',
+                            justifyContent: 'flex-start'
+                        }}
+                    />
+                );
+            }
+        },
         {
             field: 'actions',
             headerName: t('actions'),
             width: 200,
             renderCell: (params) => {
+                const actions = params.row.actions;
                 return (
-                    <GridActionsCellItem
-                        icon={<Settings />}
-                        label="Actions"
-                        action={params.value}
-                    />
+                    <Box sx={{display: 'flex', gap: 1, height: '100%', alignItems: 'center' }}>
+                        {actions.map((action: {
+                            icon: ReactElement;
+                            label: string;
+                            onClick: MouseEventHandler<HTMLButtonElement>;
+                        }, index: Key) => (
+                            <GridActionsCellItem
+                                key={index}
+                                icon={action.icon}
+                                label={action.label}
+                                onClick={action.onClick}
+                            />
+                        ))}
+                    </Box>
                 );
             },
         },
@@ -155,20 +254,7 @@ export default function RequestsPage() {
                 <Typography>{t('welcomeMessage')}</Typography>
             </Grid>
             <Grid size={4}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-
-                    {/* <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleDomainsActions("startall")}
-                        disabled={actionInProgress}
-                    >
-                        {t('startAllActive')}
-                    </Button>
-                    <Button variant="contained" color="primary" href={`/newdomain`}>
-                        {t('newDomain')}
-                    </Button> */}
-                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}/>
             </Grid>
         </Grid>
         <br />

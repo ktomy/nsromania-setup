@@ -99,7 +99,7 @@
     "dexcomServer": "Regiune server Dexcom",
     "dexcomUsername": "Nume utilizator Dexcom",
     "emailValidated": "Adresa de e-mail validată cu succes",
-    "emailValidateionCode": "Cod validare e-mail",
+    "emailValidationCode": "Cod validare e-mail",
     "emailValidationCodeInvalid": "Codul de validare e-mail nu este valid",
     "emailVerificationCodeValidated": "Adresa de e-mail validată cu succes",
     "eu": "UE",
@@ -118,7 +118,16 @@
     "title": "Titlul Site-ului",
     "us": "SUA",
     "validateEmail": "Validează",
-    "validationEmailFailed": "E-mail pentru a iniția validarea nu a putut fi trimis"
+    "validationEmailFailed": "E-mail pentru a iniția validarea nu a putut fi trimis",
+    "formValidation": {
+      "invalidEmail": "Adresa de e-mail nu este validă",
+      "invalidName": "Numele nu este valid",
+      "invalidOwnerEmail": "Adresa de e-mail a proprietarului nu este validă",
+      "invalidOwnerName": "Numele proprietarului nu este valid",
+      "invalidSubdomain": "Subdomeniul nu este valid",
+      "invalidTitle": "Titlul nu este valid",
+      "apiSecretHelperText": "Cheia API trebuie să aibă cel puțin 12 caractere"
+    }
   },
   "RequestsPage": {
     "actionFailed": "Acțiunea a eșuat",

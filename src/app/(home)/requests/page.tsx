@@ -1,14 +1,14 @@
 'use client';
 
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Chip, Snackbar } from '@mui/material';
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowsProp } from '@mui/x-data-grid';
+import {Alert, Box, Chip, Snackbar} from '@mui/material';
+import {DataGrid, GridActionsCellItem, GridColDef, GridRowsProp} from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid2';
-import {Settings, ThumbUp, ThumbDown, Info, OpenInNew, PendingActions, Check, Close} from '@mui/icons-material';
-import { useSession } from 'next-auth/react';
-import { register_request } from '@prisma/client';
-import { formatDate } from '@/lib/utils';
-import { useState, useEffect, JSX, Key, MouseEventHandler, ReactElement} from 'react';
+import {Check, Close, Info, OpenInNew, PendingActions, ThumbDown, ThumbUp} from '@mui/icons-material';
+import {useSession} from 'next-auth/react';
+import {register_request} from '@prisma/client';
+import {formatDate} from '@/lib/utils';
+import {JSX, Key, MouseEventHandler, ReactElement, useEffect, useState} from 'react';
 import {useTranslations} from 'next-intl';
 import {useRouter} from 'next/navigation'
 
@@ -252,9 +252,6 @@ export default function RequestsPage() {
         <Grid size={12} direction={"row"} container>
             <Grid size={8}>
                 <Typography>{t('welcomeMessage')}</Typography>
-            </Grid>
-            <Grid size={4}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}/>
             </Grid>
         </Grid>
         <br />

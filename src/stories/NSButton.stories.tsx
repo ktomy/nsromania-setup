@@ -5,7 +5,7 @@ import NSButton from "@/lib/components/general/NSButton";
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-	title: "UI/NSButton",
+	title: "General UI/NSButton",
 	component: NSButton,
 	parameters: {
 		// Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout

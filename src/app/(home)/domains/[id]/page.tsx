@@ -8,7 +8,7 @@ import Grid from "@mui/material/Grid2";
 import React, { useEffect, useState } from "react";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { GetDomainByIdResponse } from "@/types/domains";
-import ActionsMenu, { ActionsMenuItem } from "@/lib/components/ActionsMenu/ActionsMenu";
+import NSActionsMenu, { ActionsMenuItem } from "@/lib/components/general/NSActionsMenu/NSActionsMenu";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
@@ -232,7 +232,7 @@ export default function DomainPage() {
 					</Typography>
 				</Grid>
 				<Grid size="auto">
-					<ActionsMenu asSpeedDial actionsButtonLabel={t("actionsButtonLabel")} actions={adminActions}></ActionsMenu>
+					<NSActionsMenu asSpeedDial actionsButtonLabel={t("actionsButtonLabel")} actions={adminActions}></NSActionsMenu>
 				</Grid>
 				<Grid size={12} sx={{ mt: 2 }}>
 					<Accordion defaultExpanded={true}>

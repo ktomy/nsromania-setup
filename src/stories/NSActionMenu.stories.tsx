@@ -2,12 +2,12 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import WavingHandRoundedIcon from "@mui/icons-material/WavingHandRounded";
 
-import ActionsMenu from "../lib/components/ActionsMenu/ActionsMenu";
+import NSActionsMenu from "../lib/components/general/NSActionsMenu/NSActionsMenu";
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-	title: "Example/ActionMenu",
-	component: ActionsMenu,
+	title: "General UI/ActionMenu",
+	component: NSActionsMenu,
 	parameters: {
 		// Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
 		layout: "centered",
@@ -52,7 +52,7 @@ const meta = {
 			},
 		],
 	},
-} satisfies Meta<typeof ActionsMenu>;
+} satisfies Meta<typeof NSActionsMenu>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

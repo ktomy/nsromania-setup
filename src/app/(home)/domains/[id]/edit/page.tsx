@@ -30,7 +30,7 @@ import { NSDomainEnvironment } from "@prisma/client";
 import { useParams } from "next/navigation";
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from "@/types/domains";
 import { useTranslations, useLocale } from "next-intl";
-import NSInput from "@/lib/components/ModalEdit/NSInput";
+import NSInput from "@/lib/components/general/NSInput/NSInput";
 import NSButton from "@/lib/components/general/NSButton";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import Divider from "@mui/material/Divider";

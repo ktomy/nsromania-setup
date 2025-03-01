@@ -1,13 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import WavingHandRoundedIcon from "@mui/icons-material/WavingHandRounded";
 
-import NSInput from '@/lib/components/ModalEdit/NSInput';
+import NSInput from '@/lib/components/general/NSInput/NSInput';
 // import ModalEdit from '@/lib/components/ModalEdit/ModalEdit';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-	title: "UI/NSInput",
+	title: "General UI/NSInput",
 	component: NSInput,
 	parameters: {
 		// Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout

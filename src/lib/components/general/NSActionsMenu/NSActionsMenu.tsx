@@ -7,7 +7,7 @@ import SpeedDial from "@mui/material/SpeedDial";
 import SpeedDialAction from "@mui/material/SpeedDialAction";	
 import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 
-import NSButton from "../general/NSButton";
+import NSButton from "../NSButton";
 import { KeyboardArrowUp } from '@mui/icons-material';
 export type GenericFunction = (...args: any[]) => any | Promise<any>;
 

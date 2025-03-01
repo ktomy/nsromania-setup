@@ -2,11 +2,9 @@
 import * as React from "react";
 import Typography from "@mui/material/Typography";
 import { Alert, Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Snackbar, TextField } from "@mui/material";
-import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import Grid from "@mui/material/Grid2";
-import { useEffect, useState } from "react";
-import LocaleSwitcher from "@/lib/components/LocaleSwitcher";
+import { useState } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { RegisterDomainRequest } from "@/types/domains";
 

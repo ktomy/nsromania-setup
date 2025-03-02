@@ -13,6 +13,8 @@
         "@auth/prisma-adapter": "^2.8.0",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",
+        "@fontsource/material-icons": "^5.1.1",
+        "@fontsource/roboto": "^5.1.1",
         "@mailchimp/mailchimp_transactional": "^1.0.59",
         "@mui/icons-material": "^6.4.6",
         "@mui/material": "^6.4.6",
@@ -31,9 +33,7 @@
         "pm2": "^5.4.3",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
-        "react-google-recaptcha-v3": "^1.10.1",
-        "@fontsource/material-icons": "^5.1.1",
-        "@fontsource/roboto": "^5.1.1"
+        "react-google-recaptcha-v3": "^1.10.1"
     },
     "devDependencies": {
         "@chromatic-com/storybook": "^3.2.5",
@@ -47,13 +47,14 @@
         "@storybook/nextjs": "^8.6.1",
         "@storybook/react": "^8.6.1",
         "@storybook/test": "^8.6.1",
-        "eslint-plugin-storybook": "^0.11.3",
         "@types/node": "^22.13.5",
         "@types/react": "^18",
         "@types/react-dom": "^18",
         "eslint": "^9",
         "eslint-config-next": "^15",
+        "eslint-plugin-storybook": "^0.11.3",
         "google-recaptcha": "^1.1.0",
+        "prettier": "^3.5.2",
         "prisma": "^6.4.1",
         "typescript": "^5.8.2"
     },

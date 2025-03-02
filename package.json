@@ -1,5 +1,5 @@
 {
-    "name": "core-auth-nextjs",
+    "name": "nsromania-setup",
     "version": "0.1.0",
     "scripts": {
         "dev": "next dev",
@@ -47,11 +47,11 @@
         "@storybook/nextjs": "^8.6.1",
         "@storybook/react": "^8.6.1",
         "@storybook/test": "^8.6.1",
-        "@types/node": "^22.13.5",
-        "@types/react": "^18",
-        "@types/react-dom": "^18",
-        "eslint": "^9",
-        "eslint-config-next": "^15",
+        "@types/node": "^22.13.8",
+        "@types/react": "^18.3.18",
+        "@types/react-dom": "^18.3.5",
+        "eslint": "^9.21.0",
+        "eslint-config-next": "^15.2.0",
         "eslint-plugin-storybook": "^0.11.3",
         "google-recaptcha": "^1.1.0",
         "prettier": "^3.5.2",

@@ -9,3 +9,5 @@ deploy/
 .private/
 .idea/
 .pnpm-store/
+
+*storybook.log

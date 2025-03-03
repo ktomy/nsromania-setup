@@ -17,7 +17,7 @@
     "start": "Porniți",
     "stop": "Opriți",
     "welcome": "Greet",
-    "actionsButtonLabel": "Opțiuni"
+    "actionsButtonLabel": "Options"
   },
   "DomainsPage": {
     "actionFailed": "Acțiunea a eșuat",
@@ -99,7 +99,7 @@
     "dexcomServer": "Regiune server Dexcom",
     "dexcomUsername": "Nume utilizator Dexcom",
     "emailValidated": "Adresa de e-mail validată cu succes",
-    "emailValidationCode": "Cod validare e-mail",
+    "emailValidationCode": "Email validation code",
     "emailValidationCodeInvalid": "Codul de validare e-mail nu este valid",
     "emailVerificationCodeValidated": "Adresa de e-mail validată cu succes",
     "eu": "UE",
@@ -107,7 +107,7 @@
     "ownerName": "Nume",
     "register": "Înregistrare",
     "registrationDescription": "Vă rugăm să completați acest formular pentru a solicita crearea unui site Nightscout pe NSRomânia.info. Odată completat, formularul va fi verificat şi probabil aprobat de echipa de administrare. Odată ce se va întâmpla acest lucru, veți primi un e-mail și un site Nightscout va fi creat în numele dvs.",
-    "registrationHint": "Pentru mai multe informații despre datele cerute apăsați butonul '!' de lângă câmp.",
+    "registrationHint": "For more information about the requested data press the '!' button near the input field.",
     "registrationFailed": "Înregistrarea a eșuat, te rugăm să îți verifici datele",
     "registrationForm": "acest formular",
     "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",
@@ -121,15 +121,15 @@
     "validateEmail": "Validează",
     "validationEmailFailed": "E-mail pentru a iniția validarea nu a putut fi trimis",
     "formValidation": {
-      "invalidEmail": "Adresa de e-mail nu este validă",
-      "invalidName": "Numele nu este valid",
-      "invalidOwnerEmail": "Adresa de e-mail a proprietarului nu este validă",
-      "invalidOwnerName": "Numele proprietarului nu este valid",
-      "invalidSubdomain": "Subdomeniul nu este valid",
-      "invalidTitle": "Titlul nu este valid",
-      "apiSecretHelperText": "Cheia API trebuie să aibă cel puțin 12 caractere"
+      "invalidEmail": "Email is not valid",
+      "invalidName": "Name is not valid",
+      "invalidOwnerEmail": "Owner's email is not valid",
+      "invalidOwnerName": " Owner's name is not valid",
+      "invalidSubdomain": "Subdomain is not valid",
+      "invalidTitle": "Title is not valid",
+      "apiSecretHelperText": "API secrte must be at least 12 characters long"
     },
-    "details" : {
+    "details": {
       "ownerName": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
       "ownerEmail": "E-mailul proprietarului",
       "emailValidationCode": "Codul de validare al e-mailului",

@@ -168,6 +168,9 @@ export default function RegisterForm() {
                 <Typography sx={{ mb: 2 }} variant="body2">
                     {t('registrationDescription')}
                 </Typography>
+                <Typography sx={{ mb: 2 }} variant="body2">
+                    {t('registrationHint')}
+                </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>
                         {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}

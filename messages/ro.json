@@ -107,6 +107,7 @@
     "ownerName": "Nume",
     "register": "Înregistrare",
     "registrationDescription": "Vă rugăm să completați acest formular pentru a solicita crearea unui site Nightscout pe NSRomânia.info. Odată completat, formularul va fi verificat şi probabil aprobat de echipa de administrare. Odată ce se va întâmpla acest lucru, veți primi un e-mail și un site Nightscout va fi creat în numele dvs.",
+    "registrationHint": "Pentru mai multe informații despre datele cerute apăsați butonul '!' de lângă câmp.",
     "registrationFailed": "Înregistrarea a eșuat, te rugăm să îți verifici datele",
     "registrationForm": "acest formular",
     "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",

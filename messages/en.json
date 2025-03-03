@@ -107,6 +107,7 @@
     "ownerName": "Name",
     "register": "Register",
     "registrationDescription": "Please fill in this form in order to request creation of a Nightscout site on NSRomania.info. Once the form is filled in, it will be reviewed and potentially approved by the administration team. Once this happens, you will receive an email and a Nightscout swebsite will be created on your behalf",
+    "registrationHint": "For more information about the requested data press the '!' button near the input field.",
     "registrationFailed": "Registration failed, please check your data",
     "registrationForm": "this form",
     "registrationPrompt": "If you still want to register, please fill in",

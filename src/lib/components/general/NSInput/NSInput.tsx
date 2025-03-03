@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { TextField, IconButton, TextFieldProps } from '@mui/material';
+import { TextField, IconButton, TextFieldProps, Tooltip, Box, ClickAwayListener } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ModalEdit from './ModalEdit';
+import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 
 type EditableInputProps = {
     value: string | null;
@@ -11,6 +12,7 @@ type EditableInputProps = {
     modalSaveLabel?: string;
     modalCancelLabel?: string;
     modal?: boolean;
+    moreInformation?: string;
 } & TextFieldProps;
 
 /**
@@ -42,13 +44,20 @@ export default function NSInput({
     modalCancelLabel,
     modalTitle,
     modalDescription,
+    moreInformation,
     ...props
 }: EditableInputProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [inputValue, setInputValue] = useState<string | null>(value);
+    const [tooltipVisible, setTooltipVisible] = useState(false);
 
     if (modal && !onEdit) {
         console.warn('You are using modal mode without providing an onEdit function. The input will be read-only.');
+    }
+    if (modal && moreInformation) {
+        console.warn(
+            'You are using modal mode with moreInformation. The moreInformation should be displayed in the modal as modalDescrition.'
+        );
     }
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setInputValue(e.target.value);
@@ -68,6 +77,10 @@ export default function NSInput({
         onEdit && onEdit(newValue);
     };
 
+    const handleToggleTooltip = () => {
+        setTooltipVisible((prev) => !prev);
+    };
+
     if (modal) {
         return (
             <>
@@ -76,6 +89,7 @@ export default function NSInput({
                     onChange={handleInputChange}
                     fullWidth
                     size="small"
+                    {...props}
                     slotProps={{
                         input: {
                             endAdornment: (
@@ -85,7 +99,6 @@ export default function NSInput({
                             ),
                         },
                     }}
-                    {...props}
                 />
                 <ModalEdit
                     isOpen={isModalOpen}
@@ -101,5 +114,19 @@ export default function NSInput({
             </>
         );
     }
-    return <TextField {...props} value={value} />;
+    return (
+        <Box display="flex" alignItems="center">
+            <TextField {...props} value={value} />
+            {moreInformation && (
+                // TODO: IMprove accessibility of the tooltip with arai-labels
+                <ClickAwayListener onClickAway={() => setTooltipVisible(false)}>
+                    <Tooltip title={moreInformation} open={tooltipVisible}>
+                        <IconButton onClick={handleToggleTooltip}>
+                            <InfoRoundedIcon />
+                        </IconButton>
+                    </Tooltip>
+                </ClickAwayListener>
+            )}
+        </Box>
+    );
 }

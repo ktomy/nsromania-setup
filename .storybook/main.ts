@@ -6,7 +6,7 @@ const config: StorybookConfig = {
 		{
 			name: "@storybook/addon-essentials",
 			options: {
-				docs: false,
+				docs: true,
 			},
 		},
 		"@storybook/addon-onboarding",
@@ -21,22 +21,5 @@ const config: StorybookConfig = {
 		options: {},
 	},
 	staticDirs: ["../public"],
-	webpackFinal: async (config) => {
-		if (config.module && config.module.rules) {
-			// Add MDX loader
-			config.module.rules.push({
-				test: /\.mdx$/,
-				use: [
-					{
-						loader: "babel-loader",
-					},
-					{
-						loader: "@mdx-js/loader",
-					},
-				],
-			});
-		}
-		return config;
-	},
 };
 export default config;

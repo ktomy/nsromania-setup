@@ -5,19 +5,16 @@ import {
     Alert,
     Box,
     Button,
-    FormControl,
-    InputLabel,
     MenuItem,
-    Select,
-    SelectChangeEvent,
     Snackbar,
-    TextField,
 } from '@mui/material';
 import { useLocale, useTranslations } from 'next-intl';
 import Grid from '@mui/material/Grid2';
-import { useState } from 'react';
+import { ChangeEventHandler, useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
+import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
+import NSInput from '@/lib/components/general/NSInput/NSInput';
 
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
@@ -38,6 +35,8 @@ export default function RegisterForm() {
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     const handleSendValidationEmail = async () => {
         if (!executeRecaptcha) {
@@ -92,40 +91,52 @@ export default function RegisterForm() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
+        setIsSubmitting(true);
         e.preventDefault();
         if (!executeRecaptcha) {
             console.error('Recaptcha not initialized');
             return;
         }
+        try {
+            const token = process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('register');
 
-        const token = process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('register');
+            const registerRequest: RegisterDomainRequest = {
+                domain: subDomain,
+                ownerEmail: ownerEmail,
+                ownerName: ownerName,
+                dataSource: dataSource,
+                dexcomUsername: dexcomUsername,
+                dexcomPassword: dexcomPassword,
+                dexcomServer: dexcomServer,
+                emailVerificationToken: emailValidationCode,
+                reCAPTCHAToken: token,
+                apiSecret: apiSecret,
+                title: nsTitle,
+            };
 
-        const registerRequest: RegisterDomainRequest = {
-            domain: subDomain,
-            ownerEmail: ownerEmail,
-            ownerName: ownerName,
-            dataSource: dataSource,
-            dexcomUsername: dexcomUsername,
-            dexcomPassword: dexcomPassword,
-            dexcomServer: dexcomServer,
-            emailVerificationToken: emailValidationCode,
-            reCAPTCHAToken: token,
-            apiSecret: apiSecret,
-            title: nsTitle,
-        };
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                body: JSON.stringify(registerRequest),
+                headers: { 'Content-Type': 'application/json' },
+            });
 
-        const res = await fetch('/api/register', {
-            method: 'POST',
-            body: JSON.stringify(registerRequest),
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        const data = await res.json();
-        if (data.success) {
-            openSnack(t('registrationSuccess'), 'success');
-        } else {
-            console.log('registration failed', data);
+            const data = await res.json();
+            if (data.success) {
+                openSnack(t('registrationSuccess'), 'success');
+                setSuccess(true);
+                //TODO: Add a redirect to the success page
+            } else {
+                console.log('registration failed', data);
+                openSnack(t('registrationFailed'), 'error');
+                //TODO: Add a redirect to the error page
+            }
+        } catch (e) {
+            console.error('Registration failed', e);
+            setSuccess(false);
             openSnack(t('registrationFailed'), 'error');
+            //TODO: Add a redirect to the error page
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -139,9 +150,8 @@ export default function RegisterForm() {
         setSnackOpen(false);
     };
 
-    const handleDataSourceChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
-        const value = event.target.value as string;
-        setDataSource(value);
+    const handleDataSourceChange: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (event) => {
+        setDataSource(event.target.value);
     };
 
     return (
@@ -161,7 +171,7 @@ export default function RegisterForm() {
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>
                         {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
-                        <TextField
+                        <NSInput
                             value={ownerName}
                             onChange={(e) => setOwnerName(e.target.value)}
                             required
@@ -169,10 +179,11 @@ export default function RegisterForm() {
                             label={t('ownerName')}
                             error={ownerName.length > 0 && !/^[a-zA-Z0-9\s]{1,64}$/.test(ownerName)}
                             size="small"
+                            moreInformation={t('details.ownerName')}
                         />
                     </Grid>
                     <Grid size={{ xs: 12 }}>
-                        <TextField
+                        <NSInput
                             value={ownerEmail}
                             onChange={(e) => setOwnerEmail(e.target.value)}
                             fullWidth
@@ -184,6 +195,7 @@ export default function RegisterForm() {
                                 !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)
                             }
                             size="small"
+                            moreInformation={t('details.ownerEmail')}
                         />
                     </Grid>
                     <Grid size={12}>
@@ -203,7 +215,7 @@ export default function RegisterForm() {
                         <>
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 {/* Validation code is a string of 6 digits, it can contain spaces or tabs at any moment, including start and end of the string */}
-                                <TextField
+                                <NSInput
                                     value={emailValidationCode}
                                     onChange={(e) => setEmailValidationCode(e.target.value)}
                                     required
@@ -212,6 +224,7 @@ export default function RegisterForm() {
                                     fullWidth
                                     size="small"
                                     label={t('emailValidationCode')}
+                                    moreInformation={t('details.emailValidationCode')}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -233,7 +246,7 @@ export default function RegisterForm() {
                         <>
                             <Grid size={12}>
                                 {/* Subdomain is a string of max 32 characters containing only lowercase alphanumeric characters*/}
-                                <TextField
+                                <NSInput
                                     value={subDomain}
                                     onChange={(e) => setSubDomain(e.target.value)}
                                     required
@@ -241,19 +254,21 @@ export default function RegisterForm() {
                                     label={t('subDomain')}
                                     error={subDomain.length > 0 && !/^[a-z0-9]{1,32}$/.test(subDomain)}
                                     size="small"
+                                    moreInformation={t('details.subDomain')}
                                 />
                             </Grid>
                             <Grid size={12}>
-                                <TextField
+                                <NSInput
                                     value={nsTitle}
                                     onChange={(e) => setNsTitle(e.target.value)}
                                     fullWidth
                                     label={t('title')}
                                     size="small"
+                                    moreInformation={t('details.title')}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField
+                                <NSInput
                                     value={apiSecret}
                                     onChange={(e) => setApiSecret(e.target.value)}
                                     required
@@ -266,63 +281,66 @@ export default function RegisterForm() {
                                             : ''
                                     }
                                     size="small"
+                                    moreInformation={t('details.apiSecret')}
                                 />
                             </Grid>
-                            <Grid size={{ xs: 6, sm: 3 }}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel id="data-source">{t('dataSource')}</InputLabel>
-                                    <Select
-                                        value={dataSource}
-                                        onChange={handleDataSourceChange}
-                                        labelId="data-source"
-                                        label={t('dataSource')}
-                                    >
-                                        <MenuItem value="Dexcom">{t('dexcom')}</MenuItem>
-                                        <MenuItem value="API">{t('anythingElse')}</MenuItem>
-                                    </Select>
-                                </FormControl>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                                <NSInput
+                                    value={dataSource}
+                                    onChange={handleDataSourceChange}
+                                    select
+                                    fullWidth
+                                    size="small"
+                                    label={t('dataSource')}
+                                    moreInformation={t('details.dataSource')}
+                                >
+                                    <MenuItem value="Dexcom">{t('dexcom')}</MenuItem>
+                                    <MenuItem value="API">{t('anythingElse')}</MenuItem>
+                                </NSInput>
                             </Grid>
                             {dataSource === 'Dexcom' && (
                                 <>
-                                    <Grid size={{ xs: 6, sm: 3 }}>
-                                        <FormControl fullWidth size="small">
-                                            <InputLabel id="dexcom-server">{t('dexcomServer')}</InputLabel>
-                                            <Select
-                                                value={dexcomServer}
-                                                onChange={(e) => setDexcomServer(e.target.value)}
-                                                labelId="dexcom-server"
-                                                label={t('dexcomServer')}
-                                            >
-                                                <MenuItem value="EU">{t('eu')}</MenuItem>
-                                                <MenuItem value="US">{t('us')}</MenuItem>
-                                            </Select>
-                                        </FormControl>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <NSInput
+                                            select
+                                            value={dexcomServer}
+                                            onChange={(e) => setDexcomServer(e.target.value)}
+                                            label={t('dexcomServer')}
+                                            size="small"
+                                            fullWidth
+                                            moreInformation={t('details.dexcomServer')}
+                                        >
+                                            <MenuItem value="EU">{t('eu')}</MenuItem>
+                                            <MenuItem value="US">{t('us')}</MenuItem>
+                                        </NSInput>
                                     </Grid>
                                     <Grid size={12}>
-                                        <TextField
+                                        <NSInput
                                             value={dexcomUsername}
                                             onChange={(e) => setDexcomUsername(e.target.value)}
                                             required={dataSource === 'Dexcom'}
                                             fullWidth
                                             size="small"
                                             label={t('dexcomUsername')}
+                                            moreInformation={t('details.dexcomUsername')}
                                         />
                                     </Grid>
                                     <Grid size={12}>
-                                        <TextField
+                                        <NSInput
                                             value={dexcomPassword}
                                             onChange={(e) => setDexcomPassword(e.target.value)}
                                             required={dataSource === 'Dexcom'}
                                             fullWidth
                                             size="small"
                                             label={t('dexcomPassword')}
+                                            moreInformation={t('details.dexcomPassword')}
                                         />
                                     </Grid>
                                 </>
                             )}
                             <Grid size={8}>{/* Google reCAPTCHA */}</Grid>
                             <Grid size={12}>
-                                <Button type="submit" variant="contained" color="primary">
+                                <Button type="submit" variant="contained" color="primary" loading={isSubmitting} disabled={success}>
                                     {t('register')}
                                 </Button>
                             </Grid>

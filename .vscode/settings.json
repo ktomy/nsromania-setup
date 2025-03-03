@@ -8,4 +8,5 @@
     "git.autoStash": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 4,
+    "nuxt.isNuxtApp": false,
 }

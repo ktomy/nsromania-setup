@@ -58,9 +58,9 @@ export const AsSelectInput: Story = {
         value: 'EU',
         moreInformation: 'This is a tooltip with more information',
         children: [
-            <MenuItem value="EU">Europe</MenuItem>,
-            <MenuItem value="USA">United States</MenuItem>,
-            <MenuItem value="ASIA">ASIA</MenuItem>
+            <MenuItem value="EU" key="EU">Europe</MenuItem>,
+            <MenuItem value="USA" key="USA">United States</MenuItem>,
+            <MenuItem value="ASIA" key="ASIA">ASIA</MenuItem>
         ]
     },
 };

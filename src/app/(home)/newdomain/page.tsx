@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import * as React from 'react';
 import { useState } from 'react';
@@ -6,8 +6,10 @@ import {
     TextField,
     Checkbox,
     FormControlLabel,
-    Button, MenuItem,
-    Select, InputLabel,
+    Button,
+    MenuItem,
+    Select,
+    InputLabel,
     FormControl,
     Box,
     Typography,
@@ -15,7 +17,6 @@ import {
     Alert,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { NSDomain } from '@prisma/client';
 import { useTranslations } from 'next-intl';
 import { useSession } from 'next-auth/react';
 import { CreateDomainRequest } from '@/types/domains';
@@ -33,8 +34,8 @@ export default function NewDomainPage() {
     const [dexcomPassword, setDexcomPassword] = useState('');
     const [enable, setEnable] = useState('careportal iob cob rawbg cors dbsize bridge');
     const [showPlugins, setShowPlugins] = useState('cob iob sage cage careportal');
-    const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-    const t = useTranslations("NewDomainPage");
+    const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const t = useTranslations('NewDomainPage');
     // Owner is an email address
     const [ownerEmail, setOwnerEmail] = useState('');
     const [ownerName, setOwnerName] = useState('');
@@ -45,7 +46,10 @@ export default function NewDomainPage() {
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        const newDomain: Omit<CreateDomainRequest, 'id' | 'created' | 'lastUpdated' | 'authUserId' | 'authUser' | 'environments'> = {
+        const newDomain: Omit<
+            CreateDomainRequest,
+            'id' | 'created' | 'lastUpdated' | 'authUserId' | 'authUser' | 'environments'
+        > = {
             domain,
             title,
             apiSecret,
@@ -115,7 +119,10 @@ export default function NewDomainPage() {
                         value={ownerEmail}
                         onChange={(e) => setOwnerEmail(e.target.value)}
                         required
-                        error={ownerEmail.length > 0 && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)}
+                        error={
+                            ownerEmail.length > 0 &&
+                            !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)
+                        }
                         size="small"
                     />
                 </Grid>
@@ -151,10 +158,11 @@ export default function NewDomainPage() {
                 </Grid>
                 <Grid size={8}>
                     <TextField
+                        label={t('title')}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         error={title.length > 0 && title.length > 32}
-                        size='small'
+                        size="small"
                     />
                 </Grid>
 
@@ -167,7 +175,7 @@ export default function NewDomainPage() {
                         onChange={(e) => setApiSecret(e.target.value)}
                         required
                         error={apiSecret.length > 0 && apiSecret.length < 12}
-                        size='small'
+                        size="small"
                     />
                 </Grid>
 
@@ -185,7 +193,7 @@ export default function NewDomainPage() {
                     <Typography variant="h6">{t('dataSource')}</Typography>
                 </Grid>
                 <Grid size={8}>
-                    <FormControl fullWidth size='small'>
+                    <FormControl fullWidth size="small">
                         <Select value={dataSource} onChange={handleDataSourceChange}>
                             <MenuItem value="Dexcom">{t('dexcom')}</MenuItem>
                             <MenuItem value="API">{t('api')}</MenuItem>
@@ -200,7 +208,7 @@ export default function NewDomainPage() {
                             <Typography variant="h6">{t('dexcomServer')}</Typography>
                         </Grid>
                         <Grid size={8}>
-                            <FormControl fullWidth size='small'>
+                            <FormControl fullWidth size="small">
                                 <Select value={dexcomServer} onChange={(e) => setDexcomServer(e.target.value)}>
                                     <MenuItem value="EU">{t('eu')}</MenuItem>
                                     <MenuItem value="US">{t('us')}</MenuItem>
@@ -216,7 +224,7 @@ export default function NewDomainPage() {
                                 value={dexcomUsername}
                                 onChange={(e) => setDexcomUsername(e.target.value)}
                                 required={dataSource === 'Dexcom'}
-                                size='small'
+                                size="small"
                             />
                         </Grid>
 
@@ -228,7 +236,7 @@ export default function NewDomainPage() {
                                 value={dexcomPassword}
                                 onChange={(e) => setDexcomPassword(e.target.value)}
                                 required={dataSource === 'Dexcom'}
-                                size='small'
+                                size="small"
                             />
                         </Grid>
                     </>
@@ -257,20 +265,17 @@ export default function NewDomainPage() {
                         fullWidth
                     />
                 </Grid>
-
             </Grid>
-            {
-                alert && (
-                    <Alert severity={alert.type} onClose={() => setAlert(null)}>
-                        {alert.message}
-                    </Alert>
-                )
-            }
+            {alert && (
+                <Alert severity={alert.type} onClose={() => setAlert(null)}>
+                    {alert.message}
+                </Alert>
+            )}
             <Grid size={12}>
                 <Button type="submit" variant="contained" color="primary">
                     {t('create')}
                 </Button>
             </Grid>
-        </Box >
+        </Box>
     );
 }

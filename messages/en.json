@@ -16,7 +16,8 @@
     "loading": "Loading...",
     "start": "Start",
     "stop": "Stop",
-    "welcome": "Greet"
+    "welcome": "Greet",
+    "actionsButtonLabel": "Options"
   },
   "DomainsPage": {
     "actionFailed": "Action failed",
@@ -98,7 +99,7 @@
     "dexcomServer": "Dexcom server region",
     "dexcomUsername": "Dexcom username",
     "emailValidated": "E-mail address validated successfully",
-    "emailValidateionCode": "Email validateion code",
+    "emailValidationCode": "Email validation code",
     "emailValidationCodeInvalid": "Email validation code is invalid",
     "emailVerificationCodeValidated": "Successfully validated email address",
     "eu": "EU",
@@ -106,6 +107,7 @@
     "ownerName": "Name",
     "register": "Register",
     "registrationDescription": "Please fill in this form in order to request creation of a Nightscout site on NSRomania.info. Once the form is filled in, it will be reviewed and potentially approved by the administration team. Once this happens, you will receive an email and a Nightscout swebsite will be created on your behalf",
+    "registrationHint": "For more information about the requested data press the '!' button near the input field.",
     "registrationFailed": "Registration failed, please check your data",
     "registrationForm": "this form",
     "registrationPrompt": "If you still want to register, please fill in",
@@ -117,7 +119,29 @@
     "title": "Site title",
     "us": "US",
     "validateEmail": "Validate",
-    "validationEmailFailed": "Vailed to initiate email validation"
+    "validationEmailFailed": "Vailed to initiate email validation",
+    "formValidation": {
+      "invalidEmail": "Email is not valid",
+      "invalidName": "Name is not valid",
+      "invalidOwnerEmail": "Owner's email is not valid",
+      "invalidOwnerName": " Owner's name is not valid",
+      "invalidSubdomain": "Subdomain is not valid",
+      "invalidTitle": "Title is not valid",
+      "apiSecretHelperText": "API secrte must be at least 12 characters long"
+    },
+    "details" : {
+      "ownerName": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+      "ownerEmail": "E-mailul proprietarului",
+      "emailValidationCode": "Codul de validare al e-mailului",
+      "subDomain": "Subdomeniu",
+      "title": "Titlu",
+      "apiSecret": "Cheia API",
+      "dataSource": "Sursa de date",
+      "dexcom": "Dexcom",
+      "dexcomUsername": "Nume utilizator Dexcom",
+      "dexcomPassword": "Parolă Dexcom",
+      "dexcomServer": "Server Dexcom"
+    }
   },
   "RequestsPage": {
     "actionFailed": "Action failed",

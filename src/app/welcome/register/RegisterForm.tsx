@@ -44,6 +44,12 @@ export default function RegisterForm() {
             return;
         }
 
+        // check name and email fields
+        if (ownerName.length === 0 || ownerEmail.length === 0) {
+            openSnack(t('ownerNameAndEmailRequired'), 'error');
+            return;
+        }
+
         const token =
             process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('email_validation');
 
@@ -124,11 +130,14 @@ export default function RegisterForm() {
             if (data.success) {
                 openSnack(t('registrationSuccess'), 'success');
                 setSuccess(true);
-                //TODO: Add a redirect to the success page
+                // Wait a second and redirect to /welcome/registrationsuccess/ page
+                setTimeout(() => {
+                    window.location.href = '/welcome/registrationsuccess';
+                }, 1000);
             } else {
                 console.log('registration failed', data);
                 openSnack(t('registrationFailed'), 'error');
-                //TODO: Add a redirect to the error page
+
             }
         } catch (e) {
             console.error('Registration failed', e);
@@ -170,6 +179,8 @@ export default function RegisterForm() {
                 </Typography>
                 <Typography sx={{ mb: 2 }} variant="body2">
                     {t('registrationHint')}
+                    <InfoRoundedIcon fontSize='small' />&nbsp;
+                    {t('registrationHint2')}
                 </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>

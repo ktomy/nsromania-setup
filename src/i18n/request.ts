@@ -2,7 +2,10 @@ import { getUserLocale } from '@/lib/services/locale';
 import { getRequestConfig } from 'next-intl/server';
 import { watchMessages } from '@/lib/watchMessages';
 
-watchMessages();
+// Watch for changes in development
+if (process.env.NODE_ENV === 'development') {
+    watchMessages();
+}
 
 export default getRequestConfig(async () => {
     // Provide a static locale, fetch a user setting,

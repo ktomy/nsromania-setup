@@ -12,6 +12,21 @@ import {JSX, Key, MouseEventHandler, ReactElement, useEffect, useState} from 're
 import {useTranslations} from 'next-intl';
 import {useRouter} from 'next/navigation'
 
+type Action = {
+  icon: ReactElement;
+  label: string;
+  onClick: MouseEventHandler<HTMLButtonElement>;
+};
+
+type StatusProp = {
+  label: string;
+  color: 'warning' | 'success' | 'error' | 'default';
+  icon?: JSX.Element;
+  variant: 'filled' | 'outlined';
+};
+
+type GridRegisterRequest = Partial<register_request> & {actions: Action[], statusProps: StatusProp}
+
 // Helper function to get status chip configuration
 function getStatusChipProps(statusValue: string, t: (key: string) => string) {
         switch(statusValue.toLowerCase()) {
@@ -41,7 +56,7 @@ function getStatusChipProps(statusValue: string, t: (key: string) => string) {
                 return {
                     label: statusValue,
                     color: 'default' as const,
-                    icon: null,
+                    icon: undefined,
                     variant: 'outlined' as const
                 };
         }
@@ -49,7 +64,7 @@ function getStatusChipProps(statusValue: string, t: (key: string) => string) {
 
 export default function RequestsPage() {
     const t = useTranslations('RequestsPage');
-    const [rows, setRows] = useState<GridRowsProp>([]);
+    const [rows, setRows] = useState<GridRowsProp<GridRegisterRequest>>([]);
     const {data: session, status} = useSession();
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMessage, setSnackMessage] = useState('');
@@ -100,9 +115,9 @@ export default function RequestsPage() {
 
     const fetchRequests = () => {
         fetch(`/api/register`).then((response) => {
-            response.json().then((domains) => {
-                const rows: GridRowsProp = domains.map((request: register_request) => {
-                    let actions: { icon: JSX.Element; label: string; onClick: () => void; }[] = [];
+            response.json().then((domains: register_request[]) => {
+                const rows: GridRowsProp<GridRegisterRequest> = domains.map((request: register_request) => {
+                    let actions: Action[] = [];
                     if (request.status === "pending") {
                         actions = [
                             {
@@ -215,7 +230,7 @@ export default function RequestsPage() {
                 const actions = params.row.actions;
                 return (
                     <Box sx={{display: 'flex', gap: 1, height: '100%', alignItems: 'center' }}>
-                        {actions.map((action: {
+                        {actions?.map((action: {
                             icon: ReactElement;
                             label: string;
                             onClick: MouseEventHandler<HTMLButtonElement>;

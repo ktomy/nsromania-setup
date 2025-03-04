@@ -2,7 +2,7 @@
 
 import Typography from '@mui/material/Typography';
 import {Alert, Box, Chip, Snackbar} from '@mui/material';
-import {DataGrid, GridActionsCellItem, GridColDef, GridRowsProp} from '@mui/x-data-grid';
+import {DataGrid, GridActionsCellItem, GridColDef, GridRenderCellParams, GridRowsProp} from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid2';
 import {Check, Close, Info, OpenInNew, PendingActions, ThumbDown, ThumbUp} from '@mui/icons-material';
 import {useSession} from 'next-auth/react';
@@ -204,7 +204,7 @@ export default function RequestsPage() {
             field: 'status',
             headerName: t('status'),
             width: 150,
-            renderCell: (params) => {
+            renderCell: (params: GridRenderCellParams<GridRegisterRequest>) => {
                 const { label, color, icon, variant } = params.row.statusProps;
                 return (
                     <Chip
@@ -226,15 +226,11 @@ export default function RequestsPage() {
             field: 'actions',
             headerName: t('actions'),
             width: 200,
-            renderCell: (params) => {
+            renderCell: (params: GridRenderCellParams<GridRegisterRequest>) => {
                 const actions = params.row.actions;
                 return (
                     <Box sx={{display: 'flex', gap: 1, height: '100%', alignItems: 'center' }}>
-                        {actions?.map((action: {
-                            icon: ReactElement;
-                            label: string;
-                            onClick: MouseEventHandler<HTMLButtonElement>;
-                        }, index: Key) => (
+                        {actions.map((action: Action, index: Key) => (
                             <GridActionsCellItem
                                 key={index}
                                 icon={action.icon}

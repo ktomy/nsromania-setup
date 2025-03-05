@@ -1,13 +1,7 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import {
-    Alert,
-    Box,
-    Button,
-    MenuItem,
-    Snackbar,
-} from '@mui/material';
+import { Alert, Box, Button, MenuItem, Snackbar } from '@mui/material';
 import { useLocale, useTranslations } from 'next-intl';
 import Grid from '@mui/material/Grid2';
 import { ChangeEventHandler, useState } from 'react';
@@ -137,7 +131,6 @@ export default function RegisterForm() {
             } else {
                 console.log('registration failed', data);
                 openSnack(t('registrationFailed'), 'error');
-
             }
         } catch (e) {
             console.error('Registration failed', e);
@@ -177,10 +170,10 @@ export default function RegisterForm() {
                 <Typography sx={{ mb: 2 }} variant="body2">
                     {t('registrationDescription')}
                 </Typography>
-                <Typography sx={{ mb: 2 }} variant="body2">
-                    {t('registrationHint')}
-                    <InfoRoundedIcon fontSize='small' />&nbsp;
-                    {t('registrationHint2')}
+                <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
+                    {t.rich('registrationHint', {
+                        icon: () => <InfoRoundedIcon fontSize="small" sx={{verticalAlign: "bottom"}} />,
+                    })}
                 </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>
@@ -354,7 +347,13 @@ export default function RegisterForm() {
                             )}
                             <Grid size={8}>{/* Google reCAPTCHA */}</Grid>
                             <Grid size={12}>
-                                <Button type="submit" variant="contained" color="primary" loading={isSubmitting} disabled={success}>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                    loading={isSubmitting}
+                                    disabled={success}
+                                >
                                     {t('register')}
                                 </Button>
                             </Grid>

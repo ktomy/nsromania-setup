@@ -15,6 +15,16 @@ export async function getAllNSDomains() {
     }
 }
 
+export async function getNSDomainBySubdomain(subdomain: string) {
+    const domain = prisma.nSDomain.findFirst({
+        where: {
+            domain: subdomain,
+        },
+    });
+
+    return domain;
+}
+
 export async function getNSDomainById(id: number) {
     const domain = prisma.nSDomain.findFirst({
         where: {

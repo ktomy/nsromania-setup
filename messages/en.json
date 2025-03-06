@@ -95,7 +95,7 @@
         "contactMessage": "If you have any questions, please contact us at",
         "dataSource": "Data Source",
         "details": {
-            "apiSecret": "This is like a password which will be used to make changes to the website, e.g. to enter carbs, to upload glucose values through xDrip or to update the profile (basal rates, glucose targets, etc). Keep this password safe. This field must be at least 12 characters long",
+            "apiSecret": "This is like a password which will be used to make changes to the website, e.g. to enter carbs, to upload glucose values through xDrip or to update the profile (basal rates, glucose targets, etc). Keep this password safe. This field must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
             "dataSource": "Sursa de date",
             "dexcom": "Dexcom",
             "dexcomPassword": "Parolă Dexcom",
@@ -117,7 +117,7 @@
         "emailVerificationCodeValidated": "Successfully validated email address",
         "eu": "EU",
         "formValidation": {
-            "apiSecretHelperText": "API secrte must be at least 12 characters long",
+            "apiSecretHelperText": "API secrte must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
             "invalidEmail": "Email is not valid",
             "invalidName": "Name is not valid",
             "invalidOwnerEmail": "Owner's email is not valid",

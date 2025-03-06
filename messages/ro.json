@@ -117,7 +117,7 @@
         "emailVerificationCodeValidated": "Adresa de e-mail validată cu succes",
         "eu": "UE",
         "formValidation": {
-            "apiSecretHelperText": "Cheia API trebuie să aibă cel puțin 12 caractere",
+            "apiSecretHelperText": "Cheia API trebuie să aibă cel puțin 12 caractere. Secretul poate contine litere mari, litere mici, cifre, cratima, punct, subliniere",
             "invalidEmail": "Adresa de e-mail nu este validă",
             "invalidName": "Numele nu este valid",
             "invalidOwnerEmail": "Adresa de e-mail a proprietarului nu este validă",

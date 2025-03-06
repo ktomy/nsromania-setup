@@ -139,32 +139,32 @@ export default function DomainPage() {
         domain == null
             ? {}
             : {
-                  'Subdomain name': domain.domain || '',
-                  Owner: domain.authUser?.email || ['Unknown', 'red'],
-                  Active: domain.active ? ['Yes', 'green'] : ['No', 'red'],
-                  'Initialized (should be)': domain.dbExists ? ['Yes', 'green'] : ['No', 'red'],
-                  'Initialized (actual)': domain.dbInitialized ? ['Yes', 'green'] : ['No', 'red'],
-                  Status:
-                      domain.status === 'not running'
-                          ? ['Not running', 'red']
-                          : domain.status === 'online'
+                    'Subdomain name': domain.domain || '',
+                        Owner: domain.authUser?.email || ['Unknown', 'red'],
+                        Active: domain.active ? ['Yes', 'green'] : ['No', 'red'],
+                    'Initialized (should be)': domain.dbExists ? ['Yes', 'green'] : ['No', 'red'],
+                    'Initialized (actual)': domain.dbInitialized ? ['Yes', 'green'] : ['No', 'red'],
+                    Status:
+                        domain.status === 'not running'
+                            ? ['Not running', 'red']
+                            : domain.status === 'online'
                             ? ['Online', 'green']
                             : domain.status || ['error', 'red'],
-                  Title: domain.title || '',
-                  'Data source':
-                      domain.enable.indexOf('bridge') !== -1
-                          ? 'Dexcom'
-                          : domain.enable.indexOf('mmconnect') !== -1
+                    Title: domain.title || '',
+                    'Data source':
+                        domain.enable.indexOf('bridge') !== -1
+                            ? 'Dexcom'
+                            : domain.enable.indexOf('mmconnect') !== -1
                             ? ['Medtronic', 'red']
                             : 'API',
-                  'API Secret': domain.apiSecret || '',
-                  'Nightscout version': domain.nsversion || '<default>',
-                  Created: formatDate(domain.created),
-                  'Last updated': formatDate(domain.lastUpdated),
-                  Enable: domain.enable || '',
-                  'Database size': formatBytes(domain.dbSize) || '',
-                  'Last glucose entry': formatDate(domain.lastDbEntry) || '',
-              };
+                    'API Secret': domain.apiSecret || '',
+                    'Nightscout version': domain.nsversion || '<default>',
+                    Created: formatDate(domain.created),
+                    'Last updated': formatDate(domain.lastUpdated),
+                    Enable: domain.enable || '',
+                    'Database size': formatBytes(domain.dbSize) || '',
+                    'Last glucose entry': formatDate(domain.lastDbEntry) || '',
+                };
 
     let variables = {};
 
@@ -211,14 +211,14 @@ export default function DomainPage() {
             id: 'welcome',
             action: async () => await handleDomainActions(id, 'welcome'),
             icon: <WavingHandRoundedIcon />,
-            disabled: domain?.status === 'online' || domain?.dbInitialized === false || actionInProgress,
+            disabled: domain?.status !== 'online' || actionInProgress,
         },
         {
             label: t('edit'),
             id: 'edit',
             action: async () => await router.push(`/domains/${id}/edit`),
             icon: <EditRoundedIcon />,
-            disabled: domain?.status === 'online' || domain?.dbInitialized === false || actionInProgress,
+            disabled: domain?.status === 'online' || actionInProgress,
         },
         {
             label: t('destroy'),

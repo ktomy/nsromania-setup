@@ -281,7 +281,7 @@ export default function RegisterForm() {
                                     required
                                     fullWidth
                                     label={t('apiSecret')}
-                                    error={apiSecret.length > 0 && apiSecret.length < 12}
+                                    error={apiSecret.length > 0 && !/^[a-zA-Z0-9-\_\.]{12,32}$/.test(apiSecret)}
                                     helperText={
                                         apiSecret.length > 0 && apiSecret.length < 12
                                             ? t('formValidation.apiSecretHelperText')

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest, { params }: { params: { subdomain: string } }) {
-    const subdomain = params.subdomain;
+    const subdomain = await params.subdomain;
     const domain = await getNSDomainBySubdomain(subdomain);
 
     if (!domain) {

@@ -1,21 +1,18 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-
-import { getLocale, getTranslations } from 'next-intl/server';
+import roMessages from '../../messages/ro.json';
 import { createTheme, ThemeProvider } from '@mui/material';
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
-    
     const lightTheme = createTheme({
         palette: {
             mode: 'light',
         },
     });
-    const locale = "ro"
-    const messages = require(`../../messages/${locale}.json`);
+    const locale = 'ro';
     return (
-        <NextIntlClientProvider messages={messages} locale={locale}>
+        <NextIntlClientProvider messages={roMessages} locale={locale}>
             <ThemeProvider theme={lightTheme}>{children}</ThemeProvider>
         </NextIntlClientProvider>
     );

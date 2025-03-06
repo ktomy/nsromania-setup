@@ -8,17 +8,15 @@ import {
     MenuItem,
     Snackbar,
 } from '@mui/material';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Grid from '@mui/material/Grid2';
 import { ChangeEventHandler, useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
-import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
 
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
-    const locale = useLocale();
     const [ownerEmail, setOwnerEmail] = useState('');
     const [ownerName, setOwnerName] = useState('');
     const [emailValidationCode, setEmailValidationCode] = useState('');

@@ -43,7 +43,6 @@ export default function NSInput({
     modalSaveLabel,
     modalCancelLabel,
     modalTitle,
-    modalDescription,
     moreInformation,
     ...props
 }: EditableInputProps) {
@@ -61,7 +60,9 @@ export default function NSInput({
     }
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setInputValue(e.target.value);
-        onEdit && onEdit(e.target.value);
+        if (onEdit) {
+            onEdit(e.target.value);
+        }
     };
 
     const handleEditClick = () => {
@@ -74,7 +75,9 @@ export default function NSInput({
 
     const handleModalEdit = (newValue: string | null) => {
         setInputValue(newValue);
-        onEdit && onEdit(newValue);
+        if (onEdit) {
+            onEdit(newValue);
+        }
     };
 
     const handleToggleTooltip = () => {

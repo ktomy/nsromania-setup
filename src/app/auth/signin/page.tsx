@@ -2,7 +2,6 @@ import * as React from 'react';
 import { AuthResponse, SignInPage, type AuthProvider } from '@toolpad/core/SignInPage';
 import { AuthError } from 'next-auth';
 import { auth, providerMap, signIn } from '@/auth';
-import { Button } from '@mui/material';
 import SignOutComponent from '@/lib/components/SignOutComponent';
 
 export default async function SignIn() {

@@ -1,11 +1,6 @@
 'use client';
 
-//import {CheckIcon, LanguageIcon} from '@heroicons/react/24/solid';
-import LanguageIcon from '@mui/icons-material/Language';
-import CheckIcon from '@mui/icons-material/Check';
-//import * as Select from '@radix-ui/react-select';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-//import clsx from 'clsx';
+import Select from '@mui/material/Select';
 import { useTransition } from 'react';
 import { Locale } from '@/i18n/config';
 import { setUserLocale } from '@/lib/services/locale';
@@ -17,8 +12,8 @@ type Props = {
     label: string;
 };
 
-export default function LocaleSwitcherSelect({ defaultValue, items, label }: Props) {
-    const [isPending, startTransition] = useTransition();
+export default function LocaleSwitcherSelect({ defaultValue, items }: Props) {
+    const [, startTransition] = useTransition();
 
     function onChange(value: string) {
         const locale = value as Locale;

@@ -1,5 +1,4 @@
 import { Button, ButtonGroup, Menu, MenuItem, useMediaQuery } from '@mui/material';
-import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -9,7 +8,7 @@ import SpeedDialIcon from '@mui/material/SpeedDialIcon';
 
 import NSButton from '../NSButton';
 import { KeyboardArrowUp } from '@mui/icons-material';
-export type GenericFunction = (...args: any[]) => any | Promise<any>;
+export type GenericFunction = (...args: unknown[]) => unknown | Promise<unknown>;
 
 export interface ActionsMenuItem {
     id: string;
@@ -49,7 +48,7 @@ const handleActionFunction = async (action: ActionsMenuItem, setLoadingId: (newV
  * @param actions
  * @returns a menu or button group with the actions
  */
-export default function ActionsMenu({ actionsButtonLabel, actions, children, ...props }: ActionsMenuProps) {
+export default function ActionsMenu({ actionsButtonLabel, actions, ...props }: ActionsMenuProps) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [loadingId, setLoadingId] = useState<null | string>(null);
     const [speedDialOpen, setSpeedDialOpen] = useState(false);
@@ -73,7 +72,7 @@ export default function ActionsMenu({ actionsButtonLabel, actions, children, ...
                     icon={<SpeedDialIcon icon={<KeyboardArrowUp />} openIcon={<KeyboardArrowDownIcon />} />}
                     sx={{ position: 'absolute', bottom: 16, right: 16 }}
                     onClose={handleClose}
-                    onOpen={(e) => {
+                    onOpen={() => {
                         setSpeedDialOpen(true);
                     }}
                     open={speedDialOpen}
@@ -83,7 +82,7 @@ export default function ActionsMenu({ actionsButtonLabel, actions, children, ...
                             <SpeedDialAction
                                 key={`${action.id}-${index}`}
                                 icon={<SpeedDialIcon icon={action.icon} />}
-                                tooltipTitle={action.label}
+                                title={action.label}
                                 onClick={async () => {
                                     handleClose();
                                     handleActionFunction(action, setLoadingId);

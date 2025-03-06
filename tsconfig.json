@@ -15,7 +15,9 @@
         "resolveJsonModule": true,
         "isolatedModules": true,
         "jsx": "preserve",
+        "noImplicitAny": true,
         "incremental": true,
+        "types": ["@testing-library/jest-dom"],
         "plugins": [
             {
                 "name": "next"
@@ -26,6 +28,9 @@
         "paths": {
             "@/*": [
                 "./*"
+            ],
+            "test-utils": [
+                "./utils/test-utils.tsx"
             ]
         }
     },
@@ -34,7 +39,7 @@
         "**/*.ts",
         "**/*.tsx",
         ".next/types/**/*.ts"
-    ],
+, "jest.setup,js"    ],
     "exclude": [
         "node_modules"
     ]

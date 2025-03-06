@@ -5,7 +5,6 @@ import { User } from '@prisma/client';
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { getProcessesList } from '@/lib/services/nsruntime';
 import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from '@/lib/services/nsdatbasea';
-import { get } from 'http';
 
 type Props = {
     params: Promise<{

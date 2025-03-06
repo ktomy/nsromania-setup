@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, TextFieldProps } from '@mui/material';
 import { useTranslations } from 'next-intl';
 
@@ -61,7 +61,7 @@ export default function ModalEdit({
                     onChange={handleChange}
                     slotProps={{
                         htmlInput: {
-                            onInput: (e: any) => {
+                            onInput: (e: React.FormEvent<HTMLInputElement>) => {
                                 checkMultilineRealtime(e.currentTarget.value ?? null);
                             },
                         },

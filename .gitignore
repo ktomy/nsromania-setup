@@ -11,3 +11,4 @@ deploy/
 .pnpm-store/
 
 *storybook.log
+*.DS_Store

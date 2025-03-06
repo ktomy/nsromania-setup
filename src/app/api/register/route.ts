@@ -1,9 +1,8 @@
 import { validateCaptcha } from "@/lib/services/recaptcha";
 import { createRegistrationRequest, getAllRegistrationRequests, validateEmail } from "@/lib/services/registration";
 import { RegisterDomainRequest } from "@/types/domains";
-import { NextResponse } from "next/server";
 import { auth } from '@/auth';
-import { User, register_request } from '@prisma/client';
+import { User } from '@prisma/client';
 
 export async function POST(req: Request) {
 
@@ -56,7 +55,8 @@ export async function POST(req: Request) {
     }
 }
 
-export async function GET(req: Request) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_req: Request) {
     const session = await auth();
 
     if (!session || !session.user) {

@@ -29,6 +29,9 @@ jobs:
       - name: Generate prisma client
         run: pnpm prisma generate
 
+      - name: Run the tests
+        run: pnpm run test
+
       - name: Build the application
         run: pnpm run build
 

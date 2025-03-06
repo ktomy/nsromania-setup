@@ -1,10 +1,11 @@
 import { getAllNSDomains, getNSDomainsByUserId, createNSDomain } from '@/lib/services/domains';
 import { auth } from '@/auth';
-import { NSDomain, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { getProcessesList } from '@/lib/services/nsruntime';
 import { CreateDomainRequest } from '@/types/domains';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: NextRequest) {
     const session = await auth();
 

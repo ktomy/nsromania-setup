@@ -29,7 +29,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import { NSDomainEnvironment } from '@prisma/client';
 import { useParams } from 'next/navigation';
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
 import NSButton from '@/lib/components/general/NSButton';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
@@ -37,7 +37,6 @@ import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRou
 export default function EditDomainPage() {
     const { id } = useParams() as { id: string };
     const t = useTranslations('EditDomainPage');
-    const locale = useLocale();
     const [domain, setDomain] = useState('');
     const [title, setTitle] = useState('');
     const [apiSecret, setApiSecret] = useState('');
@@ -168,7 +167,7 @@ export default function EditDomainPage() {
         }
     };
 
-    const handleDataSourceChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
+    const handleDataSourceChange = (event: SelectChangeEvent<string>) => {
         const value = event.target.value as string;
         setDataSource(value);
         if (value === 'Dexcom') {

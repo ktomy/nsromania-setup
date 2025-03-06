@@ -3,11 +3,10 @@ import Typography from '@mui/material/Typography';
 import { Box, Button } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 export default function WelcomePage() {
     const t = useTranslations('WelcomePage');
-    const locale = useLocale();
 
     return (
         <Box

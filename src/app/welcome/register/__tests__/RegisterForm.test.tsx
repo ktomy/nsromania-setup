@@ -10,18 +10,13 @@ import { act } from 'react';
 
 //https://github.com/mui/material-ui/issues/45477 ownerState prop is not supported on ClickAwayListener
 
-const mockExecuteRecaptcha = jest.fn((_?: string) => Promise.resolve('1234567890'));
+const mockExecuteRecaptcha = jest.fn(() => Promise.resolve('1234567890'));
 
 jest.mock('react-google-recaptcha-v3', () => {
     return {
         GoogleReCaptchaProvider: ({
-            reCaptchaKey,
-            useEnterprise,
-            useRecaptchaNet,
-            scriptProps,
-            language,
             children,
-        }: any): JSX.Element => {
+        }: { children: React.ReactNode }): JSX.Element => {
             return <>{children}</>;
         },
         useGoogleReCaptcha: () => ({

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { auth } from '../../auth';
-import { useLocale, useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Box } from '@mui/material';
 

@@ -1,5 +1,5 @@
 import LocaleSwitcher from '@/lib/components/LocaleSwitcher';
-import { Box, Container, useTheme } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import { ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 
 export default function HomePagesLayout(props: { children: React.ReactNode }) {

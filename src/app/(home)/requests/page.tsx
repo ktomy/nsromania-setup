@@ -1,12 +1,12 @@
 'use client';
 
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Button, Chip, Snackbar } from '@mui/material';
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp, GridToolbar } from '@mui/x-data-grid';
+import { Alert, Box, Snackbar } from '@mui/material';
+import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp } from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid2';
 import { Settings } from '@mui/icons-material';
 import { useSession } from 'next-auth/react';
-import { register_request, User } from '@prisma/client';
+import { register_request } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { formatDate } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -19,7 +19,7 @@ export default function RequestsPage() {
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
-    const [actionInProgress, setActionInProgress] = useState(false);
+    const [, setActionInProgress] = useState(false);
 
     const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
         setSnackMessage(t(message));
@@ -104,6 +104,7 @@ export default function RequestsPage() {
         return <p>{t('notSignedIn')}</p>;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const redirectToDetails = (id: GridRowId) => () => {
         console.log('Redirecting to domain details:', id);
         redirect(`/requests/${id}`);

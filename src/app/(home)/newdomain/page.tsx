@@ -9,7 +9,6 @@ import {
     Button,
     MenuItem,
     Select,
-    InputLabel,
     FormControl,
     Box,
     Typography,
@@ -98,7 +97,7 @@ export default function NewDomainPage() {
         }
     };
 
-    const handleDataSourceChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
+    const handleDataSourceChange = (event: SelectChangeEvent<string>) => {
         const value = event.target.value as string;
         setDataSource(value);
         if (value === 'Dexcom') {

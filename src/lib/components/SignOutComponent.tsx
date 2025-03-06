@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { signOut, useSession } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import { Box, Button, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -8,7 +8,7 @@ const compat = new FlatCompat({
 const eslintConfig = [
     ...compat.config({
         extends: ['next/core-web-vitals', 'next/typescript', 'prettier'],
-
+        ignorePatterns: ['node_modules', '.next', 'public', "src/lib/services"],
         rules: {
             'react/no-unescaped-entities': 'off',
             '@next/next/no-page-custom-font': 'off',

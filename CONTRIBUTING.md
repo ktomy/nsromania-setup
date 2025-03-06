@@ -48,3 +48,12 @@ This will create a web server on the default port 6006
 http://localhost:6006
 
 Make sure to create/update stories when creating a new component or editing an existing one.
+
+### Testing 
+
+This project uses JEST testing, currently only unit tests are made. 
+
+To run the tests:
+`pnpm run test`
+
+Each test is located unde a `__tests__` folder at the location of the tested component

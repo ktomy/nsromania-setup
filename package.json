@@ -65,7 +65,7 @@
         "prettier": "^3.5.2",
         "prisma": "^6.4.1",
         "ts-node": "^10.9.2",
-        "typescript": "^5.7"
+        "typescript": "^5.8.2"
     },
     "pnpm": {
         "overrides": {

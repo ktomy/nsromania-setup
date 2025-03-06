@@ -1,0 +1,35 @@
+import { Canvas, Meta, Controls } from '@storybook/addon-docs';
+
+import * as NSInputStories from './NSInput.stories';
+
+<Meta of={NSInputStories} />
+
+## NSInput
+A simple input field implementing all the props from the Material UI library. 
+
+[TextField API documentation](https://material-ui.com/api/text-field/)
+
+In the future when we will implement Zod and react-hook-form, we will have to add the props from those libraries as well.
+
+
+
+### Contributing
+This is a main component for user input. It can be used for text input, number input, password input, etc.
+It is reused accross the project, this is why when contributing to this component it should be well documented.
+
+### Examples
+#### Example with modal editing button 
+
+<Canvas of={NSInputStories.Example} withToolbar/>
+
+#### Example with more information button
+When using this input with more information and modal set to truthy values,
+it will display a warning because the more information button will not be visible.
+
+<Canvas of={NSInputStories.MoreInformationButton} withToolbar/>
+
+#### Example as select input
+This is an example of the input used as a select input. It accepts direct children of type `MenuItem` from Material UI.
+
+[Material UI Documentation about TextField with select prop](https://mui.com/material-ui/api/text-field/#text-field-prop-select)
+<Canvas of={NSInputStories.AsSelectInput} withToolbar/>

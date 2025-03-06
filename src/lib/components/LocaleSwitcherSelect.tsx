@@ -17,11 +17,7 @@ type Props = {
     label: string;
 };
 
-export default function LocaleSwitcherSelect({
-    defaultValue,
-    items,
-    label
-}: Props) {
+export default function LocaleSwitcherSelect({ defaultValue, items, label }: Props) {
     const [isPending, startTransition] = useTransition();
 
     function onChange(value: string) {
@@ -43,9 +39,10 @@ export default function LocaleSwitcherSelect({
                     onChange={(e) => onChange(e.target.value)}
                 >
                     {items.map((item) => (
-                        <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>
+                        <MenuItem key={item.value} value={item.value}>
+                            {item.label}
+                        </MenuItem>
                     ))}
-
 
                     {/* <MenuItem value={10}>Ten</MenuItem>
                     <MenuItem value={20}>Twenty</MenuItem>

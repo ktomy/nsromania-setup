@@ -8,6 +8,7 @@ import { prisma } from "./lib/prisma"
 import { User } from '@prisma/client';
 import Credentials from 'next-auth/providers/credentials';
 
+
 const providers: Provider[] = [
     GitHub({
         clientId: process.env.GITHUB_CLIENT_ID,

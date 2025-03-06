@@ -21,3 +21,27 @@ export const formatDate = (date: Date | null | undefined): string => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
+
+/**
+ * This function formats a number of bytes into a human-readable string.
+ * Examples: 
+ * ```ts
+ * 1024 -> "1 KB"
+ * 1024 * 1024 -> "1 MB"
+ * ```
+ * @param bytes number of bytes to format
+ * @returns 
+ */
+export function formatBytes(bytes: number | null): string {
+    if (bytes === null) return "Unknown";
+    if (bytes === 0) return "0 Bytes";
+
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    const k = 1024; // Factor for conversion
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    const value = bytes / Math.pow(k, i);
+    const roundedValue = i === 0 ? value : Math.min(parseFloat(value.toFixed(2)), parseFloat(value.toFixed(0))); // Avoid decimals for "Bytes"
+
+    return `${roundedValue} ${sizes[i]}`;
+}

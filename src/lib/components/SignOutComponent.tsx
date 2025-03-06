@@ -6,8 +6,6 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { User } from 'next-auth';
 
-
-
 export default function SignOutComponent({ user }: { user: User | undefined }) {
     const t = useTranslations('SignOutComponent');
 
@@ -22,15 +20,15 @@ export default function SignOutComponent({ user }: { user: User | undefined }) {
                             <Button variant="outlined" color="primary" component={Link} href="/">
                                 {t('home')}
                             </Button>
-
                         </td>
                         <td>
-                            <Button variant="contained" color="primary" onClick={() => signOut()}>{t('signOut')}</Button>
+                            <Button variant="contained" color="primary" onClick={() => signOut()}>
+                                {t('signOut')}
+                            </Button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </Box>
     );
-
 }

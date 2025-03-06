@@ -56,7 +56,7 @@ model User {
   emailVerified    DateTime?          @map("email_verified")
   image            String?
   createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @default(dbgenerated("(now(3))")) @updatedAt @map("updated_at")
+  updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at")
   loginAllowed     Int?               @map("login_allowed") @db.TinyInt
   role             String?            @db.VarChar(16)
   accounts         Account[]
@@ -132,7 +132,7 @@ model register_email_validation {
   id              Int      @id @default(autoincrement())
   email_address   String   @db.VarChar(128)
   validation_code String   @db.VarChar(16)
-  sent_at         DateTime @default(dbgenerated("(now())")) @db.Timestamp(0)
+  sent_at         DateTime @default(now()) @db.Timestamp(0)
 }
 
 model register_request {

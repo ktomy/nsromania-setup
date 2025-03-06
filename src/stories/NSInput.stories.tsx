@@ -41,11 +41,10 @@ export const Example: Story = {
     args: meta.args, // ✅ Reuse `args` to avoid duplication
 };
 
-
 export const MoreInformationButton: Story = {
     args: {
         ...meta.args,
-		modal: false,
+        modal: false,
         moreInformation: 'This is a tooltip with more information',
     },
 };
@@ -53,14 +52,20 @@ export const MoreInformationButton: Story = {
 export const AsSelectInput: Story = {
     args: {
         ...meta.args,
-		modal: false,
+        modal: false,
         select: true,
         value: 'EU',
         moreInformation: 'This is a tooltip with more information',
         children: [
-            <MenuItem value="EU" key="EU">Europe</MenuItem>,
-            <MenuItem value="USA" key="USA">United States</MenuItem>,
-            <MenuItem value="ASIA" key="ASIA">ASIA</MenuItem>
-        ]
+            <MenuItem value="EU" key="EU">
+                Europe
+            </MenuItem>,
+            <MenuItem value="USA" key="USA">
+                United States
+            </MenuItem>,
+            <MenuItem value="ASIA" key="ASIA">
+                ASIA
+            </MenuItem>,
+        ],
     },
 };

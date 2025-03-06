@@ -9,39 +9,31 @@ export async function GET(req: NextRequest) {
     const session = await auth();
 
     if (!session || !session.user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
-            headers: { "Content-Type": "application/json" },
+            headers: { 'Content-Type': 'application/json' },
         });
     }
     const user = session.user as User;
 
     try {
-        const nsDomains = user.role === "admin" ?
-            await getAllNSDomains() :
-            await getNSDomainsByUserId(user.id);
+        const nsDomains = user.role === 'admin' ? await getAllNSDomains() : await getNSDomainsByUserId(user.id);
         const processes = await getProcessesList();
-        const domainsWithStatus = nsDomains.map(domain => ({
+        const domainsWithStatus = nsDomains.map((domain) => ({
             ...domain,
-            status: processes?.find(p => p.name.endsWith("_" + domain.domain))?.status || 'not running'
+            status: processes?.find((p) => p.name.endsWith('_' + domain.domain))?.status || 'not running',
         }));
 
-
-
         return new Response(JSON.stringify(domainsWithStatus), {
-            headers: { "Content-Type": "application/json" },
+            headers: { 'Content-Type': 'application/json' },
         });
     } catch (error) {
-        console.error("Error fetching NS domains:", error);
-        return new Response(
-            JSON.stringify({ error: "Failed to fetch NS domains" }),
-            {
-                status: 500,
-                headers: { "Content-Type": "application/json" },
-            }
-        );
+        console.error('Error fetching NS domains:', error);
+        return new Response(JSON.stringify({ error: 'Failed to fetch NS domains' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
-
 }
 
 // Create new NSDomain
@@ -50,47 +42,41 @@ export async function POST(req: NextRequest) {
     const session = await auth();
 
     if (!session || !session.user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
-            headers: { "Content-Type": "application/json" },
+            headers: { 'Content-Type': 'application/json' },
         });
     }
 
     const user = session.user as User;
-    if (user.role !== "admin") {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    if (user.role !== 'admin') {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
-            headers: { "Content-Type": "application/json" },
+            headers: { 'Content-Type': 'application/json' },
         });
     }
 
     try {
-        const { domain } = await req.json() as { domain: CreateDomainRequest };;
-        console.log("Domain:", domain);
+        const { domain } = (await req.json()) as { domain: CreateDomainRequest };
+        console.log('Domain:', domain);
         domain.dbExists = 0;
 
         const nsDomain = await createNSDomain(domain);
         return new Response(JSON.stringify(nsDomain), {
-            headers: { "Content-Type": "application/json" },
+            headers: { 'Content-Type': 'application/json' },
         });
     } catch (error: unknown) {
         if (error instanceof Error && error.message === 'Domain name already exists') {
-            return new Response(
-                JSON.stringify({ error: "Domain name already exists" }),
-                {
-                    status: 400,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+            return new Response(JSON.stringify({ error: 'Domain name already exists' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
         }
 
-        console.error("Error creating NS domain:", error);
-        return new Response(
-            JSON.stringify({ error: "Failed to create NS domain" }),
-            {
-                status: 500,
-                headers: { "Content-Type": "application/json" },
-            }
-        );
+        console.error('Error creating NS domain:', error);
+        return new Response(JSON.stringify({ error: 'Failed to create NS domain' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 }

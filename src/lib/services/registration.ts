@@ -1,5 +1,5 @@
-import { prisma } from '../prisma'
-import { NSDomain, register_request, User } from '@prisma/client'
+import { prisma } from '../prisma';
+import { NSDomain, register_request, User } from '@prisma/client';
 import { sendValidationEmail } from './sendemail';
 import { RegisterDomainRequest } from '@/types/domains';
 
@@ -7,8 +7,9 @@ export async function initiateEmailValidation(email: string) {
     // generate a validation code, save it to the database, send an email to the user
     // return the validation code
 
-
-    const validationCode = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    const validationCode = Math.floor(Math.random() * 1000000)
+        .toString()
+        .padStart(6, '0');
     if (process.env.NODE_ENV === 'development') {
         console.log(`Validation code for ${email}: ${validationCode}`);
     }
@@ -16,7 +17,7 @@ export async function initiateEmailValidation(email: string) {
         data: {
             email_address: email,
             validation_code: validationCode,
-        }
+        },
     });
 
     if (process.env.NODE_ENV !== 'development') {
@@ -31,15 +32,14 @@ export async function validateEmail(email: string, validationCode: string) {
 
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 
-
     const validation = await prisma.register_email_validation.findFirst({
         where: {
             email_address: email,
             validation_code: validationCode,
             sent_at: {
-                gte: tenMinutesAgo
-            }
-        }
+                gte: tenMinutesAgo,
+            },
+        },
     });
 
     if (validation) {
@@ -62,7 +62,7 @@ export async function createRegistrationRequest(request: RegisterDomainRequest):
             dexcom_username: request.dexcomUsername,
             dexcom_password: request.dexcomPassword,
             status: 'pending',
-        }
+        },
     });
 
     return true;
@@ -76,8 +76,8 @@ export async function getAllRegistrationRequests(): Promise<register_request[]> 
 export async function approveRegistrationRequest(id: number, approvingUser: User) {
     const request = await prisma.register_request.findUnique({
         where: {
-            id: id
-        }
+            id: id,
+        },
     });
 
     if (!request) {
@@ -86,8 +86,8 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
 
     let user = await prisma.user.findUnique({
         where: {
-            email: request!.owner_email
-        }
+            email: request!.owner_email,
+        },
     });
 
     if (!user) {
@@ -96,24 +96,23 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
                 email: request!.owner_email,
                 role: 'user',
                 name: request!.owner_name,
-            }
+            },
         });
-
     }
 
-    let enable = "";
-    let showPlugins = "";
+    let enable = '';
+    let showPlugins = '';
     switch (request?.data_source) {
-        case "Dexcom":
-            enable = "careportal iob cob cage sage rawbg cors dbsize bridge";
-            showPlugins = "cob iob sage cage careportal";
+        case 'Dexcom':
+            enable = 'careportal iob cob cage sage rawbg cors dbsize bridge';
+            showPlugins = 'cob iob sage cage careportal';
             break;
-        case "API":
-            enable = "careportal iob cob cage sage rawbg cors dbsize";
-            showPlugins = "cob iob sage cage careportal";
+        case 'API':
+            enable = 'careportal iob cob cage sage rawbg cors dbsize';
+            showPlugins = 'cob iob sage cage careportal';
             break;
         default:
-            throw new Error("Invalid data source");
+            throw new Error('Invalid data source');
     }
 
     await prisma.nSDomain.create({
@@ -129,7 +128,7 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
             active: 1,
             title: request.title!,
             port: 0,
-        }
+        },
     });
 
     await prisma.register_request.update({
@@ -138,8 +137,8 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
             chnged_by: approvingUser.id,
         },
         data: {
-            status: 'approved'
-        }
+            status: 'approved',
+        },
     });
 }
 
@@ -150,7 +149,7 @@ export async function rejectRegistrationRequest(id: number, rejectingUser: User)
             chnged_by: rejectingUser.id,
         },
         data: {
-            status: 'rejected'
-        }
+            status: 'rejected',
+        },
     });
 }

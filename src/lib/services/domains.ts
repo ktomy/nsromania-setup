@@ -1,7 +1,6 @@
 import { CreateDomainRequest, PartialNSDomainWithEnvironments } from '@/types/domains';
-import { prisma } from '../prisma'
-import { NSDomain, User } from '@prisma/client'
-
+import { prisma } from '../prisma';
+import { NSDomain, User } from '@prisma/client';
 
 export async function getAllNSDomains() {
     try {
@@ -32,8 +31,8 @@ export async function getNSDomainById(id: number) {
         },
         include: {
             environments: true,
-            authUser: true
-        }
+            authUser: true,
+        },
     });
 
     return domain;
@@ -46,8 +45,8 @@ export async function getNSDomainsByUserId(id: string) {
         },
         include: {
             environments: true,
-            authUser: true
-        }
+            authUser: true,
+        },
     });
 
     return domains;
@@ -96,8 +95,7 @@ export async function createNSDomain(data: CreateDomainRequest) {
                 loginAllowed: 1,
             },
         });
-        user = newUser
-
+        user = newUser;
     }
 
     const domain = prisma.nSDomain.create({
@@ -119,16 +117,18 @@ export async function createNSDomain(data: CreateDomainRequest) {
             nsversion: data.nsversion,
             active: data.active,
             dbExists: data.dbExists,
-            environments: data.environments ? {
-                create: data.environments.map(env => ({
-                    variable: env.variable || '',
-                    value: env.value || null
-                }))
-            } : undefined,
+            environments: data.environments
+                ? {
+                      create: data.environments.map((env) => ({
+                          variable: env.variable || '',
+                          value: env.value || null,
+                      })),
+                  }
+                : undefined,
         },
         include: {
             environments: true,
-        }
+        },
     });
 
     return domain;
@@ -199,7 +199,6 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
         }
 
         return updatedDomain;
-
     } catch (error) {
         console.error('Error updating NSDomain:', error);
         throw error;

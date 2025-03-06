@@ -4,18 +4,18 @@ import { NextResponse } from 'next/server';
 
 type Props = {
     params: Promise<{
-        subdomain: string
-    }>
-}
+        subdomain: string;
+    }>;
+};
 
 export async function GET(request: Request, props: Props) {
-    const params = await props.params
+    const params = await props.params;
     const { subdomain } = await params;
 
     const domain = await getNSDomainBySubdomain(subdomain);
 
     if (!domain) {
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const currentUrl = new URL(request.url);

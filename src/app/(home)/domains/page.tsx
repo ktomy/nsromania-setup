@@ -34,28 +34,27 @@ export default function DomainsPage() {
         setSnackOpen(false);
     };
 
-    const handleDomainsActions = async (action: "startall") => {
+    const handleDomainsActions = async (action: 'startall') => {
         try {
             setActionInProgress(true);
             const res = await fetch(`/api/domains/${action}`, {
-                method: "POST",
+                method: 'POST',
             });
 
             if (res.ok) {
-                openSnack("actionSuccess", "success");
+                openSnack('actionSuccess', 'success');
                 fetchDomains();
-
             } else {
                 console.error(`Failed to ${action} domain`, res);
-                openSnack("actionFailed", "error");
+                openSnack('actionFailed', 'error');
                 setActionInProgress(false);
             }
         } catch (error) {
             console.error(`Failed to ${action} domain`, error);
-            openSnack("actionFailed", "error");
+            openSnack('actionFailed', 'error');
             setActionInProgress(false);
         }
-    }
+    };
 
     const fetchDomains = () => {
         fetch(`/api/domains`).then((response) => {
@@ -68,24 +67,25 @@ export default function DomainsPage() {
                         domain: domain.domain,
                         created: formatDate(domain.created),
                         last_updated: formatDate(domain.lastUpdated),
-                        data_source: domain.enable.indexOf('bridge') > -1 ?
-                            'Dexcom' : domain.enable.indexOf('mmconnect') > -1 ? 'Medtronic' : 'API',
+                        data_source:
+                            domain.enable.indexOf('bridge') > -1
+                                ? 'Dexcom'
+                                : domain.enable.indexOf('mmconnect') > -1
+                                  ? 'Medtronic'
+                                  : 'API',
                         status: domain.status,
-                    }
+                    };
                 });
                 setRows(rows);
                 setActionInProgress(false);
             });
-
         });
-    }
+    };
 
     useEffect(() => {
         if (!session) return;
         fetchDomains();
-
     }, [session]);
-
 
     if (status === 'loading') {
         return <p>{t('loading')}</p>;
@@ -179,51 +179,41 @@ export default function DomainsPage() {
 
     const user = session.user as User;
 
-
-    return <Box>
-        <Snackbar
-            open={snackOpen}
-            autoHideDuration={3000}
-            onClose={handleSnackClose}
-            message={snackMessage}
-        >
-            <Alert
-                onClose={handleSnackClose}
-                severity={snackKind}
-                variant="filled"
-                sx={{ width: '100%' }}
-            >
-                {snackMessage}
-            </Alert>
-        </Snackbar>
-        <Grid size={12} direction={"row"} container>
-            <Grid size={8}>
-                <Typography>{t('welcomeMessage', { name: user.name, id: user.id || "Unknown ID", role: user.role || "Unknown" })}</Typography>
+    return (
+        <Box>
+            <Snackbar open={snackOpen} autoHideDuration={3000} onClose={handleSnackClose} message={snackMessage}>
+                <Alert onClose={handleSnackClose} severity={snackKind} variant="filled" sx={{ width: '100%' }}>
+                    {snackMessage}
+                </Alert>
+            </Snackbar>
+            <Grid size={12} direction={'row'} container>
+                <Grid size={8}>
+                    <Typography>
+                        {t('welcomeMessage', {
+                            name: user.name,
+                            id: user.id || 'Unknown ID',
+                            role: user.role || 'Unknown',
+                        })}
+                    </Typography>
+                </Grid>
+                <Grid size={4}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => handleDomainsActions('startall')}
+                            disabled={actionInProgress}
+                        >
+                            {t('startAllActive')}
+                        </Button>
+                        <Button variant="contained" color="primary" href={`/newdomain`}>
+                            {t('newDomain')}
+                        </Button>
+                    </Box>
+                </Grid>
             </Grid>
-            <Grid size={4}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleDomainsActions("startall")}
-                        disabled={actionInProgress}
-                    >
-                        {t('startAllActive')}
-                    </Button>
-                    <Button variant="contained" color="primary" href={`/newdomain`}>
-                        {t('newDomain')}
-                    </Button>
-                </Box>
-            </Grid>
-        </Grid>
-        <br />
-        <DataGrid
-            rows={rows}
-            columns={columns}
-            disableRowSelectionOnClick
-
-        />
-    </Box>
-
+            <br />
+            <DataGrid rows={rows} columns={columns} disableRowSelectionOnClick />
+        </Box>
+    );
 }

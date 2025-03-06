@@ -18,9 +18,7 @@ export default function RegistrationSuccessPage() {
             }}
         >
             <Typography variant="h4">{t('registrationSuccess')}</Typography>
-            <Typography variant="body1">
-                {t('registrationSuccessMessage')}
-            </Typography>
+            <Typography variant="body1">{t('registrationSuccessMessage')}</Typography>
             <Button variant="contained" color="primary" href="/">
                 {t('home')}
             </Button>

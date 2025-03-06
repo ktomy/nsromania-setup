@@ -6,10 +6,7 @@
     "postCreateCommand": "pnpm install && pnpx prisma generate",
     "customizations": {
         "vscode": {
-            "extensions": [
-                "prisma.prisma",
-                "ms-azuretools.vscode-docker"
-            ],
+            "extensions": ["prisma.prisma", "ms-azuretools.vscode-docker"],
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash"
             }

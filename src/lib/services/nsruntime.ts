@@ -25,7 +25,7 @@ export async function getProcessesList(): Promise<ProcessInfo[]> {
                     reject(err);
                 } else {
                     const formattedProcesses = list
-                        .filter(proc => proc.name !== undefined)
+                        .filter((proc) => proc.name !== undefined)
                         .map((proc) => ({
                             name: proc.name!,
                             status: proc.pm2_env?.status,
@@ -45,7 +45,6 @@ export async function isDomainRunning(domain: string): Promise<boolean> {
     return (await getProcessesList()).some((proc) => proc.name.endsWith(`_${domain}`));
 }
 
-
 export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): Promise<string> {
     // connect to pm2 and start the domain
     const pm2 = await import('pm2');
@@ -57,35 +56,33 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
                 reject(err);
                 return;
             }
-            let nsHome = process.env.NS_HOME
+            let nsHome = process.env.NS_HOME;
             if (process.env.NODE_ENV === 'production') {
                 if (domain.nsversion !== null) {
                     nsHome += `/${domain.nsversion}/`;
-                }
-                else {
+                } else {
                     nsHome += '/master/';
                 }
             }
 
-            let nsEnvironment: { [key: string]: string; } = {};
+            let nsEnvironment: { [key: string]: string } = {};
             nsEnvironment.ENABLE = domain.enable || '';
             nsEnvironment.SHOW_PLUGINS = domain.showPlugins || '';
             // domain.mmconnectUsername ? nsEnvironment.MMCONNECT_USER_NAME = domain.mmconnectUsername : null;
             // domain.mmconnectPassword ? nsEnvironment.MMCONNECT_PASSWORD = domain.mmconnectPassword : null;
             // domain.mmconnectServer ? nsEnvironment.MMCONNECT_SERVER = domain.mmconnectServer : null;
             if (domain.enable?.indexOf('bridge') !== -1) {
-                domain.bridgeUsername ? nsEnvironment.BRIDGE_USER_NAME = domain.bridgeUsername : null;
-                domain.bridgePassword ? nsEnvironment.BRIDGE_PASSWORD = domain.bridgePassword : null;
-                domain.bridgeServer ? nsEnvironment.BRIDGE_SERVER = domain.bridgeServer : null;
+                domain.bridgeUsername ? (nsEnvironment.BRIDGE_USER_NAME = domain.bridgeUsername) : null;
+                domain.bridgePassword ? (nsEnvironment.BRIDGE_PASSWORD = domain.bridgePassword) : null;
+                domain.bridgeServer ? (nsEnvironment.BRIDGE_SERVER = domain.bridgeServer) : null;
             }
             nsEnvironment.API_SECRET = domain.apiSecret || '';
-            domain.title ? nsEnvironment.CUSTOM_TITLE = domain.title : null;
+            domain.title ? (nsEnvironment.CUSTOM_TITLE = domain.title) : null;
             nsEnvironment.INSECURE_USE_HTTP = 'true';
             nsEnvironment.LANGUAGE = 'ro';
             nsEnvironment.PORT = (11000 + (domain.id || 999)).toString();
             nsEnvironment.THEME = 'colors';
-            nsEnvironment.TIME_FORMAT = "24";
-
+            nsEnvironment.TIME_FORMAT = '24';
 
             let connectionStringInVariables = false;
 
@@ -105,19 +102,22 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
 
             // console.log("Environment", nsEnvironment);
 
-            pm2.start({
-                name: `11${(domain.id || 999).toString().padStart(3, '0')}_${domain.domain}`,
-                script: 'server.js',
-                cwd: nsHome,
-                env: nsEnvironment,
-                interpreter: process.env.NS_NODE_PATH,
-            }, (err, proc) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve('ok');
+            pm2.start(
+                {
+                    name: `11${(domain.id || 999).toString().padStart(3, '0')}_${domain.domain}`,
+                    script: 'server.js',
+                    cwd: nsHome,
+                    env: nsEnvironment,
+                    interpreter: process.env.NS_NODE_PATH,
+                },
+                (err, proc) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve('ok');
+                    }
                 }
-            });
+            );
             console.log(`Started domain ${domain.domain}`);
         });
     });

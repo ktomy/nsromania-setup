@@ -172,7 +172,7 @@ export default function RegisterForm() {
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
                     {t.rich('registrationHint', {
-                        icon: () => <InfoRoundedIcon fontSize="small" sx={{verticalAlign: "bottom"}} />,
+                        icon: () => <InfoRoundedIcon fontSize="small" sx={{ verticalAlign: 'bottom' }} />,
                     })}
                 </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>

@@ -2,12 +2,11 @@ import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import type { Provider } from 'next-auth/providers';
 import Google from 'next-auth/providers/google';
-import Sendgrid from "next-auth/providers/sendgrid"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "./lib/prisma"
+import Sendgrid from 'next-auth/providers/sendgrid';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import { prisma } from './lib/prisma';
 import { User } from '@prisma/client';
 import Credentials from 'next-auth/providers/credentials';
-
 
 const providers: Provider[] = [
     GitHub({
@@ -22,34 +21,34 @@ const providers: Provider[] = [
     }),
     Sendgrid({
         apiKey: process.env.SENDGRID_API_KEY,
-        from: "NSRomania <login@nsromania.info>",
-        id: "nodemailer",
-        name: "Email",
+        from: 'NSRomania <login@nsromania.info>',
+        id: 'nodemailer',
+        name: 'Email',
         //allowDangerousEmailAccountLinking: true,
     }),
-    process.env.NODE_ENV === "development" ? Credentials({
-        name: "Test User",
-        credentials: {
-            email: { label: "Email", type: "text", placeholder: "email@test.com" },
-            password: { label: "Password", type: "password" },
-        },
-        async authorize(credentials) {
-            if (!credentials?.email || !credentials?.password) return null;
+    process.env.NODE_ENV === 'development'
+        ? Credentials({
+              name: 'Test User',
+              credentials: {
+                  email: { label: 'Email', type: 'text', placeholder: 'email@test.com' },
+                  password: { label: 'Password', type: 'password' },
+              },
+              async authorize(credentials) {
+                  if (!credentials?.email || !credentials?.password) return null;
 
-            const testUser = await prisma.user.findUnique({
-                where: { email: credentials.email as string },
-            });
+                  const testUser = await prisma.user.findUnique({
+                      where: { email: credentials.email as string },
+                  });
 
-            if (!testUser) return null;
+                  if (!testUser) return null;
 
-            // Simple password check 
-            const isValidPassword = credentials.password === 'test'
+                  // Simple password check
+                  const isValidPassword = credentials.password === 'test';
 
-            return isValidPassword
-                ? { id: testUser.id, name: testUser.name, email: testUser.email }
-                : null;
-        },
-    }) : null,
+                  return isValidPassword ? { id: testUser.id, name: testUser.name, email: testUser.email } : null;
+              },
+          })
+        : null,
 ] as Provider[];
 
 if (!process.env.GITHUB_CLIENT_ID) {
@@ -59,21 +58,23 @@ if (!process.env.GITHUB_CLIENT_SECRET) {
     console.warn('Missing environment variable "GITHUB_CLIENT_SECRET"');
 }
 
-export const providerMap = providers.filter((provider) => provider !== null).map((provider) => {
-    if (typeof provider === 'function') {
-        const providerData = provider();
-        if (providerData.id === 'sendgrid') {
-            return { id: "nodemailer", name: "Email" };
+export const providerMap = providers
+    .filter((provider) => provider !== null)
+    .map((provider) => {
+        if (typeof provider === 'function') {
+            const providerData = provider();
+            if (providerData.id === 'sendgrid') {
+                return { id: 'nodemailer', name: 'Email' };
+            }
+            return { id: providerData.id, name: providerData.name };
         }
-        return { id: providerData.id, name: providerData.name };
-    }
 
-    if (provider.id === 'sendgrid') {
-        return { id: "nodemailer", name: "Email" };
-    }
+        if (provider.id === 'sendgrid') {
+            return { id: 'nodemailer', name: 'Email' };
+        }
 
-    return { id: provider.id, name: provider.name };
-});
+        return { id: provider.id, name: provider.name };
+    });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: providers.filter((provider) => provider !== null),
@@ -85,11 +86,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     callbacks: {
         async authorized({ auth: session, request: { nextUrl } }) {
             const isLoggedIn = !!session?.user;
-            const isPublicPage = nextUrl.pathname.startsWith('/public')
-                || nextUrl.pathname.startsWith('/welcome')
-                || nextUrl.pathname.startsWith('/auth/signin')
-                ;
-
+            const isPublicPage =
+                nextUrl.pathname.startsWith('/public') ||
+                nextUrl.pathname.startsWith('/welcome') ||
+                nextUrl.pathname.startsWith('/auth/signin');
             if (isPublicPage || isLoggedIn) {
                 return true;
             }
@@ -121,10 +121,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
 
             if (newDbUser && newDbUser.loginAllowed === 1) {
-                if (profile !== undefined && (
-                    newDbUser.image !== profile.image ||
-                    newDbUser.name !== profile.name
-                )) {
+                if (profile !== undefined && (newDbUser.image !== profile.image || newDbUser.name !== profile.name)) {
                     await prisma.user.update({
                         where: {
                             email: user.email as string,
@@ -140,7 +137,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
 
             return false;
-
         },
         async session({ session, token }) {
             // console.log("Session arguments:\nsession: ", session, "\ntoken: ", token);

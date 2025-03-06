@@ -1,13 +1,7 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import {
-    Alert,
-    Box,
-    Button,
-    MenuItem,
-    Snackbar,
-} from '@mui/material';
+import { Alert, Box, Button, MenuItem, Snackbar } from '@mui/material';
 import { useLocale, useTranslations } from 'next-intl';
 import Grid from '@mui/material/Grid2';
 import { ChangeEventHandler, useState } from 'react';
@@ -41,6 +35,12 @@ export default function RegisterForm() {
     const handleSendValidationEmail = async () => {
         if (!executeRecaptcha) {
             console.error('Recaptcha not initialized');
+            return;
+        }
+
+        // check name and email fields
+        if (ownerName.length === 0 || ownerEmail.length === 0) {
+            openSnack(t('ownerNameAndEmailRequired'), 'error');
             return;
         }
 
@@ -124,11 +124,13 @@ export default function RegisterForm() {
             if (data.success) {
                 openSnack(t('registrationSuccess'), 'success');
                 setSuccess(true);
-                //TODO: Add a redirect to the success page
+                // Wait a second and redirect to /welcome/registrationsuccess/ page
+                setTimeout(() => {
+                    window.location.href = '/welcome/registrationsuccess';
+                }, 1000);
             } else {
                 console.log('registration failed', data);
                 openSnack(t('registrationFailed'), 'error');
-                //TODO: Add a redirect to the error page
             }
         } catch (e) {
             console.error('Registration failed', e);
@@ -168,8 +170,10 @@ export default function RegisterForm() {
                 <Typography sx={{ mb: 2 }} variant="body2">
                     {t('registrationDescription')}
                 </Typography>
-                <Typography sx={{ mb: 2 }} variant="body2">
-                    {t('registrationHint')}
+                <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
+                    {t.rich('registrationHint', {
+                        icon: () => <InfoRoundedIcon fontSize="small" sx={{verticalAlign: "bottom"}} />,
+                    })}
                 </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>
@@ -343,7 +347,13 @@ export default function RegisterForm() {
                             )}
                             <Grid size={8}>{/* Google reCAPTCHA */}</Grid>
                             <Grid size={12}>
-                                <Button type="submit" variant="contained" color="primary" loading={isSubmitting} disabled={success}>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                    loading={isSubmitting}
+                                    disabled={success}
+                                >
                                     {t('register')}
                                 </Button>
                             </Grid>

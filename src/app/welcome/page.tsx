@@ -15,7 +15,7 @@ export default function WelcomePage() {
                 height: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: 'start',
                 alignItems: 'center',
                 gap: 2,
             }}

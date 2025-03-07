@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 export type ModalEditProps = {
     isOpen: boolean;
     onClose: () => void;
-    onEdit: (value: string | null) => void;
+    onEdit: (value: string) => void;
     value: string | null;
     label?: React.ReactNode;
     modalSaveLabel?: string;
@@ -37,7 +37,7 @@ export default function ModalEdit({
     };
 
     const handleSave = () => {
-        onEdit(editedValue);
+        onEdit(editedValue ? editedValue : '');
         onClose();
     };
 

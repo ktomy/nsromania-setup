@@ -123,7 +123,10 @@
             "invalidOwnerEmail": "Adresa de e-mail a proprietarului nu este validă",
             "invalidOwnerName": "Numele proprietarului nu este valid",
             "invalidSubdomain": "Subdomeniul nu este valid",
-            "invalidTitle": "Titlul nu este valid"
+            "invalidTitle": "Titlul nu este valid",
+            "min" : "Minim {min} caractere",
+            "email": "Adresa de e-mail nu este validă",
+            "required": "Acest câmp este obligatoriu"
         },
         "ownerEmail": "E-mail",
         "ownerName": "Nume",

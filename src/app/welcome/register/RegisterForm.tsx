@@ -9,6 +9,14 @@ import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
+import { SubmitErrorHandler, SubmitHandler, useForm } from 'react-hook-form';
+import useEmailValidationSchema from './formSchema';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+export interface ValidateEmailForm {
+    ownerName: string;
+    ownerEmail: string;
+}
 
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
@@ -31,12 +39,29 @@ export default function RegisterForm() {
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const EmailValidationSchema = useEmailValidationSchema(t);
+    const {
+        handleSubmit: handleEmailValidation,
+        formState: { errors: emailValidationErrors, isValid: emailValidationIsValid },
+        control,
+    } = useForm<ValidateEmailForm>({
+        resolver: zodResolver(EmailValidationSchema),
+        mode: 'all',
+        defaultValues: { ownerName: '', ownerEmail: '' },
+    });
+    const emailValidationSubmitHandler: SubmitHandler<ValidateEmailForm> = (data) => {
+        // Here is where you would send the data to the server
+        console.log(data);
+    };
 
     const handleSendValidationEmail = async () => {
         if (!executeRecaptcha) {
             console.error('Recaptcha not initialized');
             return;
         }
+        console.log('Started validation');
+
+        handleEmailValidation(emailValidationSubmitHandler)();
 
         // check name and email fields
         if (ownerName.length === 0 || ownerEmail.length === 0) {
@@ -180,12 +205,14 @@ export default function RegisterForm() {
                         {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
                         <NSInput
                             value={ownerName}
+                            name="ownerName"
                             onChange={(e) => setOwnerName(e.target.value)}
                             required
                             fullWidth
                             label={t('ownerName')}
                             error={ownerName.length > 0 && !/^[a-zA-Z0-9\s]{1,64}$/.test(ownerName)}
                             size="small"
+                            control={control}
                             moreInformation={t('details.ownerName')}
                         />
                     </Grid>
@@ -202,13 +229,15 @@ export default function RegisterForm() {
                                 !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)
                             }
                             size="small"
+                            name="ownerEmail"
+                            control={control}
                             moreInformation={t('details.ownerEmail')}
                         />
                     </Grid>
                     <Grid size={12}>
                         {!validationEmailSent && (
                             <Button
-                                disabled={emailValidated}
+                                disabled={!emailValidationIsValid}
                                 onClick={handleSendValidationEmail}
                                 type="button"
                                 variant="contained"

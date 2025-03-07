@@ -3,9 +3,9 @@ import { TextField, IconButton, TextFieldProps, Tooltip, Box, ClickAwayListener 
 import EditIcon from '@mui/icons-material/Edit';
 import ModalEdit from './ModalEdit';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
-
+import { Control, Controller, FieldError, FieldValues, UseFormRegister } from 'react-hook-form';
 type EditableInputProps = {
-    value: string | null;
+    value: string;
     onEdit?: (value: string | null) => void;
     modalTitle?: string;
     modalDescription?: string;
@@ -13,6 +13,7 @@ type EditableInputProps = {
     modalCancelLabel?: string;
     modal?: boolean;
     moreInformation?: string;
+    control?: Control<any>;
 } & TextFieldProps;
 
 /**
@@ -48,7 +49,7 @@ export default function NSInput({
     ...props
 }: EditableInputProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [inputValue, setInputValue] = useState<string | null>(value);
+    const [inputValue, setInputValue] = useState<string>(value ?? '');
     const [tooltipVisible, setTooltipVisible] = useState(false);
 
     if (modal && !onEdit) {
@@ -72,7 +73,7 @@ export default function NSInput({
         setIsModalOpen(false);
     };
 
-    const handleModalEdit = (newValue: string | null) => {
+    const handleModalEdit = (newValue: string) => {
         setInputValue(newValue);
         onEdit && onEdit(newValue);
     };
@@ -81,52 +82,94 @@ export default function NSInput({
         setTooltipVisible((prev) => !prev);
     };
 
-    if (modal) {
+    if (props.name) {
+        return (
+            <Controller
+                name={props.name}
+                control={props.control}
+                render={({ field: { onChange, value }, fieldState: { error }, formState }) => {
+                    console.log('fieldState', error);
+
+                    return (
+                        <>
+                            <Box display="flex" alignItems="center">
+                                <TextField
+                                    {...props}
+                                    value={value}
+                                    error={error ? true : false}
+                                    onChange={(e) => {
+                                        onChange(e);
+                                        setInputValue(e.target.value);
+                                    }}
+                                />
+                                {moreInformation && (
+                                    // TODO: IMprove accessibility of the tooltip with arai-labels
+                                    <ClickAwayListener onClickAway={() => setTooltipVisible(false)}>
+                                        <Tooltip title={moreInformation} open={tooltipVisible}>
+                                            <IconButton onClick={handleToggleTooltip}>
+                                                <InfoRoundedIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </ClickAwayListener>
+                                )}
+                            </Box>
+                            {error && <Box color="error.main">{error.message}</Box>}
+                        </>
+                    );
+                }}
+            />
+        );
+    } else {
+        if (modal) {
+            return (
+                <>
+                    <TextField
+                        value={inputValue}
+                        onChange={handleInputChange}
+                        fullWidth
+                        size="small"
+                        {...props}
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <IconButton onClick={handleEditClick}>
+                                        <EditIcon />
+                                    </IconButton>
+                                ),
+                            },
+                        }}
+                    />
+
+                    <ModalEdit
+                        isOpen={isModalOpen}
+                        onClose={handleModalClose}
+                        onEdit={handleModalEdit}
+                        value={inputValue}
+                        label={props.label}
+                        modalTitle={modalTitle}
+                        modalCancelLabel={modalCancelLabel}
+                        modalSaveLabel={modalSaveLabel}
+                        disabled={props.disabled}
+                    />
+                </>
+            );
+        }
         return (
             <>
-                <TextField
-                    value={inputValue}
-                    onChange={handleInputChange}
-                    fullWidth
-                    size="small"
-                    {...props}
-                    slotProps={{
-                        input: {
-                            endAdornment: (
-                                <IconButton onClick={handleEditClick}>
-                                    <EditIcon />
+                <Box display="flex" alignItems="center">
+                    <TextField {...props} value={value} />
+                    {moreInformation && (
+                        // TODO: IMprove accessibility of the tooltip with arai-labels
+                        <ClickAwayListener onClickAway={() => setTooltipVisible(false)}>
+                            <Tooltip title={moreInformation} open={tooltipVisible}>
+                                <IconButton onClick={handleToggleTooltip}>
+                                    <InfoRoundedIcon />
                                 </IconButton>
-                            ),
-                        },
-                    }}
-                />
-                <ModalEdit
-                    isOpen={isModalOpen}
-                    onClose={handleModalClose}
-                    onEdit={handleModalEdit}
-                    value={inputValue}
-                    label={props.label}
-                    modalTitle={modalTitle}
-                    modalCancelLabel={modalCancelLabel}
-                    modalSaveLabel={modalSaveLabel}
-                    disabled={props.disabled}
-                />
+                            </Tooltip>
+                        </ClickAwayListener>
+                    )}
+                </Box>
             </>
         );
     }
-    return (
-        <Box display="flex" alignItems="center">
-            <TextField {...props} value={value} />
-            {moreInformation && (
-                // TODO: IMprove accessibility of the tooltip with arai-labels
-                <ClickAwayListener onClickAway={() => setTooltipVisible(false)}>
-                    <Tooltip title={moreInformation} open={tooltipVisible}>
-                        <IconButton onClick={handleToggleTooltip}>
-                            <InfoRoundedIcon />
-                        </IconButton>
-                    </Tooltip>
-                </ClickAwayListener>
-            )}
-        </Box>
-    );
 }

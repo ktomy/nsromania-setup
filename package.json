@@ -55,7 +55,7 @@
         "eslint-config-next": "^15.2.0",
         "eslint-plugin-storybook": "^0.11.3",
         "google-recaptcha": "^1.1.0",
-        "prettier": "^3.5.2",
+        "prettier": "^3.5.3",
         "prisma": "^6.4.1",
         "typescript": "^5.8.2"
     },

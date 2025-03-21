@@ -27,7 +27,7 @@
         "invariant": "^2.2.4",
         "mailersend": "^2.3.0",
         "mongodb": "^6.14.2",
-        "next": "^15.2.2",
+        "next": "^15.2.3",
         "next-auth": "5.0.0-beta.25",
         "next-extra": "^0.6.2",
         "next-intl": "^3.26.5",

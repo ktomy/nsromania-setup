@@ -18,8 +18,15 @@ export async function GET(request: Request, props: Props) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const currentUrl = new URL(request.url);
-    const absoluteUrl = new URL(`/api/domains/${domain.id}`, currentUrl.origin);
+    const baseUrl = new URL(
+        request.headers.get('x-forwarded-proto') +
+            '://' +
+            request.headers.get('x-forwarded-host') +
+            ':' +
+            request.headers.get('x-forwarded-port')
+    );
+
+    const absoluteUrl = new URL(`/api/domains/${domain.id}`, baseUrl);
 
     return NextResponse.redirect(absoluteUrl.toString());
 }

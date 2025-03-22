@@ -97,7 +97,7 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
             });
 
             if (!connectionStringInVariables) {
-                nsEnvironment.MONGODB_URI = `mongodb://${domain.domain}:${domain.apiSecret}@localhost:27017/${domain.domain}`;
+                nsEnvironment.MONGODB_URI = `mongodb://${domain.domain}:${encodeURIComponent(domain.apiSecret || '')}@localhost:27017/${domain.domain}`;
             }
 
             // console.log("Environment", nsEnvironment);

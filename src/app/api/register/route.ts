@@ -1,7 +1,6 @@
 import { validateCaptcha } from '@/lib/services/recaptcha';
 import { createRegistrationRequest, getAllRegistrationRequests, validateEmail } from '@/lib/services/registration';
 import { RegisterDomainRequest } from '@/types/domains';
-import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
 

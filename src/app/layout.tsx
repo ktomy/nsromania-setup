@@ -8,8 +8,6 @@ import { auth } from '../auth';
 import { Domain, DomainAdd, HowToReg } from '@mui/icons-material';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
-import LocaleSwitcher from '@/lib/components/LocaleSwitcher';
-import { Box } from '@mui/material';
 
 const BRANDING = {
     title: 'NSRomania',
@@ -29,7 +27,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     const messages = await getMessages();
     const t = await getTranslations('App');
 
-    let navigation: Navigation = [];
+    const navigation: Navigation = [];
 
     navigation.push({
         kind: 'header',

@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig = {
     eslint: {
-        dirs: ['./src/app', "./src/lib/components"],
+        dirs: ['./src/app', './src/lib/components'],
     },
     webpack: (config, { isServer }) => {
         if (isServer) {

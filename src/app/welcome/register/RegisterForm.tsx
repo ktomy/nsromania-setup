@@ -2,12 +2,13 @@
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { Alert, Box, Button, MenuItem, Snackbar } from '@mui/material';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Grid from '@mui/material/Grid2';
 import { ChangeEventHandler, useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
+import { InfoRounded } from '@mui/icons-material';
 
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
@@ -170,7 +171,7 @@ export default function RegisterForm() {
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.5 }}>
                     {t.rich('registrationHint', {
-                        icon: () => <InfoRoundedIcon fontSize="small" sx={{ verticalAlign: 'bottom' }} />,
+                        icon: () => <InfoRounded fontSize="small" sx={{ verticalAlign: 'bottom' }} />,
                     })}
                 </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>

@@ -14,9 +14,7 @@ const mockExecuteRecaptcha = jest.fn(() => Promise.resolve('1234567890'));
 
 jest.mock('react-google-recaptcha-v3', () => {
     return {
-        GoogleReCaptchaProvider: ({
-            children,
-        }: { children: React.ReactNode }): JSX.Element => {
+        GoogleReCaptchaProvider: ({ children }: { children: React.ReactNode }): JSX.Element => {
             return <>{children}</>;
         },
         useGoogleReCaptcha: () => ({
@@ -51,19 +49,19 @@ describe('RegisterForm', () => {
         const nameTextarea = screen.getByRole('textbox', { name: 'Nume' });
         const emailTextarea = screen.getByRole('textbox', { name: 'E-mail' });
 
-        console.log("Checking if email and name textareas are present");
+        console.log('Checking if email and name textareas are present');
         expect(emailTextarea).toBeInTheDocument();
         expect(nameTextarea).toBeInTheDocument();
         expect(validateEmailButton).toBeInTheDocument();
 
-        console.log("Filling in email and name textareas");
+        console.log('Filling in email and name textareas');
         fireEvent.change(nameTextarea, { target: { value: 'John Doe' } });
         fireEvent.change(emailTextarea, { target: { value: 'johnDoe@co.com' } });
         await act(async () => {
             fireEvent.click(validateEmailButton);
         });
 
-        console.log("Checking if validate email was called with the correct data");
+        console.log('Checking if validate email was called with the correct data');
         expect(global.fetch).toHaveBeenCalledWith(
             '/api/register/validate-email',
             expect.objectContaining({
@@ -75,7 +73,7 @@ describe('RegisterForm', () => {
         const validationCodeInput = screen.getByRole('textbox', { name: 'Cod validare e-mail' });
         const checkValidationCodeButton = screen.getByRole('button', { name: 'Verificați codul de validare' });
 
-        console.log("Checking if validation code input and check validation code button are present");
+        console.log('Checking if validation code input and check validation code button are present');
         expect(checkValidationCodeButton).toBeInTheDocument();
         expect(validationCodeInput).toBeInTheDocument();
         fireEvent.change(validationCodeInput, { target: { value: '123456' } });
@@ -84,7 +82,7 @@ describe('RegisterForm', () => {
             fireEvent.click(checkValidationCodeButton);
         });
 
-        console.log("Checking if check validation code was called with the correct data");
+        console.log('Checking if check validation code was called with the correct data');
         expect(global.fetch).toHaveBeenCalledWith(
             '/api/register/validate-verification-code',
             expect.objectContaining({
@@ -100,10 +98,10 @@ describe('RegisterForm', () => {
         const serverRegionInput = screen.getByRole('combobox', { name: 'Regiune server Dexcom' });
         const dexcomUsernameInput = screen.getByRole('textbox', { name: 'Nume utilizator Dexcom' });
         const dexcomPasswordInput = screen.getByRole('textbox', { name: 'Parolă Dexcom' });
-        
+
         const submitRegistrationButton = screen.getByRole('button', { name: 'Înregistrare' });
-        
-        console.log("Checking the rest of the fom inputs are present");
+
+        console.log('Checking the rest of the fom inputs are present');
         expect(subdomainInput).toBeInTheDocument();
         expect(siteTitleInput).toBeInTheDocument();
         expect(secretApiInput).toBeInTheDocument();
@@ -121,8 +119,8 @@ describe('RegisterForm', () => {
         await act(async () => {
             fireEvent.click(submitRegistrationButton);
         });
-        
-        console.log("Checking if the registration was called with the correct data");
+
+        console.log('Checking if the registration was called with the correct data');
         expect(global.fetch).toHaveBeenCalledWith(
             '/api/register',
             expect.objectContaining({

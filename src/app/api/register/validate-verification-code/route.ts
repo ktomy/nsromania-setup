@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { validateEmail } from '@/lib/services/registration';
 import { validateCaptcha } from '@/lib/services/recaptcha';
 

@@ -1,9 +1,9 @@
 import { auth } from '@/auth';
-import { createSubdomain, deleteSubdomain, listSubdomains } from '@/lib/services/dnsmanagement';
+import { deleteSubdomain, listSubdomains } from '@/lib/services/dnsmanagement';
 import { getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
-import { createVirtualHost, deleteVirtualHost, getVirtualHosts } from '@/lib/services/nginxmanagement';
-import { checkMongoDatabaseAndUser, createDatabaseAndUser, deleteDatabaseAndUser } from '@/lib/services/nsdatbasea';
-import { isDomainRunning, tryStartDomain, tryStopDomain } from '@/lib/services/nsruntime';
+import { deleteVirtualHost, getVirtualHosts } from '@/lib/services/nginxmanagement';
+import { checkMongoDatabaseAndUser, deleteDatabaseAndUser } from '@/lib/services/nsdatbasea';
+import { isDomainRunning, tryStopDomain } from '@/lib/services/nsruntime';
 import { User } from '@prisma/client';
 import { NextRequest } from 'next/server';
 

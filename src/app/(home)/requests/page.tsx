@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import { Alert, Box, Chip, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRenderCellParams, GridRowsProp } from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid2';
-import { Check, Close, Info, OpenInNew, PendingActions, ThumbDown, ThumbUp } from '@mui/icons-material';
+import { Check, Close, Info, OpenInNew, PendingActions, Settings, ThumbDown, ThumbUp } from '@mui/icons-material';
 import { useSession } from 'next-auth/react';
 import { register_request } from '@prisma/client';
 import { formatDate } from '@/lib/utils';
@@ -108,6 +108,14 @@ export default function RequestsPage() {
         router.push(`/requests/${id}`);
     };
 
+    const navigateToSiteInformation = (subdomain: string) => {
+        fetch(`/api/domains/by-subdomain/${subdomain}`).then((response) => {
+            response.json().then((data) => {
+                router.push(`/domains/${data.id}`);
+            });
+        });
+    };
+
     const visitWebsite = (subdomain: string) => {
         window.open(`https://${subdomain}.nsromania.info/`, '_blank');
     };
@@ -120,6 +128,11 @@ export default function RequestsPage() {
                     if (request.status === 'pending') {
                         actions = [
                             {
+                                icon: <Info color="primary" />,
+                                label: t('details'),
+                                onClick: () => navigateToDetails(request.id),
+                            },
+                            {
                                 icon: <ThumbUp color="success" />,
                                 label: t('approve'),
                                 onClick: () => handleRequestsActions(request.id, 'approve'),
@@ -129,11 +142,6 @@ export default function RequestsPage() {
                                 label: t('reject'),
                                 onClick: () => handleRequestsActions(request.id, 'reject'),
                             },
-                            {
-                                icon: <Info color="primary" />,
-                                label: t('details'),
-                                onClick: () => navigateToDetails(request.id),
-                            },
                         ];
                     } else if (request.status === 'approved') {
                         actions = [
@@ -141,6 +149,11 @@ export default function RequestsPage() {
                                 icon: <Info color="primary" />,
                                 label: t('details'),
                                 onClick: () => navigateToDetails(request.id),
+                            },
+                            {
+                                icon: <Settings />,
+                                label: t('siteInformation'),
+                                onClick: () => navigateToSiteInformation(request.subdomain),
                             },
                             {
                                 icon: <OpenInNew />,

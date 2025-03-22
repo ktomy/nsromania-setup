@@ -1,8 +1,7 @@
-import { exec } from "child_process";
-import { promises as fs } from "fs";
+import { exec } from 'child_process';
+import { promises as fs } from 'fs';
 
 export async function createSubdomain(subdomain: string) {
-
     if (!subdomain) {
         throw new Error('Subdomain name is required');
     }
@@ -41,7 +40,6 @@ export async function createSubdomain(subdomain: string) {
 }
 
 export async function deleteSubdomain(subdomain: string) {
-
     if (!subdomain) {
         throw new Error('Subdomain name is required');
     }
@@ -68,7 +66,6 @@ export async function deleteSubdomain(subdomain: string) {
         const newZoneFile = zoneFile.replace(entryToRemove, '');
         await fs.writeFile(zoneFilePath, newZoneFile);
 
-
         // Reload BIND configuration using rndc
         let lastErrorOutput: string | null = null;
         try {
@@ -77,7 +74,6 @@ export async function deleteSubdomain(subdomain: string) {
         } catch (error) {
             throw new Error(`Failed to reload DNS: ${error}, ${lastErrorOutput}`);
         }
-
     } catch (error) {
         throw new Error(`Failed to delete subdomain: ${error}`);
     }

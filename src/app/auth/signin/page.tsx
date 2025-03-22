@@ -7,9 +7,7 @@ import SignOutComponent from '@/lib/components/SignOutComponent';
 export default async function SignIn() {
     const session = await auth();
     if (session) {
-        return (
-            <SignOutComponent user={session.user} />
-        );
+        return <SignOutComponent user={session.user} />;
     }
 
     return (
@@ -40,9 +38,9 @@ export default async function SignIn() {
                             error:
                                 error.type === 'CredentialsSignin'
                                     ? 'Invalid credentials.'
-                                    : error.type === 'AccessDenied' ?
-                                        "Unknown email address"
-                                        : 'An error with Auth.js occurred.',
+                                    : error.type === 'AccessDenied'
+                                      ? 'Unknown email address'
+                                      : 'An error with Auth.js occurred.',
                             type: error.type,
                         };
                     }

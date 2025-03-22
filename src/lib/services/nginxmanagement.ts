@@ -1,8 +1,7 @@
-import { exec } from "child_process";
-import { promises as fs } from "fs";
+import { exec } from 'child_process';
+import { promises as fs } from 'fs';
 
 export async function createVirtualHost(domain: string, port: number) {
-
     if (!domain) {
         throw new Error('Domain name is required');
     }
@@ -36,9 +35,7 @@ export async function createVirtualHost(domain: string, port: number) {
     const template = await fs.readFile(virtualHostTemplateFIlePath, 'utf8');
 
     // Replace placeholders
-    const configContent = template
-        .replace(/\[% subdomain %\]/g, domain)
-        .replace(/\[% port %\]/g, port.toString());
+    const configContent = template.replace(/\[% subdomain %\]/g, domain).replace(/\[% port %\]/g, port.toString());
 
     // Save the new virtual host config
     await fs.writeFile(virtualHostFilePath, configContent, 'utf8');
@@ -61,7 +58,6 @@ export async function createVirtualHost(domain: string, port: number) {
 }
 
 export async function deleteVirtualHost(domain: string) {
-
     if (!domain) {
         throw new Error('Domain name is required');
     }
@@ -104,9 +100,8 @@ export async function getVirtualHosts() {
     const files = await fs.readdir(sitesAvailableDir);
 
     const virtualHosts = files
-        .filter(file => (file !== '_template' && file !== '00-default' && file !== 'setup'))
-        .map(file => file);
+        .filter((file) => file !== '_template' && file !== '00-default' && file !== 'setup')
+        .map((file) => file);
 
     return virtualHosts;
 }
-

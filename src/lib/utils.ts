@@ -1,6 +1,6 @@
 /**
  * Formats a given Date object into a string with the format yyyy-MM-dd HH:mm:ss.
- * 
+ *
  * @param date - The Date object to format.
  * @returns A string representing the formatted date and time.
  */
@@ -24,19 +24,19 @@ export const formatDate = (date: Date | null | undefined): string => {
 
 /**
  * This function formats a number of bytes into a human-readable string.
- * Examples: 
+ * Examples:
  * ```ts
  * 1024 -> "1 KB"
  * 1024 * 1024 -> "1 MB"
  * ```
  * @param bytes number of bytes to format
- * @returns 
+ * @returns
  */
 export function formatBytes(bytes: number | null): string {
-    if (bytes === null) return "Unknown";
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === null) return 'Unknown';
+    if (bytes === 0) return '0 Bytes';
 
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const k = 1024; // Factor for conversion
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 

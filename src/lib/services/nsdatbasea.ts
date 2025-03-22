@@ -7,7 +7,6 @@ interface MongoUser {
 }
 
 export async function checkMongoDatabaseAndUser(dbName: string, userName: string): Promise<boolean> {
-
     if (!process.env.MONGO_URL) {
         throw new Error('Missing environment variable "MONGO_URL"');
     }
@@ -20,15 +19,13 @@ export async function checkMongoDatabaseAndUser(dbName: string, userName: string
 
         // Check if database exists
         const databases = await adminDb.listDatabases();
-        const dbExists = databases.databases.some(db => db.name === dbName);
+        const dbExists = databases.databases.some((db) => db.name === dbName);
         if (!dbExists) {
             return false;
         }
         const users = await client.db(dbName).command({ usersInfo: 1 });
         const userExists = users.users.some((user: MongoUser) => user.user === userName);
         return userExists;
-
-
     } catch (error) {
         console.error('Error checking database and user:', error);
         return false;
@@ -56,7 +53,6 @@ export async function createDatabaseAndUser(name: string, password: string) {
 
         await db.collection('dummy').insertOne({ initialized: true });
 
-
         // const adminDb = client.db('admin').admin();
 
         // // Create database
@@ -68,7 +64,6 @@ export async function createDatabaseAndUser(name: string, password: string) {
         //     pwd: password,
         //     roles: [{ role: 'readWrite', db: name }],
         // });
-
     } catch (error) {
         console.error('Error creating database and user:', error);
         throw error;
@@ -76,7 +71,6 @@ export async function createDatabaseAndUser(name: string, password: string) {
         await client.close();
     }
     console.log(`Database and user created: ${name}`);
-
 }
 
 export async function deleteDatabaseAndUser(name: string) {
@@ -95,8 +89,6 @@ export async function deleteDatabaseAndUser(name: string) {
 
         // Drop database
         await userDb.dropDatabase();
-
-
     } catch (error) {
         console.error('Error deleting database and user:', error);
         throw error;
@@ -104,7 +96,6 @@ export async function deleteDatabaseAndUser(name: string) {
         await client.close();
     }
     console.log(`Database and user deleted: ${name}`);
-
 }
 
 export async function getCollections(dbName: string) {
@@ -117,7 +108,7 @@ export async function getCollections(dbName: string) {
     try {
         await client.connect();
         const collections = await client.db(dbName).listCollections().toArray();
-        return collections.map(collection => collection.name);
+        return collections.map((collection) => collection.name);
     } catch (error) {
         console.error('Error getting collections:', error);
         throw error;
@@ -141,7 +132,7 @@ export async function getLastDbEntry(dbName: string) {
         await client.connect();
         // check if collection 'entries' exists
         const collections = await client.db(dbName).listCollections().toArray();
-        if (!collections.some(collection => collection.name === 'entries')) {
+        if (!collections.some((collection) => collection.name === 'entries')) {
             return null;
         }
         // get one entry from 'entries' sorted by 'date' descending
@@ -150,7 +141,6 @@ export async function getLastDbEntry(dbName: string) {
             return null;
         }
         return new Date(lastEntry[0].date);
-
     } catch (error) {
         console.error('Error getting last database entry:', error);
         throw error;
@@ -174,7 +164,6 @@ export async function getDbSize(dbName: string) {
         await client.connect();
         const stats = await client.db(dbName).stats();
         return stats.dataSize;
-
     } catch (error) {
         console.error('Error getting database size:', error);
         throw error;
@@ -182,4 +171,3 @@ export async function getDbSize(dbName: string) {
         await client.close();
     }
 }
-

@@ -9,8 +9,12 @@ export default async function HomePage() {
     const t = await getTranslations('HomePage');
     const lastCommitHash = process.env.NEXT_PUBLIC_COMMIT_HASH || 'Unknown';
 
-    return <Box>
-        <Typography>{t('welcomeMessage', { name: session?.user?.name || 'User', id: session?.user?.id || "Unknown ID" })}</Typography>
-        <Typography variant="body2">Last commit: {lastCommitHash}</Typography>
-    </Box>;
+    return (
+        <Box>
+            <Typography>
+                {t('welcomeMessage', { name: session?.user?.name || 'User', id: session?.user?.id || 'Unknown ID' })}
+            </Typography>
+            <Typography variant="body2">Last commit: {lastCommitHash}</Typography>
+        </Box>
+    );
 }

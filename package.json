@@ -19,7 +19,7 @@
         "@fontsource/roboto": "^5.1.1",
         "@mailchimp/mailchimp_transactional": "^1.0.59",
         "@mui/icons-material": "^6.4.6",
-        "@mui/material": "^6.4.7",
+        "@mui/material": "^6.4.8",
         "@mui/material-nextjs": "^6.4.3",
         "@mui/x-data-grid": "^7.28.1",
         "@prisma/client": "^6.5.0",

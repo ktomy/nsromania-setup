@@ -12,7 +12,11 @@ export default async function HomePage() {
     return (
         <Box>
             <Typography>
-                {t('welcomeMessage', { name: session?.user?.name || 'User', id: session?.user?.id || 'Unknown ID' })}
+                {t('welcomeMessage', { 
+                    name: session?.user?.name || 'User',
+                    role: session?.user?.role || 'Unknown',
+                    id: session?.user?.id || 'Unknown'
+                })}
             </Typography>
             <Typography variant="body2">Last commit: {lastCommitHash}</Typography>
         </Box>

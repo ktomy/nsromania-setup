@@ -194,6 +194,7 @@ export default function RequestsPage() {
     useEffect(() => {
         if (!session) return;
         fetchRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session]);
 
     if (status === 'loading') {

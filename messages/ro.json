@@ -61,7 +61,7 @@
   },
   "HomePage": {
     "title": "Salut, lume!",
-    "welcomeMessage": "Bine ați venit la Nightscout România, {name} ({id}). Rol!"
+    "welcomeMessage": "Welcome to Nightscout Romania, {name} ({role}), id: {id}!"
   },
   "LocaleSwitcher": {
     "en": "Engleza",

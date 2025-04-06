@@ -170,7 +170,10 @@
     "visit": "Visit",
     "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați",
     "siteInformation": "Site information",
-    "notAuthorized": "Not authorized"
+    "notAuthorized": "Not authorized",
+    "requestDetails": "request details",
+    "basicData": "Main details",
+    "dexcomSettings": "Dexcom settings"
   },
   "SignOutComponent": {
     "alreadySignedIn": "Sunteți deja logat(a).",

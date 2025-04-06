@@ -170,7 +170,10 @@
     "visit": "Visit",
     "welcomeMessage": "Here are the registration request, please be minful when evaluating",
     "siteInformation": "Site information",
-    "notAuthorized": "Not authorized"
+    "notAuthorized": "Not authorized",
+    "requestDetails": "request details",
+    "basicData": "Main details",
+    "dexcomSettings": "Dexcom settings"
   },
   "SignOutComponent": {
     "alreadySignedIn": "You are already signed in.",

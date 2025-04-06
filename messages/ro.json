@@ -170,7 +170,10 @@
     "visit": "Vizitează",
     "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați",
     "siteInformation": "Detaliile site-ului",
-    "notAuthorized": "No aveti acces"
+    "notAuthorized": "No aveti acces",
+    "requestDetails": "cerere de inregistrare",
+    "basicData": "Date principale",
+    "dexcomSettings": "Configurari Dexcom"
   },
   "SignOutComponent": {
     "alreadySignedIn": "Sunteți deja logat(a).",

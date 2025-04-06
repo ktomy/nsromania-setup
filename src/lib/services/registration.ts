@@ -73,6 +73,16 @@ export async function getAllRegistrationRequests(): Promise<register_request[]> 
     return requests;
 }
 
+export async function getRegistrationRequestById(id: number): Promise<register_request | null> {
+    const request = await prisma.register_request.findUnique({
+        where: {
+            id: id,
+        },
+    });
+    
+    return request;
+}
+
 export async function approveRegistrationRequest(id: number, approvingUser: User) {
     const request = await prisma.register_request.findUnique({
         where: {

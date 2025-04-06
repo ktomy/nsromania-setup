@@ -4,12 +4,13 @@ import Typography from '@mui/material/Typography';
 import { Alert, Box, Chip, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRenderCellParams, GridRowsProp } from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid2';
-import { Check, Close, Info, OpenInNew, PendingActions, Settings, ThumbDown, ThumbUp } from '@mui/icons-material';
+import { Info, OpenInNew, Settings, ThumbDown, ThumbUp } from '@mui/icons-material';
 import { register_request, User } from '@prisma/client';
 import { formatDate } from '@/lib/utils';
-import { JSX, Key, MouseEventHandler, ReactElement, useEffect, useState } from 'react';
+import { Key, MouseEventHandler, ReactElement, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import getStatusChipProps from './utils';
 
 type Action = {
     icon: ReactElement;
@@ -17,54 +18,14 @@ type Action = {
     onClick: MouseEventHandler<HTMLButtonElement>;
 };
 
-type StatusProp = {
-    label: string;
-    color: 'warning' | 'success' | 'error' | 'default';
-    icon?: JSX.Element;
-    variant: 'filled' | 'outlined';
-};
-
-
 interface RegistrationRequestsListProps {
     user: User;
 }
 
-type GridRegisterRequest = Partial<register_request> & { actions: Action[]; statusProps: StatusProp };
-
-// Helper function to get status chip configuration
-function getStatusChipProps(statusValue: string, t: (key: string) => string) {
-    switch (statusValue.toLowerCase()) {
-        case 'pending':
-            return {
-                label: t('pending'),
-                color: 'warning' as const,
-                icon: <PendingActions fontSize="small" />,
-                variant: 'filled' as const,
-            };
-        case 'approved':
-            return {
-                label: t('approved'),
-                color: 'success' as const,
-                icon: <Check fontSize="small" />,
-                variant: 'filled' as const,
-            };
-        case 'denied':
-        case 'rejected':
-            return {
-                label: t('rejected'),
-                color: 'error' as const,
-                icon: <Close fontSize="small" />,
-                variant: 'filled' as const,
-            };
-        default:
-            return {
-                label: statusValue,
-                color: 'default' as const,
-                icon: undefined,
-                variant: 'outlined' as const,
-            };
-    }
-}
+type GridRegisterRequest = Partial<register_request> & { 
+    actions: Action[]; 
+    statusProps: ReturnType<typeof getStatusChipProps>;
+};
 
 export default function RegistrationRequestsList({ user }: RegistrationRequestsListProps) {
     const t = useTranslations('RequestsPage');
@@ -197,8 +158,6 @@ export default function RegistrationRequestsList({ user }: RegistrationRequestsL
     useEffect(() => {
         fetchRequests();
     }, [user]);
-
-
 
     const columns: GridColDef[] = [
         { field: 'domain', headerName: t('domain'), width: 200 },

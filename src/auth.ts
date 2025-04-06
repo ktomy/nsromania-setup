@@ -7,6 +7,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './lib/prisma';
 import { User } from '@prisma/client';
 import Credentials from 'next-auth/providers/credentials';
+import { sendSignInEmail } from './lib/services/sendemail';
 
 const providers: Provider[] = [
     GitHub({
@@ -21,10 +22,11 @@ const providers: Provider[] = [
     }),
     Sendgrid({
         apiKey: process.env.SENDGRID_API_KEY,
-        from: 'NSRomania <login@nsromania.info>',
         id: 'nodemailer',
         name: 'Email',
-        //allowDangerousEmailAccountLinking: true,
+        sendVerificationRequest: async ({ identifier: email, url }) => {
+            return sendSignInEmail(email, url);
+        }
     }),
     process.env.NODE_ENV === 'development'
         ? Credentials({

@@ -96,7 +96,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             return false; // Redirect unauthenticated users to login page
         },
-        async signIn({ user, account, profile, email, credentials }) {
+        async signIn({ user, profile }) {
             // console.log("SignIn arguments:\nuser: ", user,
             //     "\naccount: ", account,
             //     "\nprofile: ", profile,
@@ -141,6 +141,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async session({ session, token }) {
             // console.log("Session arguments:\nsession: ", session, "\ntoken: ", token);
             session.user.role = token?.role as string | undefined;
+            session.user.id = typeof token?.id === 'string' ? token.id : '';
             return session;
         },
         async jwt({ token, user }) {
@@ -152,7 +153,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     },
                 });
             }
-            if (prismaUser) token.role = prismaUser.role;
+            if (prismaUser) {
+                token.role = prismaUser.role;
+                token.id = prismaUser.id;
+            }
             // console.log("JWT arguments:\ntoken: ", token, "\nuser: ", user);
             return token;
         },

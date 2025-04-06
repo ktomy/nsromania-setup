@@ -169,7 +169,8 @@
     "status": "Status",
     "visit": "Vizitează",
     "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați",
-    "siteInformation": "Detaliile site-ului"
+    "siteInformation": "Detaliile site-ului",
+    "notAuthorized": "No aveti acces"
   },
   "SignOutComponent": {
     "alreadySignedIn": "Sunteți deja logat(a).",

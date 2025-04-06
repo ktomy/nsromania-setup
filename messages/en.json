@@ -169,7 +169,8 @@
     "status": "Status",
     "visit": "Visit",
     "welcomeMessage": "Here are the registration request, please be minful when evaluating",
-    "siteInformation": "Site information"
+    "siteInformation": "Site information",
+    "notAuthorized": "Not authorized"
   },
   "SignOutComponent": {
     "alreadySignedIn": "You are already signed in.",

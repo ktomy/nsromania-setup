@@ -49,7 +49,7 @@ importers:
         version: 8.1.4
       '@toolpad/core':
         specifier: latest
-        version: 0.13.0(46ecb1075fc6c618d7b57865aa0dc5bc)
+        version: 0.13.0(oeoatvddmb5ienhgzqmwh6o5ny)
       invariant:
         specifier: ^2.2.4
         version: 2.2.4
@@ -157,8 +157,8 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0(eslint@9.24.0(jiti@1.21.7))
       eslint-plugin-storybook:
-        specifier: ^0.11.6
-        version: 0.11.6(eslint@9.24.0(jiti@1.21.7))(typescript@5.8.3)
+        specifier: ^0.12.0
+        version: 0.12.0(eslint@9.24.0(jiti@1.21.7))(typescript@5.8.3)
       google-recaptcha:
         specifier: ^1.1.0
         version: 1.1.0
@@ -3713,8 +3713,8 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
 
-  eslint-plugin-storybook@0.11.6:
-    resolution: {integrity: sha512-3WodYD6Bs9ACqnB+TP2TuLh774c/nacAjxSKOP9bHJ2c8rf+nrhocxjjeAWNmO9IPkFIzTKlcl0vNXI2yYpVOw==}
+  eslint-plugin-storybook@0.12.0:
+    resolution: {integrity: sha512-Lg5I0+npTgiYgZ4KSvGWGDFZi3eOCNJPaWX0c9rTEEXC5wvooOClsP9ZtbI4hhFKyKgYR877KiJxbRTSJq9gWA==}
     engines: {node: '>= 18'}
     peerDependencies:
       eslint: '>=8'
@@ -9285,7 +9285,7 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.0
 
-  '@toolpad/core@0.13.0(46ecb1075fc6c618d7b57865aa0dc5bc)':
+  '@toolpad/core@0.13.0(oeoatvddmb5ienhgzqmwh6o5ny)':
     dependencies:
       '@babel/runtime': 7.27.0
       '@mui/icons-material': 6.4.10(@mui/material@6.4.10(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.20)(react@18.3.1)
@@ -11097,7 +11097,7 @@ snapshots:
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-storybook@0.11.6(eslint@9.24.0(jiti@1.21.7))(typescript@5.8.3):
+  eslint-plugin-storybook@0.12.0(eslint@9.24.0(jiti@1.21.7))(typescript@5.8.3):
     dependencies:
       '@storybook/csf': 0.1.13
       '@typescript-eslint/utils': 8.29.0(eslint@9.24.0(jiti@1.21.7))(typescript@5.8.3)

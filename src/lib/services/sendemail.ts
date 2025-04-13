@@ -1,5 +1,6 @@
 //import { EmailParams, MailerSend, Recipient } from "mailersend";
 
+import { RegisterDomainRequest } from "@/types/domains";
 import { EmailConfig } from "next-auth/providers";
 
 export async function sendWelcomeEmail(to: string, subdomain: string, api_secret: string): Promise<boolean> {
@@ -109,4 +110,46 @@ export async function sendSignInEmail(email: string, url: string) {
         console.log('Email not sent');
     }
 
+}
+
+export async function sendRegistrationNotificationEmail(
+    request: RegisterDomainRequest,
+    adminEmails: {name: string, email: string}[]) {
+
+    console.log('Sending registration notification');
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+
+    const message = {
+        from: {
+            email: 'notifications@nsromania.info',
+            name: 'NSRomania',
+        },
+        reply_to: {
+            email: 'artiom+nsromania@gmail.com',
+            name: 'Echipa NSRomania',
+        },
+        template_id: 'd-44f5275b4a554af984dd2d26805afd2e',
+        personalizations: [
+            {
+                to: adminEmails,
+                dynamic_template_data: {
+                    subject: 'Notificare cerere inregistrare NSRomania',
+                    subdomain: request.domain,
+                    ownerName: request.ownerName,
+                    ownerEmail: request.ownerEmail,
+                    dataSource: request.dataSource,
+                    title: request.title,
+                    requestId: request.id,
+                },
+            },
+        ],
+    };
+
+    const result = await sgMail.send(message, true);
+    if (result[0].statusCode === 202) {
+        console.log('Email sent');
+    } else {
+        console.log('Email not sent');
+    }
 }

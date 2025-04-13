@@ -1,6 +1,6 @@
 import { prisma } from '../prisma';
 import { NSDomain, register_request, User } from '@prisma/client';
-import { sendValidationEmail } from './sendemail';
+import { sendRegistrationNotificationEmail, sendValidationEmail } from './sendemail';
 import { RegisterDomainRequest } from '@/types/domains';
 
 export async function initiateEmailValidation(email: string) {
@@ -64,6 +64,25 @@ export async function createRegistrationRequest(request: RegisterDomainRequest):
             status: 'pending',
         },
     });
+
+    request.id = registrationRequest.id;
+
+    // now let's get all admins
+    const admins = await prisma.user.findMany({
+        where: {
+            role: 'admin',
+        },
+    });
+    // create an array with objects containing the email and name of each admin
+    const adminEmails = admins.map((admin) => {
+        return {
+            email: admin.email!,
+            name: admin.name || admin.email!,
+        };
+    });
+    // send an email to each admin
+
+    await sendRegistrationNotificationEmail(request, adminEmails);
 
     return true;
 }

@@ -30,4 +30,5 @@ export interface RegisterDomainRequest {
     dexcomServer: string;
     emailVerificationToken: string;
     reCAPTCHAToken: string;
+    id?: number;
 }

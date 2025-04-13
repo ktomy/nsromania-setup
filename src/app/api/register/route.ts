@@ -1,5 +1,5 @@
 import { validateCaptcha } from '@/lib/services/recaptcha';
-import { createRegistrationRequest, getAllRegistrationRequests, validateEmail } from '@/lib/services/registration';
+import { createRegistrationRequest, getAllRegistrationRequests, validateEmail, validateSubdomain } from '@/lib/services/registration';
 import { RegisterDomainRequest } from '@/types/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
@@ -40,6 +40,12 @@ export async function POST(req: Request) {
             headers: { 'Content-Type': 'application/json' },
         });
     }
+
+    if (!(await validateSubdomain(registrationRequest.domain))) {
+        return new Response(JSON.stringify({ error: 'Subdomain already in use' }), {
+            status: 409,
+            headers: { 'Content-Type': 'application/json' },
+        })};
 
     if (await createRegistrationRequest(registrationRequest)) {
         return new Response(JSON.stringify({ success: true }), {

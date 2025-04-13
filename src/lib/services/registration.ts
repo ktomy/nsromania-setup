@@ -49,6 +49,31 @@ export async function validateEmail(email: string, validationCode: string) {
     return false;
 }
 
+export async function validateSubdomain(subdomain: string) {
+    // check if the subdomain is already in use
+    const domain = await prisma.nSDomain.findUnique({
+        where: {
+            domain: subdomain,
+        },
+    });
+    if (domain) {
+        return false;
+    }
+    // check if the subdomain is already in use in the register_request table
+    const request = await prisma.register_request.findFirst({
+        where: {
+            subdomain: subdomain,
+        },
+    });
+    
+    if (request) {
+        return false;
+    }
+
+    return true;
+}
+
+
 export async function createRegistrationRequest(request: RegisterDomainRequest): Promise<boolean> {
     const registrationRequest = await prisma.register_request.create({
         data: {

@@ -1,4 +1,10 @@
 export async function validateCaptcha(token: string): Promise<boolean> {
+
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Skipping reCAPTCHA validation in development mode');
+        return true;
+    }
+
     try {
         const secretKey = process.env.RECAPTCHA_SECRET_KEY;
         const response = await fetch(

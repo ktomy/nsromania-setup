@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Button, MenuItem, Snackbar } from '@mui/material';
+import { Alert, Box, Button, debounce, MenuItem, Snackbar } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import Grid from '@mui/material/Grid2';
 import { ChangeEventHandler, useState } from 'react';
@@ -30,6 +30,7 @@ export default function RegisterForm() {
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [subdomainIsValid, setSubbdomainIsValid] = useState(false);
 
     const handleSendValidationEmail = async () => {
         if (!executeRecaptcha) {
@@ -62,6 +63,50 @@ export default function RegisterForm() {
         openSnack(t('sendingValidationEmail'), 'info');
         setValidationEmailSent(true);
     };
+
+    const validateSubdomain = async () => {
+        console.log('Validating subdomain', subDomain);
+        if (!executeRecaptcha) {
+            console.error('Recaptcha not initialized');
+            setSubbdomainIsValid(false);
+            return;
+        }
+        const token =
+            process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('subdomain_validation');
+        const res = await fetch('/api/register/validate-subdomain', {
+            method: 'POST',
+            body: JSON.stringify({ token: token, subdomain: subDomain }),
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (res.status === 200) {
+            setSubbdomainIsValid(true);
+        } else {
+            setSubbdomainIsValid(false);
+        }
+    };
+
+    // Create a debounced version of validateSubdomain
+    const debouncedValidateSubdomain = React.useCallback(
+        debounce(() => {
+            if (subDomain.length > 0) {
+                validateSubdomain();
+            }
+        }, 500), // 500ms delay
+        [subDomain, executeRecaptcha]
+    );
+
+    React.useEffect(() => {
+        if (subDomain.length > 0 && /^[a-z0-9]{1,32}$/.test(subDomain)) {
+            debouncedValidateSubdomain();
+        } else {
+            setSubbdomainIsValid(false);
+        }
+
+        // Cleanup the debounced function on unmount or when dependencies change
+        return () => {
+            debouncedValidateSubdomain.clear();
+        };
+    }, [subDomain, debouncedValidateSubdomain]);
 
     const handleCheckValidationCode = async () => {
         if (!executeRecaptcha) {
@@ -258,7 +303,7 @@ export default function RegisterForm() {
                                     required
                                     fullWidth
                                     label={t('subDomain')}
-                                    error={subDomain.length > 0 && !/^[a-z0-9]{1,32}$/.test(subDomain)}
+                                    error={subDomain.length > 0 && !subdomainIsValid}
                                     size="small"
                                     moreInformation={t('details.subDomain')}
                                 />
@@ -351,7 +396,7 @@ export default function RegisterForm() {
                                     variant="contained"
                                     color="primary"
                                     loading={isSubmitting}
-                                    disabled={success}
+                                    disabled={success && !subdomainIsValid}
                                 >
                                     {t('register')}
                                 </Button>

@@ -103,6 +103,9 @@ export async function getRegistrationRequestById(id: number): Promise<register_r
 }
 
 export async function approveRegistrationRequest(id: number, approvingUser: User) {
+
+    console.log('Approving registration request with ID:', id);
+
     const request = await prisma.register_request.findUnique({
         where: {
             id: id,
@@ -163,22 +166,25 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
     await prisma.register_request.update({
         where: {
             id: id,
-            chnged_by: approvingUser.id,
         },
         data: {
             status: 'approved',
+            chnged_by: approvingUser.id,
         },
     });
 }
 
 export async function rejectRegistrationRequest(id: number, rejectingUser: User) {
+
+    console.log('Rejecting registration request with ID:', id);
+    
     await prisma.register_request.update({
         where: {
             id: id,
-            chnged_by: rejectingUser.id,
         },
         data: {
             status: 'rejected',
+            chnged_by: rejectingUser.id,
         },
     });
 }

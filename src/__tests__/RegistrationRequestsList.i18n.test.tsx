@@ -1,9 +1,10 @@
 // Unit tests for RegistrationRequestsList
 import React from 'react';
 import { render } from '@testing-library/react';
-import RegistrationRequestsList from '../RegistrationRequestsList';
 import path from 'path';
-import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } from '../../../../lib/test-utils';
+import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } 
+    from '@/lib/test-utils';
+import RegistrationRequestsList from '@/app/(home)/requests/RegistrationRequestsList';
 
 // Mock fetch
 global.fetch = jest.fn(() =>
@@ -49,7 +50,7 @@ describe('Translations', () => {
         console.log('Unique keys:', uniqueKeys);
 
         // Validate keys using the utility
-        const messagesPath = path.join(__dirname, '../../../../../messages');
+        const messagesPath = path.join(__dirname, '../../messages');
         validateTranslationKeys(uniqueKeys, 'RequestsPage', messagesPath);
     });
 });

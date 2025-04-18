@@ -1,25 +1,14 @@
 // Unit tests for RegisterForm
 import React from 'react';
 import { render } from '@testing-library/react';
-import RegisterForm from '../RegisterForm';
+import RegisterForm from '../app/welcome/register/RegisterForm';
 import path from 'path';
-import { extractTranslationKeys, validateTranslationKeys } from '../../../../lib/test-utils';
+import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } from '@/lib/test-utils';
+
 
 // Mock next-intl
 jest.mock('next-intl', () => ({
-    useTranslations: () => {
-        const t = (key: string, params?: any) => {
-            if (params) {
-                return Object.entries(params).reduce(
-                    (acc, [k, v]) => acc.replace(`{${k}}`, String(v)),
-                    '#$%' + key + '$%#'
-                );
-            }
-            return '#$%' + key + '$%#';
-        };
-        t.rich = (key: string, { icon }: any) => (icon ? [icon(), key] : key);
-        return t;
-    },
+    useTranslations: () => createMockTranslator(),
 }));
 
 describe('Translations', () => {
@@ -32,7 +21,7 @@ describe('Translations', () => {
         console.log('Unique keys:', uniqueKeys);
 
         // Validate keys using the utility
-        const messagesPath = path.join(__dirname, '../../../../../messages');
+        const messagesPath = path.join(__dirname, '../../messages');
         validateTranslationKeys(uniqueKeys, 'RegisterPage', messagesPath);
     });
 });

@@ -3,8 +3,8 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import fs from 'fs';
 import path from 'path';
-import RegistrationSuccess from '../RegistrationSuccess';
 import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } from '@/lib/test-utils';
+import RegistrationSuccess from '@/app/welcome/registrationsuccess/RegistrationSuccess';
 
 // Mock next-intl
 jest.mock('next-intl', () => ({
@@ -21,7 +21,7 @@ describe('Translations', () => {
         console.log('Unique keys:', uniqueKeys);
 
         // Validate keys using the utility
-        const messagesPath = path.join(__dirname, '../../../../../messages');
+        const messagesPath = path.join(__dirname, '../../messages');
         validateTranslationKeys(uniqueKeys, 'RegistrationSuccessPage', messagesPath);
     });
 });

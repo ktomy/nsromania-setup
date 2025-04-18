@@ -1,9 +1,8 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Button, debounce, MenuItem, Snackbar } from '@mui/material';
+import { Alert, Box, Button, debounce, Grid, MenuItem, Snackbar } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import Grid from '@mui/material/Grid2';
 import { ChangeEventHandler, useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';

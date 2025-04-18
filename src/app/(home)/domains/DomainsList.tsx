@@ -1,8 +1,7 @@
 'use client';
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Button, Chip, Snackbar } from '@mui/material';
+import { Alert, Box, Button, Chip, Grid, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp } from '@mui/x-data-grid';
-import Grid from '@mui/material/Grid2';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { NSDomain, User } from '@prisma/client';
 import { useRouter } from 'next/navigation';

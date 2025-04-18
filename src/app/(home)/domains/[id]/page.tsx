@@ -3,8 +3,7 @@ import { notFound, useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import { Box, Typography, Snackbar, Alert, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Typography, Snackbar, Alert, Accordion, AccordionSummary, AccordionDetails, Grid } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { formatBytes, formatDate } from '@/lib/utils';
 import { GetDomainByIdResponse } from '@/types/domains';

@@ -23,8 +23,8 @@ import {
     Paper,
     Snackbar,
     InputLabel,
+    Grid,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import ClearIcon from '@mui/icons-material/Clear';
 import { NSDomainEnvironment } from '@prisma/client';
 import { useParams } from 'next/navigation';

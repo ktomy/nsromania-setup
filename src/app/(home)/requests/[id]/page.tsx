@@ -14,8 +14,8 @@ import {
     AccordionDetails,
     Button,
     Chip,
+    Grid,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import React, { useEffect, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { register_request } from '@prisma/client';

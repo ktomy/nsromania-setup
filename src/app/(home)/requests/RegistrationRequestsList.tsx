@@ -1,9 +1,8 @@
 'use client';
 
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Chip, Snackbar } from '@mui/material';
+import { Alert, Box, Chip, Grid, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRenderCellParams, GridRowsProp } from '@mui/x-data-grid';
-import Grid from '@mui/material/Grid2';
 import { Info, OpenInNew, Settings, ThumbDown, ThumbUp } from '@mui/icons-material';
 import { register_request, User } from '@prisma/client';
 import { formatDate } from '@/lib/utils';

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { Box, Button } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Button, Grid } from '@mui/material';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 

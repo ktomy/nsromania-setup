@@ -14,6 +14,13 @@ const eslintConfig = [
             '@next/next/no-page-custom-font': 'off',
         },
     }),
+    // Add override for test files
+    {
+        files: ['**/*.test.tsx', '**/*.test.ts'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off'
+        }
+    }
 ];
 
 export default eslintConfig;

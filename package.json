@@ -9,7 +9,8 @@
         "storybook": "storybook dev -p 6006",
         "build-storybook": "storybook build",
         "test": "NODE_ENV=development jest",
-        "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
+        "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
+        "clear_jest": "jest --clearCache"
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.8.0",
@@ -31,7 +32,7 @@
         "next": "^15.2.4",
         "next-auth": "5.0.0-beta.25",
         "next-extra": "^0.6.2",
-        "next-intl": "^3.26.5",
+        "next-intl": "^4.0.2",
         "pm2": "^5.4.3",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",

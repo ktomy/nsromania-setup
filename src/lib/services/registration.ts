@@ -65,14 +65,13 @@ export async function validateSubdomain(subdomain: string) {
             subdomain: subdomain,
         },
     });
-    
+
     if (request) {
         return false;
     }
 
     return true;
 }
-
 
 export async function createRegistrationRequest(request: RegisterDomainRequest): Promise<boolean> {
     const registrationRequest = await prisma.register_request.create({
@@ -123,12 +122,11 @@ export async function getRegistrationRequestById(id: number): Promise<register_r
             id: id,
         },
     });
-    
+
     return request;
 }
 
 export async function approveRegistrationRequest(id: number, approvingUser: User) {
-
     console.log('Approving registration request with ID:', id);
 
     const request = await prisma.register_request.findUnique({
@@ -200,9 +198,8 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
 }
 
 export async function rejectRegistrationRequest(id: number, rejectingUser: User) {
-
     console.log('Rejecting registration request with ID:', id);
-    
+
     await prisma.register_request.update({
         where: {
             id: id,

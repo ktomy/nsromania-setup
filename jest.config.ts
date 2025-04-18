@@ -12,7 +12,7 @@ const config: Config = {
     testEnvironment: 'jsdom',
     // Add more setup options before each test is run
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-    transformIgnorePatterns: ['node_modules/(?!next-intl)/']
+    transformIgnorePatterns: ['node_modules/(?!next-intl)/'],
 };
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
 export default createJestConfig(config);

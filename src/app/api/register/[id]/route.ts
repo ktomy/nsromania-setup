@@ -1,5 +1,9 @@
 import { auth } from '@/auth';
-import { approveRegistrationRequest, getRegistrationRequestById, rejectRegistrationRequest } from '@/lib/services/registration';
+import {
+    approveRegistrationRequest,
+    getRegistrationRequestById,
+    rejectRegistrationRequest,
+} from '@/lib/services/registration';
 import { User } from '@prisma/client';
 
 type Props = {
@@ -29,7 +33,7 @@ export async function GET(req: Request, props: Props) {
     }
 
     const request = await getRegistrationRequestById(parseInt(id));
-    
+
     if (!request) {
         return new Response(JSON.stringify({ error: 'Request not found' }), {
             status: 404,

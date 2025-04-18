@@ -26,7 +26,7 @@ const providers: Provider[] = [
         name: 'Email',
         sendVerificationRequest: async ({ identifier: email, url }) => {
             return sendSignInEmail(email, url);
-        }
+        },
     }),
     process.env.NODE_ENV === 'development'
         ? Credentials({

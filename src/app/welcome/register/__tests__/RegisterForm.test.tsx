@@ -50,7 +50,8 @@ describe('RegisterForm', () => {
 
     it('submits correct data on submit button press', async () => {
         // Mock fetch
-        global.fetch = jest.fn()
+        global.fetch = jest
+            .fn()
             // validate-email
             .mockResolvedValueOnce({ json: async () => ({}), status: 200 })
             // validate-verification-code
@@ -64,20 +65,22 @@ describe('RegisterForm', () => {
 
         // Fill owner name and email
         fireEvent.change(screen.getByRole('textbox', { name: 'ownerName' }), { target: { value: 'Test User' } });
-        fireEvent.change(screen.getByRole('textbox', { name: 'ownerEmail' }), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByRole('textbox', { name: 'ownerEmail' }), {
+            target: { value: 'test@example.com' },
+        });
         // Send validation email
         fireEvent.click(screen.getByText('validateEmail'));
-        await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
-            '/api/register/validate-email', expect.anything()
-        ));
+        await waitFor(() =>
+            expect(global.fetch).toHaveBeenCalledWith('/api/register/validate-email', expect.anything())
+        );
 
         // Fill validation code
         const codeInput = await screen.findByRole('textbox', { name: 'emailValidationCode' });
         fireEvent.change(codeInput, { target: { value: '123456' } });
         fireEvent.click(screen.getByText('checkValidationCode'));
-        await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
-            '/api/register/validate-verification-code', expect.anything()
-        ));
+        await waitFor(() =>
+            expect(global.fetch).toHaveBeenCalledWith('/api/register/validate-verification-code', expect.anything())
+        );
 
         // Wait for subDomain textbox to appear (UI update after email validation)
         await waitFor(() => expect(screen.getByRole('textbox', { name: 'subDomain' })).toBeInTheDocument());
@@ -125,5 +128,4 @@ describe('RegisterForm', () => {
             title: 'Nightscout',
         });
     });
-
 });

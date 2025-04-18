@@ -1,7 +1,7 @@
 //import { EmailParams, MailerSend, Recipient } from "mailersend";
 
-import { RegisterDomainRequest } from "@/types/domains";
-import { EmailConfig } from "next-auth/providers";
+import { RegisterDomainRequest } from '@/types/domains';
+import { EmailConfig } from 'next-auth/providers';
 
 export async function sendWelcomeEmail(to: string, subdomain: string, api_secret: string): Promise<boolean> {
     console.log('Sending welcome email to: ', to);
@@ -109,13 +109,12 @@ export async function sendSignInEmail(email: string, url: string) {
     } else {
         console.log('Email not sent');
     }
-
 }
 
 export async function sendRegistrationNotificationEmail(
     request: RegisterDomainRequest,
-    adminEmails: {name: string, email: string}[]) {
-
+    adminEmails: { name: string; email: string }[]
+) {
     console.log('Sending registration notification');
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');

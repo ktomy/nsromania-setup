@@ -22,8 +22,8 @@ interface RegistrationRequestsListProps {
     user: User;
 }
 
-type GridRegisterRequest = Partial<register_request> & { 
-    actions: Action[]; 
+type GridRegisterRequest = Partial<register_request> & {
+    actions: Action[];
     statusProps: ReturnType<typeof getStatusChipProps>;
 };
 
@@ -84,7 +84,7 @@ export default function RegistrationRequestsList({ user }: RegistrationRequestsL
         window.open(`https://${subdomain}.nsromania.info/`, '_blank');
     };
 
-    const fetchRequests = () =>  {
+    const fetchRequests = () => {
         fetch(`/api/register`).then((response) => {
             response.json().then((domains: register_request[]) => {
                 const rows: GridRowsProp<GridRegisterRequest> = domains.map((request: register_request) => {

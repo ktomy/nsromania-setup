@@ -7,16 +7,14 @@ import { User } from '@prisma/client';
 export default async function RequestsPage() {
     const t = await getTranslations('RequestsPage');
     const session = await auth();
-    
+
     if (!session) {
         return <p>{t('notSignedIn')}</p>;
     }
     if (session.user.role !== 'admin') {
         return <p>{t('notAuthorized')}</p>;
     }
-    
+
     const user = session.user as User;
-  return (
-    <RegistrationRequestsList user={user} />
-  );
+    return <RegistrationRequestsList user={user} />;
 }

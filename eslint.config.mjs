@@ -18,9 +18,9 @@ const eslintConfig = [
     {
         files: ['**/*.test.tsx', '**/*.test.ts'],
         rules: {
-            '@typescript-eslint/no-explicit-any': 'off'
-        }
-    }
+            '@typescript-eslint/no-explicit-any': 'off',
+        },
+    },
 ];
 
 export default eslintConfig;

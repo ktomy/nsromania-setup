@@ -20,12 +20,12 @@ export async function GET(request: Request, props: Props) {
 
     const baseUrl = new URL(
         process.env.NODE_ENV === 'development'
-            ? 'http://' + request.headers.get('host'):
-        request.headers.get('x-forwarded-proto') +
-            '://' +
-            request.headers.get('x-forwarded-host') +
-            ':' +
-            request.headers.get('x-forwarded-port')
+            ? 'http://' + request.headers.get('host')
+            : request.headers.get('x-forwarded-proto') +
+              '://' +
+              request.headers.get('x-forwarded-host') +
+              ':' +
+              request.headers.get('x-forwarded-port')
     );
 
     const absoluteUrl = new URL(`/api/domains/${domain.id}`, baseUrl);

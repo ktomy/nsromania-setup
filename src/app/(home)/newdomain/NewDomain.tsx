@@ -25,7 +25,6 @@ interface NewDomainProps {
 }
 
 export default function NewDomain({ user }: NewDomainProps) {
-
     const [domain, setDomain] = useState('');
     const [title, setTitle] = useState('');
     const [apiSecret, setApiSecret] = useState('');

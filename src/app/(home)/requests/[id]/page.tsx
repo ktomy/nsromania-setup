@@ -4,16 +4,16 @@ import { notFound, useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import { 
-    Box, 
-    Typography, 
-    Snackbar, 
-    Alert, 
-    Accordion, 
-    AccordionSummary, 
+import {
+    Box,
+    Typography,
+    Snackbar,
+    Alert,
+    Accordion,
+    AccordionSummary,
     AccordionDetails,
     Button,
-    Chip
+    Chip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import React, { useEffect, useState } from 'react';
@@ -121,13 +121,13 @@ export default function RequestDetailsPage() {
 
     useEffect(() => {
         if (status === 'loading') return;
-        
+
         if (!session) {
             // User not logged in
             router.push('/auth/signin');
             return;
         }
-        
+
         if (session.user.role !== 'admin') {
             // User doesn't have admin role
             router.push('/');
@@ -149,11 +149,11 @@ export default function RequestDetailsPage() {
         request == null
             ? {}
             : {
-                  'Subdomain': request.subdomain || '',
+                  Subdomain: request.subdomain || '',
                   'Owner Name': request.owner_name || '',
                   'Owner Email': request.owner_email || '',
                   'Data Source': request.data_source || '',
-                  'Title': request.title || '',
+                  Title: request.title || '',
                   'API Secret': request.api_secret || '',
                   'Created At': formatDate(request.requested_at),
                   'Last Updated': formatDate(request.chnged_at),
@@ -169,7 +169,7 @@ export default function RequestDetailsPage() {
         };
     }
 
-    return (status === 'loading' || !session || session.user.role !== 'admin') ? (
+    return status === 'loading' || !session || session.user.role !== 'admin' ? (
         <Typography>{t('loading')}</Typography>
     ) : loading || !request ? (
         <Typography>{t('loading')}</Typography>

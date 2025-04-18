@@ -2,8 +2,6 @@ import NewDomain from './NewDomain';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
 
-
-
 export default async function NewDomainPage() {
     const session = await auth();
     const user = session?.user as User;
@@ -12,5 +10,5 @@ export default async function NewDomainPage() {
         <div>
             <NewDomain user={user} />
         </div>
-  );
+    );
 }

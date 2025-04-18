@@ -28,7 +28,6 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     const t = await getTranslations('App');
 
     const navigationItemsDict: Record<number, NavigationItem> = {};
-    
 
     navigationItemsDict[0] = {
         kind: 'header',
@@ -71,8 +70,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     }
 
     const navigation: Navigation = Object.entries(navigationItemsDict)
-    .sort(([orderA], [orderB]) => Number(orderA) - Number(orderB))
-    .map(([, item]) => item);
+        .sort(([orderA], [orderB]) => Number(orderA) - Number(orderB))
+        .map(([, item]) => item);
 
     return (
         <html lang={locale} data-toolpad-color-scheme="light" suppressHydrationWarning={true}>

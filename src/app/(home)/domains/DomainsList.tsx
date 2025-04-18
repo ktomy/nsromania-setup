@@ -39,17 +39,20 @@ export default function DomainsList({ user }: DomainsListProps) {
                 domain.enable.indexOf('bridge') > -1
                     ? 'Dexcom'
                     : domain.enable.indexOf('mmconnect') > -1
-                        ? 'Medtronic'
-                        : 'API',
+                      ? 'Medtronic'
+                      : 'API',
             status: domain.status,
         };
     }
 
-    const openSnack = useCallback((message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
-        setSnackMessage(t(message));
-        setSnackKind(kind);
-        setSnackOpen(true);
-    }, [t]);
+    const openSnack = useCallback(
+        (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
+            setSnackMessage(t(message));
+            setSnackKind(kind);
+            setSnackOpen(true);
+        },
+        [t]
+    );
 
     const handleSnackClose = useCallback(() => {
         setSnackOpen(false);
@@ -63,33 +66,36 @@ export default function DomainsList({ user }: DomainsListProps) {
             setRows(rows);
             setActionInProgress(false);
         } catch (error) {
-            console.error("Failed to fetch domains", error);
+            console.error('Failed to fetch domains', error);
             openSnack('fetchFailed', 'error');
             setActionInProgress(false);
         }
     }, [openSnack]);
 
-    const handleDomainsActions = useCallback(async (action: 'startall') => {
-        try {
-            setActionInProgress(true);
-            const res = await fetch(`/api/domains/${action}`, {
-                method: 'POST',
-            });
+    const handleDomainsActions = useCallback(
+        async (action: 'startall') => {
+            try {
+                setActionInProgress(true);
+                const res = await fetch(`/api/domains/${action}`, {
+                    method: 'POST',
+                });
 
-            if (res.ok) {
-                openSnack('actionSuccess', 'success');
-                fetchDomains();
-            } else {
-                console.error(`Failed to ${action} domain`, res);
+                if (res.ok) {
+                    openSnack('actionSuccess', 'success');
+                    fetchDomains();
+                } else {
+                    console.error(`Failed to ${action} domain`, res);
+                    openSnack('actionFailed', 'error');
+                    setActionInProgress(false);
+                }
+            } catch (error) {
+                console.error(`Failed to ${action} domain`, error);
                 openSnack('actionFailed', 'error');
                 setActionInProgress(false);
             }
-        } catch (error) {
-            console.error(`Failed to ${action} domain`, error);
-            openSnack('actionFailed', 'error');
-            setActionInProgress(false);
-        }
-    }, [fetchDomains, openSnack]);
+        },
+        [fetchDomains, openSnack]
+    );
 
     useEffect(() => {
         if (rows.length === 0) {
@@ -97,10 +103,13 @@ export default function DomainsList({ user }: DomainsListProps) {
         }
     }, [rows.length, fetchDomains]);
 
-    const redirectToDetails = useCallback((id: GridRowId) => () => {
-        console.log('Redirecting to domain details:', id);
-        router.push(`/domains/${id}`);
-    }, [router]);
+    const redirectToDetails = useCallback(
+        (id: GridRowId) => () => {
+            console.log('Redirecting to domain details:', id);
+            router.push(`/domains/${id}`);
+        },
+        [router]
+    );
 
     const columns: GridColDef[] = [
         {

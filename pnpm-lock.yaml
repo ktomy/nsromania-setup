@@ -94,8 +94,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(acorn@8.14.1)(webpack@5.98.0(esbuild@0.25.2))
       '@next/eslint-plugin-next':
-        specifier: ^15.2.4
-        version: 15.2.4
+        specifier: ^15.3.1
+        version: 15.3.1
       '@storybook/addon-docs':
         specifier: ^8.6.12
         version: 8.6.12(@types/react@18.3.20)(storybook@8.6.3(prettier@3.5.3))
@@ -1688,9 +1688,6 @@ packages:
 
   '@next/env@15.2.4':
     resolution: {integrity: sha512-+SFtMgoiYP3WoSswuNmxJOCwi06TdWE733D+WPjpXIe4LXGULwEaofiiAy6kbS0+XjM5xF5n3lKuBwN2SnqD9g==}
-
-  '@next/eslint-plugin-next@15.2.4':
-    resolution: {integrity: sha512-O8ScvKtnxkp8kL9TpJTTKnMqlkZnS+QxwoQnJwPGBxjBbzd6OVVPEJ5/pMNrktSyXQD/chEfzfFzYLM6JANOOQ==}
 
   '@next/eslint-plugin-next@15.3.1':
     resolution: {integrity: sha512-oEs4dsfM6iyER3jTzMm4kDSbrQJq8wZw5fmT6fg2V3SMo+kgG+cShzLfEV20senZzv8VF+puNLheiGPlBGsv2A==}
@@ -8721,10 +8718,6 @@ snapshots:
     optional: true
 
   '@next/env@15.2.4': {}
-
-  '@next/eslint-plugin-next@15.2.4':
-    dependencies:
-      fast-glob: 3.3.1
 
   '@next/eslint-plugin-next@15.3.1':
     dependencies:

@@ -5,7 +5,6 @@ import RegisterForm from '../app/welcome/register/RegisterForm';
 import path from 'path';
 import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } from '@/lib/test-utils';
 
-
 // Mock next-intl
 jest.mock('next-intl', () => ({
     useTranslations: () => createMockTranslator(),

@@ -2,8 +2,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import path from 'path';
-import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } 
-    from '@/lib/test-utils';
+import { createMockTranslator, extractTranslationKeys, validateTranslationKeys } from '@/lib/test-utils';
 import WelcomePage from '@/app/welcome/WelcomePage';
 
 // Mock next-intl

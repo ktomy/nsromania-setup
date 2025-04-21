@@ -13,7 +13,7 @@
         "clear_jest": "jest --clearCache"
     },
     "dependencies": {
-        "@auth/prisma-adapter": "^2.8.0",
+        "@auth/prisma-adapter": "^2.9.0",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.0",
         "@fontsource/material-icons": "^5.2.5",

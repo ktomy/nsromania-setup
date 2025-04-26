@@ -5,5 +5,6 @@
     "git.autoStash": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 4,
-    "nuxt.isNuxtApp": false
+    "nuxt.isNuxtApp": false,
+    "typescript.tsdk": "node_modules/typescript/lib"
 }

@@ -34,14 +34,18 @@ export default async function SignIn() {
                     // Handle Auth.js errors
 
                     if (error instanceof AuthError) {
+                        // Instead of casting, we can access the error properties directly
+                        // This ensures TypeScript recognizes the object structure
+                        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                        const errorType = (error as any).type;
                         return {
                             error:
-                                error.type === 'CredentialsSignin'
-                                    ? 'Invalid credentials.'
-                                    : error.type === 'AccessDenied'
-                                      ? 'Unknown email address'
-                                      : 'An error with Auth.js occurred.',
-                            type: error.type,
+                                errorType === 'CredentialsSignin'
+                                        ? 'Invalid credentials.'
+                                    : errorType === 'AccessDenied'
+                                        ? 'Unknown email address'
+                                        : 'An error with Auth.js occurred.',
+                            type: errorType,
                         };
                     }
                     // An error boundary must exist to handle unknown errors

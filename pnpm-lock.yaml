@@ -54,8 +54,8 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
       mongodb:
-        specifier: ^6.15.0
-        version: 6.15.0(socks@2.8.4)
+        specifier: ^6.16.0
+        version: 6.16.0(socks@2.8.4)
       next:
         specifier: ^15.3.1
         version: 15.3.1(@babel/core@7.26.10)(babel-plugin-macros@3.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -5281,8 +5281,8 @@ packages:
   mongodb-connection-string-url@3.0.2:
     resolution: {integrity: sha512-rMO7CGo/9BFwyZABcKAWL8UJwH/Kc2x0g72uhDWzG48URRax5TCIcJ7Rc3RZqffZzO/Gwff/jyKwCU9TN8gehA==}
 
-  mongodb@6.15.0:
-    resolution: {integrity: sha512-ifBhQ0rRzHDzqp9jAQP6OwHSH7dbYIQjD3SbJs9YYk9AikKEettW/9s/tbSFDTpXcRbF+u1aLrhHxDFaYtZpFQ==}
+  mongodb@6.16.0:
+    resolution: {integrity: sha512-D1PNcdT0y4Grhou5Zi/qgipZOYeWrhLEpk33n3nm6LGtz61jvO88WlrWCK/bigMjpnOdAUKKQwsGIl0NtWMyYw==}
     engines: {node: '>=16.20.1'}
     peerDependencies:
       '@aws-sdk/credential-providers': ^3.188.0
@@ -13200,7 +13200,7 @@ snapshots:
       '@types/whatwg-url': 11.0.5
       whatwg-url: 14.2.0
 
-  mongodb@6.15.0(socks@2.8.4):
+  mongodb@6.16.0(socks@2.8.4):
     dependencies:
       '@mongodb-js/saslprep': 1.2.2
       bson: 6.10.3

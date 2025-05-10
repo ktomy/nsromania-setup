@@ -1,6 +1,8 @@
-import { CreateDomainRequest, PartialNSDomainWithEnvironments } from '@/types/domains';
+import { CreateDomainRequest, GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { prisma } from '../prisma';
 import { NSDomain, User } from '@prisma/client';
+import { getProcessesList } from './nsruntime';
+import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from './nsdatbasea';
 
 export async function getAllNSDomains() {
     try {
@@ -50,6 +52,21 @@ export async function getNSDomainsByUserId(id: string) {
     });
 
     return domains;
+}
+
+export async function getFullDOmainData(id: number): Promise<GetDomainByIdResponse | null> {
+    const nsDomain = await getNSDomainById(id) as GetDomainByIdResponse;
+    if (!nsDomain) {
+        return null;
+    }
+    const processList = await getProcessesList();
+    // check if a process having the domain name is running and if yes, set "status" field to the process's status
+    nsDomain.status =
+        processList.find((proc) => proc.name.endsWith(`_${nsDomain.domain}`))?.status || 'not running';
+    nsDomain.dbInitialized = await checkMongoDatabaseAndUser(nsDomain.domain, nsDomain.domain);
+    nsDomain.lastDbEntry = await getLastDbEntry(nsDomain.domain);
+    nsDomain.dbSize = await getDbSize(nsDomain.domain);    
+    return nsDomain;
 }
 
 export async function createNSDomain(data: CreateDomainRequest) {

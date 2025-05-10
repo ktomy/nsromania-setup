@@ -1,10 +1,8 @@
 // /src/app/api/domains/[id]/route.ts
-import { getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
+import { getFullDOmainData, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
-import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
-import { getProcessesList } from '@/lib/services/nsruntime';
-import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from '@/lib/services/nsdatbasea';
+import {  PartialNSDomainWithEnvironments } from '@/types/domains';
 
 type Props = {
     params: Promise<{
@@ -25,7 +23,7 @@ export async function GET(req: Request, props: Props) {
     }
 
     try {
-        const nsDomain = (await getNSDomainById(parseInt(id))) as GetDomainByIdResponse;
+        const nsDomain = await getFullDOmainData(parseInt(id));
         if (!nsDomain) {
             return new Response(JSON.stringify({ error: 'Not found' }), {
                 status: 404,
@@ -41,13 +39,6 @@ export async function GET(req: Request, props: Props) {
                 headers: { 'Content-Type': 'application/json' },
             });
         }
-        const processList = await getProcessesList();
-        // check if a process having the domain name is running and if yes, set "status" field to the process's status
-        nsDomain.status =
-            processList.find((proc) => proc.name.endsWith(`_${nsDomain.domain}`))?.status || 'not running';
-        nsDomain.dbInitialized = await checkMongoDatabaseAndUser(nsDomain.domain, nsDomain.domain);
-        nsDomain.lastDbEntry = await getLastDbEntry(nsDomain.domain);
-        nsDomain.dbSize = await getDbSize(nsDomain.domain);
 
         return new Response(JSON.stringify(nsDomain), {
             headers: { 'Content-Type': 'application/json' },

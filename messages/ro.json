@@ -57,7 +57,9 @@
     "showPlugins": "Afișează pluginuri",
     "title": "Titlu",
     "value": "Valoare",
-    "variable": "Variabilă"
+    "variable": "Variabilă",
+    "notSignedIn": "Please sign in first",
+    "notAuthorized": "Not authorized"
   },
   "HomePage": {
     "title": "Salut, lume!",

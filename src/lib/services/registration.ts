@@ -151,6 +151,7 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
                 email: request!.owner_email,
                 role: 'user',
                 name: request!.owner_name,
+                loginAllowed: 1,
             },
         });
     }

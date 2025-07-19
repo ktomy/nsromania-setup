@@ -371,6 +371,7 @@ export default function RegisterForm() {
                                             required={dataSource === 'Dexcom'}
                                             fullWidth
                                             size="small"
+                                            error={dexcomUsername.length > 0 && !/^[a-zA-Z0-9!@#$%^&*().+\-]{5,32}$/.test(dexcomUsername)}
                                             label={t('dexcomUsername')}
                                             moreInformation={t('details.dexcomUsername')}
                                         />

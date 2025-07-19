@@ -33,6 +33,12 @@ import NSInput from '@/lib/components/general/NSInput/NSInput';
 import NSButton from '@/lib/components/general/NSButton';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 
+interface NightscoutVersion {
+    name: string;
+    version: string;
+    directoryName: string;
+}
+
 interface EditDomainFormProps {
     domainData: GetDomainByIdResponse;
     idNumber: number;
@@ -50,6 +56,8 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
     const [dexcomPassword, setDexcomPassword] = useState(domainData.bridgePassword ?? '');
     const [enable, setEnable] = useState(domainData.enable ?? '');
     const [showPlugins, setShowPlugins] = useState(domainData.showPlugins ?? '');
+    const [nsversion, setNsversion] = useState(domainData.nsversion ?? '');
+    const [availableVersions, setAvailableVersions] = useState<NightscoutVersion[]>([]);
     const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [environments, setEnvironments] = useState<NSDomainEnvironment[]>(domainData.environments ?? []);
     const [newEnvKey, setNewEnvKey] = useState('');
@@ -58,6 +66,22 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
     const [owner, ] = useState(domainData.authUser?.email ?? '?');
+
+    // Fetch available versions on component mount
+    React.useEffect(() => {
+        const fetchVersions = async () => {
+            try {
+                const response = await fetch('/api/versions');
+                if (response.ok) {
+                    const versions = await response.json();
+                    setAvailableVersions(versions);
+                }
+            } catch (error) {
+                console.error('Failed to fetch versions:', error);
+            }
+        };
+        fetchVersions();
+    }, []);
 
     const handleAddEnvironment = () => {
         if (!newEnvKey || !newEnvValue) {
@@ -113,7 +137,7 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
             bridgeServer: dexcomServer,
             port: 0,
             dbPassword: null,
-            nsversion: null,
+            nsversion: nsversion || null,
             environments: environments,
         };
 
@@ -158,7 +182,13 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
 
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                    <FormControlLabel
+                        control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />}
+                        label={t('active')}
+                    />
+                </Grid> 
+                <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Box sx={{ display: 'flex' }} alignItems="center">
                         <NSInput
@@ -198,6 +228,27 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
                         size="small"
                     />
                 </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                    <FormControl fullWidth size="small">
+                        <InputLabel id="nsversion-label">{t('nsversion')}</InputLabel>
+                        <Select
+                            labelId="nsversion-label"
+                            value={nsversion}
+                            onChange={(e) => setNsversion(e.target.value)}
+                            label={t('nsversion')}
+                            color="primary"
+                        >
+                            <MenuItem value="">
+                                <em>{t('defaultVersion')}</em>
+                            </MenuItem>
+                            {availableVersions.map((version) => (
+                                <MenuItem key={version.directoryName} value={version.directoryName}>
+                                    {version.version} ({version.directoryName})
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Grid>
 
                 <Grid size={{ xs: 12, md: 4 }}>
                     <FormControl fullWidth size="small">
@@ -216,12 +267,6 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
                     </FormControl>
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <FormControlLabel
-                        control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />}
-                        label={t('active')}
-                    />
-                </Grid>
                 {(dataSource === 'Dexcom' || dataSource === 'Custom') && (
                     <>
                         <Grid size={{ xs: 12, md: 4 }}>

@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { formatDate } from '@/lib/utils';
-import { register_request } from '@prisma/client';
+import { register_request, User } from '@prisma/client';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -59,8 +59,13 @@ const RenderRequestProperties = ({ properties, title }: RenderRequestPropertiesP
     );
 };
 
+
+interface RegisterRequestExtended extends register_request {
+    auth_user?: User;
+}
+
 interface RequestDetailsProps {
-    request: register_request;
+    request: RegisterRequestExtended;
 }
 
 export default function RequestDetails({ request }: RequestDetailsProps) {
@@ -115,7 +120,7 @@ export default function RequestDetails({ request }: RequestDetailsProps) {
         'API Secret': request.api_secret || '',
         'Created At': formatDate(request.requested_at),
         'Last Updated': formatDate(request.chnged_at),
-        'Updated By': request.auth_user.name || '',
+        'Updated By': request.auth_user?.name || '',
     };
 
     let dexcomProperties = {};

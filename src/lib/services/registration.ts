@@ -117,9 +117,12 @@ export async function getAllRegistrationRequests(): Promise<register_request[]> 
 }
 
 export async function getRegistrationRequestById(id: number): Promise<register_request | null> {
-    const request = await prisma.register_request.findUnique({
+    const request = await prisma.register_request.findFirst({
         where: {
             id: id,
+        },
+        include: {
+            auth_user: true,
         },
     });
 

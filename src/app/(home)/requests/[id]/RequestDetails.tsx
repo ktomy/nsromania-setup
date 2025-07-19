@@ -115,6 +115,7 @@ export default function RequestDetails({ request }: RequestDetailsProps) {
         'API Secret': request.api_secret || '',
         'Created At': formatDate(request.requested_at),
         'Last Updated': formatDate(request.chnged_at),
+        'Updated By': request.auth_user.name || '',
     };
 
     let dexcomProperties = {};

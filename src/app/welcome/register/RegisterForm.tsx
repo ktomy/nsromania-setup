@@ -3,42 +3,86 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { Alert, Box, Button, debounce, Grid, MenuItem, Snackbar } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { ChangeEventHandler, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
 import { InfoRounded } from '@mui/icons-material';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registrationFormSchema, RegistrationFormData } from '@/lib/validations/index';
+
+// TODO: Make sure all the hints and descriptions are added to the controller fields (e.g. moreInformation, helperText,  size, etc.) cross reference with the GITHUB original code.
+// TODO: Resolve dexcom optional fields issue
 
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
-    const [ownerEmail, setOwnerEmail] = useState('');
-    const [ownerName, setOwnerName] = useState('');
-    const [emailValidationCode, setEmailValidationCode] = useState('');
-    const [subDomain, setSubDomain] = useState('');
-    const [nsTitle, setNsTitle] = useState('Nightscout');
-    const [apiSecret, setApiSecret] = useState('');
-    const [dataSource, setDataSource] = useState('Dexcom');
-    const [dexcomServer, setDexcomServer] = useState('EU');
-    const [dexcomUsername, setDexcomUsername] = useState('');
-    const [dexcomPassword, setDexcomPassword] = useState('');
     const { executeRecaptcha } = useGoogleReCaptcha();
     const [validationEmailSent, setValidationEmailSent] = useState(false);
     const [emailValidated, setEmailValidated] = useState(false);
-    const [snackOpen, setSnackOpen] = useState(false);
-    const [snackMessage, setSnackMessage] = useState('');
-    const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+    const [subdomainIsValid, setSubdomainIsValid] = useState(false);
+    const [snack, setSnack] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'success' | 'error' | 'info' | 'warning';
+    }>({ open: false, message: '', severity: 'success' });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [subdomainIsValid, setSubbdomainIsValid] = useState(false);
 
-    const handleSendValidationEmail = async () => {
-        if (!executeRecaptcha) {
-            console.error('Recaptcha not initialized');
+    // Initialize React Hook Form with Zod schema
+    const {
+        control,
+        handleSubmit,
+        watch,
+        getValues,
+        formState: { errors },
+    } = useForm({
+        resolver: zodResolver(registrationFormSchema),
+        defaultValues: {
+            ownerName: '',
+            ownerEmail: '',
+            emailValidationCode: undefined,
+            subDomain: '',
+            nsTitle: 'Nightscout',
+            apiSecret: '',
+            dataSource: 'Dexcom',
+            dexcomServer: 'EU',
+            dexcomUsername: undefined,
+            dexcomPassword: undefined,
+            reCAPTCHAToken: undefined,
+            emailVerificationToken: undefined,
+        },
+    });
+
+    const dataSource = watch('dataSource');
+
+    // Debounced subdomain validation
+    useEffect(() => {
+        const sub = watch('subDomain');
+        if (!sub) {
+            setSubdomainIsValid(false);
             return;
         }
+        const validate = debounce(async () => {
+            if (!executeRecaptcha) return;
+            const token =
+                process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('subdomain_validation');
+            const res = await fetch('/api/register/validate-subdomain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subdomain: sub, token }),
+            });
+            setSubdomainIsValid(res.ok);
+        }, 500);
 
-        // check name and email fields
-        if (ownerName.length === 0 || ownerEmail.length === 0) {
+        validate();
+        return () => validate.clear();
+    }, [executeRecaptcha, watch]);
+
+    // Send validation email
+    const handleSendValidationEmail = async () => {
+        const { ownerName, ownerEmail } = getValues();
+        if (!executeRecaptcha) return;
+        if (!ownerName || !ownerEmail) {
             openSnack(t('ownerNameAndEmailRequired'), 'error');
             return;
         }
@@ -54,7 +98,6 @@ export default function RegisterForm() {
 
         const data = await res.json();
         if (data.error) {
-            console.log('Email validation failed', data);
             openSnack(t('validationEmailFailed'), 'error');
             return;
         }
@@ -63,51 +106,10 @@ export default function RegisterForm() {
         setValidationEmailSent(true);
     };
 
-    const validateSubdomain = async () => {
-        console.log('Validating subdomain', subDomain);
-        if (!executeRecaptcha) {
-            console.error('Recaptcha not initialized');
-            setSubbdomainIsValid(false);
-            return;
-        }
-        const token =
-            process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('subdomain_validation');
-        const res = await fetch('/api/register/validate-subdomain', {
-            method: 'POST',
-            body: JSON.stringify({ token: token, subdomain: subDomain }),
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (res.status === 200) {
-            setSubbdomainIsValid(true);
-        } else {
-            setSubbdomainIsValid(false);
-        }
-    };
-
-    // Create a debounced version of validateSubdomain
-    const debouncedValidateSubdomain = React.useCallback(
-        debounce(() => {
-            if (subDomain.length > 0) {
-                validateSubdomain();
-            }
-        }, 500), // 500ms delay
-        [subDomain, executeRecaptcha]
-    );
-
-    React.useEffect(() => {
-        if (subDomain.length > 0 && /^[a-z0-9]{1,32}$/.test(subDomain)) {
-            debouncedValidateSubdomain();
-        } else {
-            setSubbdomainIsValid(false);
-        }
-
-        // Cleanup the debounced function on unmount or when dependencies change
-        return () => {
-            debouncedValidateSubdomain.clear();
-        };
-    }, [subDomain, debouncedValidateSubdomain]);
-
+    // Check email verification code
     const handleCheckValidationCode = async () => {
+        const { ownerEmail, emailValidationCode } = getValues();
+
         if (!executeRecaptcha) {
             console.error('Recaptcha not initialized');
             return;
@@ -124,7 +126,6 @@ export default function RegisterForm() {
 
         const data = await res.json();
         if (data.error) {
-            console.log('Email verification code validation failed', data);
             openSnack(t('emailValidationCodeInvalid'), 'error');
             return;
         }
@@ -133,28 +134,28 @@ export default function RegisterForm() {
         setEmailValidated(true);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Form submission
+    const onSubmit = async (values: RegistrationFormData) => {
         setIsSubmitting(true);
-        e.preventDefault();
         if (!executeRecaptcha) {
-            console.error('Recaptcha not initialized');
             return;
         }
         try {
-            const token = process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('register');
+            const recaptcha =
+                process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('register');
 
             const registerRequest: RegisterDomainRequest = {
-                domain: subDomain,
-                ownerEmail: ownerEmail,
-                ownerName: ownerName,
-                dataSource: dataSource,
-                dexcomUsername: dexcomUsername,
-                dexcomPassword: dexcomPassword,
-                dexcomServer: dexcomServer,
-                emailVerificationToken: emailValidationCode,
-                reCAPTCHAToken: token,
-                apiSecret: apiSecret,
-                title: nsTitle,
+                domain: values.subDomain,
+                ownerEmail: values.ownerEmail,
+                ownerName: values.ownerName,
+                dataSource: values.dataSource,
+                dexcomUsername: values.dexcomUsername,
+                dexcomPassword: values.dexcomPassword,
+                dexcomServer: values.dexcomServer,
+                emailVerificationToken: values.emailVerificationToken,
+                reCAPTCHAToken: recaptcha,
+                apiSecret: values.apiSecret,
+                title: values.nsTitle,
             };
 
             const res = await fetch('/api/register', {
@@ -166,18 +167,14 @@ export default function RegisterForm() {
             const data = await res.json();
             if (data.success) {
                 openSnack(t('registrationSuccess'), 'success');
-                setSuccess(true);
                 // Wait a second and redirect to /welcome/registrationsuccess/ page
                 setTimeout(() => {
                     window.location.href = '/welcome/registrationsuccess';
                 }, 1000);
             } else {
-                console.log('registration failed', data);
                 openSnack(t('registrationFailed'), 'error');
             }
-        } catch (e) {
-            console.error('Registration failed', e);
-            setSuccess(false);
+        } catch {
             openSnack(t('registrationFailed'), 'error');
             //TODO: Add a redirect to the error page
         } finally {
@@ -185,31 +182,22 @@ export default function RegisterForm() {
         }
     };
 
-    const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
-        setSnackMessage(message);
-        setSnackKind(kind);
-        setSnackOpen(true);
+    const openSnack = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+        setSnack({ open: true, message, severity });
     };
-
-    const handleSnackClose = () => {
-        setSnackOpen(false);
-    };
-
-    const handleDataSourceChange: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (event) => {
-        setDataSource(event.target.value);
-    };
+    const handleSnackClose = () => setSnack((s) => ({ ...s, open: false }));
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 4 }}>
-            <Snackbar open={snackOpen} autoHideDuration={3000} onClose={handleSnackClose} message={snackMessage}>
-                <Alert onClose={handleSnackClose} severity={snackKind} variant="filled" sx={{ width: '100%' }}>
-                    {snackMessage}
+            <Snackbar open={snack.open} autoHideDuration={3000} onClose={handleSnackClose}>
+                <Alert onClose={handleSnackClose} severity={snack.severity} variant="filled" sx={{ width: '100%' }}>
+                    {snack.message}
                 </Alert>
             </Snackbar>
             <Typography sx={{ mb: 2 }} variant="h4">
                 {t('registrationTitle')}
             </Typography>
-            <Box maxWidth={'sm'} component="form" onSubmit={handleSubmit}>
+            <Box maxWidth={'sm'} component="form" onSubmit={handleSubmit(onSubmit)}>
                 <Typography sx={{ mb: 2 }} variant="body2">
                     {t('registrationDescription')}
                 </Typography>
@@ -221,31 +209,34 @@ export default function RegisterForm() {
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>
                         {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
-                        <NSInput
-                            value={ownerName}
-                            onChange={(e) => setOwnerName(e.target.value)}
-                            required
-                            fullWidth
-                            label={t('ownerName')}
-                            error={ownerName.length > 0 && !/^[a-zA-Z0-9\s]{1,64}$/.test(ownerName)}
-                            size="small"
-                            moreInformation={t('details.ownerName')}
+                        <Controller
+                            name="ownerName"
+                            control={control}
+                            render={({ field }) => (
+                                <NSInput
+                                    fullWidth
+                                    label={t('ownerName')}
+                                    error={!!errors.ownerName}
+                                    helperText={errors.ownerName?.message}
+                                    {...field}
+                                />
+                            )}
                         />
                     </Grid>
                     <Grid size={{ xs: 12 }}>
-                        <NSInput
-                            value={ownerEmail}
-                            onChange={(e) => setOwnerEmail(e.target.value)}
-                            fullWidth
-                            required
-                            label={t('ownerEmail')}
-                            disabled={emailValidated}
-                            error={
-                                ownerEmail.length > 0 &&
-                                !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(ownerEmail)
-                            }
-                            size="small"
-                            moreInformation={t('details.ownerEmail')}
+                        <Controller
+                            name="ownerEmail"
+                            control={control}
+                            render={({ field }) => (
+                                <NSInput
+                                    fullWidth
+                                    label={t('ownerEmail')}
+                                    error={!!errors.ownerEmail}
+                                    helperText={errors.ownerEmail?.message}
+                                    {...field}
+                                    disabled={emailValidated}
+                                />
+                            )}
                         />
                     </Grid>
                     <Grid size={12}>
@@ -261,20 +252,24 @@ export default function RegisterForm() {
                             </Button>
                         )}
                     </Grid>
-                    {validationEmailSent && (
+                    {validationEmailSent && !emailValidated && (
                         <>
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 {/* Validation code is a string of 6 digits, it can contain spaces or tabs at any moment, including start and end of the string */}
-                                <NSInput
-                                    value={emailValidationCode}
-                                    onChange={(e) => setEmailValidationCode(e.target.value)}
-                                    required
-                                    disabled={emailValidated}
-                                    error={emailValidationCode.length > 0 && !/^\s*\d{6}\s*$/.test(emailValidationCode)}
-                                    fullWidth
-                                    size="small"
-                                    label={t('emailValidationCode')}
-                                    moreInformation={t('details.emailValidationCode')}
+                                <Controller
+                                    name="emailValidationCode"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <NSInput
+                                            fullWidth
+                                            size="small"
+                                            label={t('emailValidationCode')}
+                                            error={!!errors.emailValidationCode}
+                                            helperText={errors.emailValidationCode?.message}
+                                            moreInformation={t('details.emailValidationCode')}
+                                            {...field}
+                                        />
+                                    )}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -296,95 +291,132 @@ export default function RegisterForm() {
                         <>
                             <Grid size={12}>
                                 {/* Subdomain is a string of max 32 characters containing only lowercase alphanumeric characters*/}
-                                <NSInput
-                                    value={subDomain}
-                                    onChange={(e) => setSubDomain(e.target.value)}
-                                    required
-                                    fullWidth
-                                    label={t('subDomain')}
-                                    error={subDomain.length > 0 && !subdomainIsValid}
-                                    size="small"
-                                    moreInformation={t('details.subDomain')}
+                                <Controller
+                                    name="subDomain"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <NSInput
+                                            fullWidth
+                                            size="small"
+                                            label={t('subDomain')}
+                                            error={!!errors.subDomain || !subdomainIsValid}
+                                            helperText={errors.subDomain?.message}
+                                            moreInformation={t('details.subDomain')}
+                                            {...field}
+                                        />
+                                    )}
                                 />
                             </Grid>
                             <Grid size={12}>
-                                <NSInput
-                                    value={nsTitle}
-                                    onChange={(e) => setNsTitle(e.target.value)}
-                                    fullWidth
-                                    label={t('title')}
-                                    size="small"
-                                    moreInformation={t('details.title')}
+                                <Controller
+                                    name="nsTitle"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <NSInput
+                                            fullWidth
+                                            size="small"
+                                            label={t('title')}
+                                            error={!!errors.nsTitle}
+                                            helperText={errors.nsTitle?.message}
+                                            moreInformation={t('details.title')}
+                                            {...field}
+                                        />
+                                    )}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                                <NSInput
-                                    value={apiSecret}
-                                    onChange={(e) => setApiSecret(e.target.value)}
-                                    required
-                                    fullWidth
-                                    label={t('apiSecret')}
-                                    error={apiSecret.length > 0 && !/^[a-zA-Z0-9-\_\.]{12,32}$/.test(apiSecret)}
-                                    helperText={
-                                        apiSecret.length > 0 && apiSecret.length < 12
-                                            ? t('formValidation.apiSecretHelperText')
-                                            : ''
-                                    }
-                                    size="small"
-                                    moreInformation={t('details.apiSecret')}
+                                <Controller
+                                    name="apiSecret"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <NSInput
+                                            fullWidth
+                                            size="small"
+                                            label={t('apiSecret')}
+                                            error={!!errors.apiSecret}
+                                            helperText={errors.apiSecret?.message}
+                                            moreInformation={t('details.apiSecret')}
+                                            {...field}
+                                        />
+                                    )}
                                 />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                                <NSInput
-                                    value={dataSource}
-                                    onChange={handleDataSourceChange}
-                                    select
-                                    fullWidth
-                                    size="small"
-                                    label={t('dataSource')}
-                                    moreInformation={t('details.dataSource')}
-                                >
-                                    <MenuItem value="Dexcom">{t('dexcom')}</MenuItem>
-                                    <MenuItem value="API">{t('anythingElse')}</MenuItem>
-                                </NSInput>
+                                <Controller
+                                    name="dataSource"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <NSInput
+                                            fullWidth
+                                            size="small"
+                                            select
+                                            label={t('dataSource')}
+                                            error={!!errors.dataSource}
+                                            helperText={errors.dataSource?.message}
+                                            moreInformation={t('details.dataSource')}
+                                            {...field}
+                                        >
+                                            <MenuItem value="Dexcom">{t('dexcom')}</MenuItem>
+                                            <MenuItem value="API">{t('anythingElse')}</MenuItem>
+                                        </NSInput>
+                                    )}
+                                />
                             </Grid>
                             {dataSource === 'Dexcom' && (
                                 <>
                                     <Grid size={{ xs: 12, sm: 6 }}>
-                                        <NSInput
-                                            select
-                                            value={dexcomServer}
-                                            onChange={(e) => setDexcomServer(e.target.value)}
-                                            label={t('dexcomServer')}
-                                            size="small"
-                                            fullWidth
-                                            moreInformation={t('details.dexcomServer')}
-                                        >
-                                            <MenuItem value="EU">{t('eu')}</MenuItem>
-                                            <MenuItem value="US">{t('us')}</MenuItem>
-                                        </NSInput>
-                                    </Grid>
-                                    <Grid size={12}>
-                                        <NSInput
-                                            value={dexcomUsername}
-                                            onChange={(e) => setDexcomUsername(e.target.value)}
-                                            required={dataSource === 'Dexcom'}
-                                            fullWidth
-                                            size="small"
-                                            error={dexcomUsername.length > 0 && !/^[a-zA-Z0-9!@#$%^&*().+\-]{5,32}$/.test(dexcomUsername)}
-                                            label={t('dexcomUsername')}
-                                            moreInformation={t('details.dexcomUsername')}
+                                        <Controller
+                                            name="dexcomServer"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <NSInput
+                                                    fullWidth
+                                                    size="small"
+                                                    select
+                                                    label={t('dexcomServer')}
+                                                    error={!!errors.dexcomServer}
+                                                    helperText={errors.dexcomServer?.message}
+                                                    moreInformation={t('details.dexcomServer')}
+                                                    {...field}
+                                                >
+                                                    <MenuItem value="EU">{t('eu')}</MenuItem>
+                                                    <MenuItem value="US">{t('us')}</MenuItem>
+                                                </NSInput>
+                                            )}
                                         />
                                     </Grid>
                                     <Grid size={12}>
-                                        <NSInput
-                                            value={dexcomPassword}
-                                            onChange={(e) => setDexcomPassword(e.target.value)}
-                                            required={dataSource === 'Dexcom'}
-                                            fullWidth
-                                            size="small"
-                                            label={t('dexcomPassword')}
-                                            moreInformation={t('details.dexcomPassword')}
+                                        <Controller
+                                            name="dexcomUsername"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <NSInput
+                                                    fullWidth
+                                                    size="small"
+                                                    label={t('dexcomUsername')}
+                                                    error={!!errors.dexcomUsername}
+                                                    helperText={errors.dexcomUsername?.message}
+                                                    moreInformation={t('details.dexcomUsername')}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </Grid>
+                                    <Grid size={12}>
+                                        <Controller
+                                            name="dexcomPassword"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <NSInput
+                                                    fullWidth
+                                                    size="small"
+                                                    label={t('dexcomPassword')}
+                                                    error={!!errors.dexcomPassword}
+                                                    helperText={errors.dexcomPassword?.message}
+                                                    moreInformation={t('details.dexcomPassword')}
+                                                    {...field}
+                                                />
+                                            )}
                                         />
                                     </Grid>
                                 </>
@@ -396,7 +428,7 @@ export default function RegisterForm() {
                                     variant="contained"
                                     color="primary"
                                     loading={isSubmitting}
-                                    disabled={success && !subdomainIsValid}
+                                    disabled={!subdomainIsValid}
                                 >
                                     {t('register')}
                                 </Button>

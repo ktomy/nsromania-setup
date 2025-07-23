@@ -5,16 +5,16 @@ import { useTranslations } from 'next-intl';
 export type ModalEditProps = {
     isOpen: boolean;
     onClose: () => void;
-    onEdit: (value: string | null) => void;
-    value: string | null;
+    onEdit: (value: string | null | undefined) => void;
+    value: string | null | undefined;
     label?: React.ReactNode;
     modalSaveLabel?: string;
     modalCancelLabel?: string;
     modalTitle?: string | React.ReactNode;
 } & TextFieldProps;
 
-const checkMultiline = (value: string | null) => {
-    if (value === null) return false;
+const checkMultiline = (value: string | null | undefined) => {
+    if (value === null || value === undefined) return false;
     const multilineRegex = /[\r\n]|.{30,}/;
     return multilineRegex.test(value);
 };

@@ -5,8 +5,8 @@ import ModalEdit from './ModalEdit';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 
 type EditableInputProps = {
-    value: string | null;
-    onEdit?: (value: string | null) => void;
+    value: string | null | undefined;
+    onEdit?: (value: string | null | undefined) => void;
     modalTitle?: string;
     modalDescription?: string;
     modalSaveLabel?: string;
@@ -47,7 +47,7 @@ export default function NSInput({
     ...props
 }: EditableInputProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [inputValue, setInputValue] = useState<string | null>(value);
+    const [inputValue, setInputValue] = useState<string | null | undefined>(value);
     const [tooltipVisible, setTooltipVisible] = useState(false);
 
     if (modal && !onEdit) {
@@ -73,7 +73,7 @@ export default function NSInput({
         setIsModalOpen(false);
     };
 
-    const handleModalEdit = (newValue: string | null) => {
+    const handleModalEdit = (newValue: string | null | undefined) => {
         setInputValue(newValue);
         if (onEdit) {
             onEdit(newValue);

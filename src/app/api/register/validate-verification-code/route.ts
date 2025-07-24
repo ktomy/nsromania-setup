@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!(await validateCaptcha(token))) {
-        return new Response(JSON.stringify({ message: 'Failed to verify' }), {
+        return new Response(JSON.stringify({ error: 'Failed to verify' }), {
             status: 405,
         });
     }

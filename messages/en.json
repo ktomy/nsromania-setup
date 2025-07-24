@@ -121,7 +121,7 @@
     "emailVerificationCodeValidated": "Successfully validated email address",
     "eu": "EU",
     "formValidation": {
-      "apiSecretHelperText": "API secrte must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
+      "apiSecretHelperText": "API secret must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
       "invalidEmail": "Email is not valid",
       "invalidName": "Name is not valid",
       "invalidOwnerEmail": "Owner's email is not valid",

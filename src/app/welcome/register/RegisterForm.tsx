@@ -1,9 +1,9 @@
 'use client';
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { Alert, Box, Button, debounce, Grid, MenuItem, Snackbar } from '@mui/material';
+import { Alert, Box, Button, Grid, MenuItem, Snackbar } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
@@ -20,7 +20,7 @@ export default function RegisterForm() {
     const { executeRecaptcha } = useGoogleReCaptcha();
     const [validationEmailSent, setValidationEmailSent] = useState(false);
     const [emailValidated, setEmailValidated] = useState(false);
-    const [subdomainIsValid, setSubdomainIsValid] = useState(false);
+    const [subdomainIsValid, setSubdomainIsValid] = useState(true);
     const [snack, setSnack] = useState<{
         open: boolean;
         message: string;
@@ -35,12 +35,14 @@ export default function RegisterForm() {
         watch,
         getValues,
         formState: { errors },
+        setError,
     } = useForm({
         resolver: zodResolver(registrationFormSchema),
+        mode: 'onChange',
         defaultValues: {
             ownerName: '',
             ownerEmail: '',
-            emailValidationCode: undefined,
+            emailValidationCode: '',
             subDomain: '',
             nsTitle: 'Nightscout',
             apiSecret: '',
@@ -48,35 +50,10 @@ export default function RegisterForm() {
             dexcomServer: 'EU',
             dexcomUsername: undefined,
             dexcomPassword: undefined,
-            reCAPTCHAToken: undefined,
-            emailVerificationToken: undefined,
         },
     });
 
     const dataSource = watch('dataSource');
-
-    // Debounced subdomain validation
-    useEffect(() => {
-        const sub = watch('subDomain');
-        if (!sub) {
-            setSubdomainIsValid(false);
-            return;
-        }
-        const validate = debounce(async () => {
-            if (!executeRecaptcha) return;
-            const token =
-                process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('subdomain_validation');
-            const res = await fetch('/api/register/validate-subdomain', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subdomain: sub, token }),
-            });
-            setSubdomainIsValid(res.ok);
-        }, 500);
-
-        validate();
-        return () => validate.clear();
-    }, [executeRecaptcha, watch]);
 
     // Send validation email
     const handleSendValidationEmail = async () => {
@@ -134,12 +111,55 @@ export default function RegisterForm() {
         setEmailValidated(true);
     };
 
+    React.useEffect(() => {
+        console.log('Form errors:', errors);
+    });
+
     // Form submission
     const onSubmit = async (values: RegistrationFormData) => {
+        console.log('Form submitted with values:', values);
+
         setIsSubmitting(true);
         if (!executeRecaptcha) {
             return;
         }
+
+        // Validate subdomain before proceeding
+        try {
+            const recaptcha =
+                process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('subdomain_validation');
+            const availRes = await fetch('/api/register/validate-subdomain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subdomain: values.subDomain, token: recaptcha }),
+            });
+
+            if (!availRes.ok) {
+                const errorData = await availRes.json();
+                setError('subDomain', {
+                    type: 'manual',
+                    message: errorData.error || errorData.message || 'That sub-domain is already taken.',
+                });
+                setSubdomainIsValid(false);
+                setIsSubmitting(false);
+
+                console.error('Subdomain validation recaptcha failed');
+                return;
+            }
+        } catch {
+            setError('subDomain', {
+                type: 'manual',
+                message: 'Could not check sub-domain availability. Try again.',
+            });
+
+            setSubdomainIsValid(false);
+            setIsSubmitting(false);
+            openSnack(t('subdomainValidationFailed'), 'error');
+
+            console.error('Subdomain validation failed');
+            return;
+        }
+
         try {
             const recaptcha =
                 process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('register');
@@ -152,7 +172,7 @@ export default function RegisterForm() {
                 dexcomUsername: values.dexcomUsername,
                 dexcomPassword: values.dexcomPassword,
                 dexcomServer: values.dexcomServer,
-                emailVerificationToken: values.emailVerificationToken,
+                emailVerificationToken: values.emailValidationCode,
                 reCAPTCHAToken: recaptcha,
                 apiSecret: values.apiSecret,
                 title: values.nsTitle,
@@ -215,9 +235,12 @@ export default function RegisterForm() {
                             render={({ field }) => (
                                 <NSInput
                                     fullWidth
+                                    required
+                                    size="small"
                                     label={t('ownerName')}
                                     error={!!errors.ownerName}
                                     helperText={errors.ownerName?.message}
+                                    moreInformation={t('details.ownerName')}
                                     {...field}
                                 />
                             )}
@@ -230,11 +253,14 @@ export default function RegisterForm() {
                             render={({ field }) => (
                                 <NSInput
                                     fullWidth
+                                    required
+                                    size="small"
                                     label={t('ownerEmail')}
                                     error={!!errors.ownerEmail}
                                     helperText={errors.ownerEmail?.message}
-                                    {...field}
                                     disabled={emailValidated}
+                                    moreInformation={t('details.ownerEmail')}
+                                    {...field}
                                 />
                             )}
                         />
@@ -242,7 +268,7 @@ export default function RegisterForm() {
                     <Grid size={12}>
                         {!validationEmailSent && (
                             <Button
-                                disabled={emailValidated}
+                                disabled={emailValidated || !!errors.ownerEmail}
                                 onClick={handleSendValidationEmail}
                                 type="button"
                                 variant="contained"
@@ -274,7 +300,7 @@ export default function RegisterForm() {
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Button
-                                    disabled={emailValidated}
+                                    disabled={emailValidated || !!errors.emailValidationCode}
                                     fullWidth
                                     type="button"
                                     variant="contained"
@@ -428,7 +454,6 @@ export default function RegisterForm() {
                                     variant="contained"
                                     color="primary"
                                     loading={isSubmitting}
-                                    disabled={!subdomainIsValid}
                                 >
                                     {t('register')}
                                 </Button>

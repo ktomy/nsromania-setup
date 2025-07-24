@@ -25,9 +25,9 @@ export interface RegisterDomainRequest {
     ownerEmail: string;
     ownerName: string;
     dataSource: string;
-    dexcomUsername: string;
-    dexcomPassword: string;
-    dexcomServer: string;
+    dexcomUsername?: string;
+    dexcomPassword?: string;
+    dexcomServer?: string;
     emailVerificationToken: string;
     reCAPTCHAToken: string;
     id?: number;

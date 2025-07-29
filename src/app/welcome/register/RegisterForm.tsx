@@ -12,9 +12,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registrationFormSchema, RegistrationFormData } from '@/lib/validations/index';
 
-// TODO: Make sure all the hints and descriptions are added to the controller fields (e.g. moreInformation, helperText,  size, etc.) cross reference with the GITHUB original code.
-// TODO: Resolve dexcom optional fields issue
-
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
     const { executeRecaptcha } = useGoogleReCaptcha();
@@ -138,7 +135,7 @@ export default function RegisterForm() {
                 const errorData = await availRes.json();
                 setError('subDomain', {
                     type: 'manual',
-                    message: errorData.error || errorData.message || 'That sub-domain is already taken.',
+                    message: errorData.error,
                 });
                 setSubdomainIsValid(false);
                 setIsSubmitting(false);
@@ -228,7 +225,6 @@ export default function RegisterForm() {
                 </Typography>
                 <Grid container spacing={2} sx={{ marginX: 'auto' }}>
                     <Grid size={{ xs: 12 }}>
-                        {/* Owner name is a string of max 64 characters having alphanumeric characters and spaces */}
                         <Controller
                             name="ownerName"
                             control={control}
@@ -281,13 +277,13 @@ export default function RegisterForm() {
                     {validationEmailSent && !emailValidated && (
                         <>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                                {/* Validation code is a string of 6 digits, it can contain spaces or tabs at any moment, including start and end of the string */}
                                 <Controller
                                     name="emailValidationCode"
                                     control={control}
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
+                                            required
                                             size="small"
                                             label={t('emailValidationCode')}
                                             error={!!errors.emailValidationCode}
@@ -316,13 +312,13 @@ export default function RegisterForm() {
                     {emailValidated && (
                         <>
                             <Grid size={12}>
-                                {/* Subdomain is a string of max 32 characters containing only lowercase alphanumeric characters*/}
                                 <Controller
                                     name="subDomain"
                                     control={control}
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
+                                            required
                                             size="small"
                                             label={t('subDomain')}
                                             error={!!errors.subDomain || !subdomainIsValid}
@@ -357,6 +353,7 @@ export default function RegisterForm() {
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
+                                            required
                                             size="small"
                                             label={t('apiSecret')}
                                             error={!!errors.apiSecret}
@@ -418,7 +415,7 @@ export default function RegisterForm() {
                                             render={({ field }) => (
                                                 <NSInput
                                                     fullWidth
-                                                    size="small"
+                                                    size="small"    
                                                     label={t('dexcomUsername')}
                                                     error={!!errors.dexcomUsername}
                                                     helperText={errors.dexcomUsername?.message}
@@ -449,12 +446,7 @@ export default function RegisterForm() {
                             )}
                             <Grid size={8}>{/* Google reCAPTCHA */}</Grid>
                             <Grid size={12}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    color="primary"
-                                    loading={isSubmitting}
-                                >
+                                <Button type="submit" variant="contained" color="primary" loading={isSubmitting}>
                                     {t('register')}
                                 </Button>
                             </Grid>

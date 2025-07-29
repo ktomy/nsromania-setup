@@ -18,6 +18,8 @@ export async function POST(req: Request) {
     // name can only contain letters and spaces
     // API secret should be a string of 12 characters
 
+    console.log('Received registration request:', registrationRequest);
+
     if (
         !registrationRequest.ownerEmail ||
         !registrationRequest.reCAPTCHAToken ||

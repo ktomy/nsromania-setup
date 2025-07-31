@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { Alert, Box, Button, Grid, MenuItem, Snackbar } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
@@ -14,6 +14,7 @@ import { registrationFormSchema, RegistrationFormData } from '@/lib/validations/
 
 export default function RegisterForm() {
     const t = useTranslations('RegisterPage');
+    const locale = useLocale();
     const { executeRecaptcha } = useGoogleReCaptcha();
     const [validationEmailSent, setValidationEmailSent] = useState(false);
     const [emailValidated, setEmailValidated] = useState(false);
@@ -34,7 +35,7 @@ export default function RegisterForm() {
         formState: { errors },
         setError,
     } = useForm({
-        resolver: zodResolver(registrationFormSchema),
+        resolver: zodResolver(registrationFormSchema(t)),
         mode: 'onChange',
         defaultValues: {
             ownerName: '',
@@ -67,12 +68,17 @@ export default function RegisterForm() {
         const res = await fetch('/api/register/validate-email', {
             method: 'POST',
             body: JSON.stringify({ email: ownerEmail, token: token }),
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
         });
 
         const data = await res.json();
         if (data.error) {
-            openSnack(t('validationEmailFailed'), 'error');
+            setError('ownerEmail', {
+                type: 'manual',
+                message: data.error,
+            });
+
+            openSnack(data.error, 'error');
             return;
         }
 
@@ -84,10 +90,7 @@ export default function RegisterForm() {
     const handleCheckValidationCode = async () => {
         const { ownerEmail, emailValidationCode } = getValues();
 
-        if (!executeRecaptcha) {
-            console.error('Recaptcha not initialized');
-            return;
-        }
+        if (!executeRecaptcha) return;
 
         const token =
             process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('email_code_validation');
@@ -95,12 +98,17 @@ export default function RegisterForm() {
         const res = await fetch('/api/register/validate-verification-code', {
             method: 'POST',
             body: JSON.stringify({ email: ownerEmail, token: token, code: emailValidationCode }),
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
         });
 
         const data = await res.json();
         if (data.error) {
-            openSnack(t('emailValidationCodeInvalid'), 'error');
+            setError('emailValidationCode', {
+                type: 'manual',
+                message: data.error,
+            });
+
+            openSnack(data.error, 'error');
             return;
         }
 
@@ -108,14 +116,8 @@ export default function RegisterForm() {
         setEmailValidated(true);
     };
 
-    React.useEffect(() => {
-        console.log('Form errors:', errors);
-    });
-
     // Form submission
     const onSubmit = async (values: RegistrationFormData) => {
-        console.log('Form submitted with values:', values);
-
         setIsSubmitting(true);
         if (!executeRecaptcha) {
             return;
@@ -127,7 +129,7 @@ export default function RegisterForm() {
                 process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('subdomain_validation');
             const availRes = await fetch('/api/register/validate-subdomain', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
                 body: JSON.stringify({ subdomain: values.subDomain, token: recaptcha }),
             });
 
@@ -140,20 +142,18 @@ export default function RegisterForm() {
                 setSubdomainIsValid(false);
                 setIsSubmitting(false);
 
-                console.error('Subdomain validation recaptcha failed');
                 return;
             }
         } catch {
             setError('subDomain', {
                 type: 'manual',
-                message: 'Could not check sub-domain availability. Try again.',
+                message: t('errors.subdomain.availability'),
             });
 
             setSubdomainIsValid(false);
             setIsSubmitting(false);
             openSnack(t('subdomainValidationFailed'), 'error');
 
-            console.error('Subdomain validation failed');
             return;
         }
 
@@ -178,7 +178,7 @@ export default function RegisterForm() {
             const res = await fetch('/api/register', {
                 method: 'POST',
                 body: JSON.stringify(registerRequest),
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
             });
 
             const data = await res.json();
@@ -231,7 +231,6 @@ export default function RegisterForm() {
                             render={({ field }) => (
                                 <NSInput
                                     fullWidth
-                                    required
                                     size="small"
                                     label={t('ownerName')}
                                     error={!!errors.ownerName}
@@ -249,7 +248,6 @@ export default function RegisterForm() {
                             render={({ field }) => (
                                 <NSInput
                                     fullWidth
-                                    required
                                     size="small"
                                     label={t('ownerEmail')}
                                     error={!!errors.ownerEmail}
@@ -283,7 +281,6 @@ export default function RegisterForm() {
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
-                                            required
                                             size="small"
                                             label={t('emailValidationCode')}
                                             error={!!errors.emailValidationCode}
@@ -318,7 +315,6 @@ export default function RegisterForm() {
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
-                                            required
                                             size="small"
                                             label={t('subDomain')}
                                             error={!!errors.subDomain || !subdomainIsValid}
@@ -353,7 +349,6 @@ export default function RegisterForm() {
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
-                                            required
                                             size="small"
                                             label={t('apiSecret')}
                                             error={!!errors.apiSecret}
@@ -415,7 +410,7 @@ export default function RegisterForm() {
                                             render={({ field }) => (
                                                 <NSInput
                                                     fullWidth
-                                                    size="small"    
+                                                    size="small"
                                                     label={t('dexcomUsername')}
                                                     error={!!errors.dexcomUsername}
                                                     helperText={errors.dexcomUsername?.message}

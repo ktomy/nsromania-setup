@@ -1,118 +1,141 @@
 import { z } from 'zod';
 
-// TODO use translations for all error messages
-// TODO server-side validations should be consistent with client-side validations 
-// Return the error messagef from the server-side and use it in the client-side
+// TODO server-side validations should be consistent with client-side validations
+// TODO Return the error messages from the server-side and use it in the client-side
+// TODO disable email sending if in DEVELOPMENT mode
+
+// Type for translation function
+type T = (key: string) => string;
 
 // Common validation patterns
-export const emailSchema = z.email('Email must be a valid email address').min(1, 'Email is required');
+export const emailSchema = (t: T) => z.email(t('errors.email.invalid')).min(1, t('errors.email.required'));
 
-export const nameSchema = z
-    .string()
-    .min(1, 'Name is required')
-    .max(64, 'Name must be 64 characters or less')
-    .regex(/^[a-zA-Z0-9\s]+$/, 'Name can only contain letters, numbers, and spaces');
+export const nameSchema = (t: T) =>
+    z
+        .string()
+        .min(1, t('errors.name.required'))
+        .max(64, t('errors.name.max'))
+        .regex(/^[a-zA-Z0-9\s]+$/, t('errors.name.pattern'));
 
-export const subdomainSchema = z
-    .string()
-    .min(1, 'Subdomain is required')
-    .max(63, 'Subdomain must be 63 characters or less')
-    .regex(/^[a-z0-9-]+$/, 'Subdomain can only contain lowercase letters, numbers, and hyphens')
-    .refine((val) => !val.startsWith('-') && !val.endsWith('-'), {
-        message: 'Subdomain cannot start or end with a hyphen',
-    });
+export const subdomainSchema = (t: T) =>
+    z
+        .string()
+        .min(1, t('errors.subdomain.required'))
+        .max(63, t('errors.subdomain.max'))
+        .regex(/^[a-z0-9-]+$/, t('errors.subdomain.pattern'))
+        .refine((val) => !val.startsWith('-') && !val.endsWith('-'), {
+            error: t('errors.subdomain.hyphen'),
+        });
 
-export const apiSecretSchema = z
-    .string()
-    .min(12, 'API secret must be at least 12 characters')
-    .max(32, 'API secret must be 32 characters or less')
-    .regex(/^[a-zA-Z0-9\-_\.]+$/, 'API secret can only contain letters, numbers, hyphens, underscores, and dots');
+export const apiSecretSchema = (t: T) =>
+    z
+        .string()
+        .min(12, t('errors.apiSecret.min'))
+        .max(32, t('errors.apiSecret.max'))
+        .regex(/^[a-zA-Z0-9\-_\.]+$/, t('errors.apiSecret.pattern'));
 
-export const validationCodeSchema = z
-    .string()
-    .regex(/^\s*\d{6}\s*$/, 'Validation code must be exactly 6 digits')
-    .transform((val) => val.trim()); // Remove whitespace
+export const validationCodeSchema = (t: T) =>
+    z
+        .string()
+        .regex(/^\s*\d{6}\s*$/, t('errors.validationCode.pattern'))
+        .transform((val) => val.trim());
 
-export const dexcomCredentialsSchema = z
-    .string()
-    .min(5, 'Must be at least 5 characters')
-    .max(32, 'Must be 32 characters or less')
-    .regex(/^[a-zA-Z0-9!@#$%^&*().+\-]+$/, 'Invalid characters in credentials');
+export const dexcomCredentialsSchema = (t: T) =>
+    z
+        .string()
+        .min(5, t('errors.dexcomCredentials.min'))
+        .max(32, t('errors.dexcomCredentials.max'))
+        .regex(/^[a-zA-Z0-9!@#$%^&*().+\-]+$/, t('errors.dexcomCredentials.pattern'));
 
-export const reCAPTCHATokenSchema = z.string().min(10, 'Invalid reCAPTCHA token');
+export const reCAPTCHATokenSchema = (t: T) => z.string().min(10, t('errors.reCAPTCHA.invalid'));
 
 // Registration form schema
-export const registrationFormSchema = z
-    .object({
-        ownerName: nameSchema,
-        ownerEmail: emailSchema,
-        emailValidationCode: validationCodeSchema,
-        subDomain: subdomainSchema,
-        nsTitle: z
-            .string()
-            .min(1, 'Title is required')
-            .max(50, 'Title must be 50 characters or less')
-            .optional()
-            .default('Nightscout'),
-        apiSecret: apiSecretSchema,
-        dataSource: z.enum(['Dexcom', 'API'], {
-            message: 'Data source must be either Dexcom or API',
-        }),
-        dexcomServer: z.enum(['EU', 'US']).optional(),
-        dexcomUsername: z.string().optional(),
-        dexcomPassword: z.string().optional(),
-    })
-    .check((ctx) => {
-        if (ctx.value.dataSource === 'Dexcom') {
-            // Username validation
-            if (!ctx.value.dexcomUsername) {
-                ctx.issues.push({
-                    code: 'custom',
-                    path: ['dexcomUsername'],
-                    message: 'Dexcom username is required when using Dexcom as data source',
-                    input: ctx.value.dexcomUsername,
-                });
-            } else {
-                const parsed = dexcomCredentialsSchema.safeParse(ctx.value.dexcomUsername);
+export const registrationFormSchema = (t: T) =>
+    z
+        .object({
+            ownerName: nameSchema(t),
+            ownerEmail: emailSchema(t),
+            emailValidationCode: validationCodeSchema(t),
+            subDomain: subdomainSchema(t),
+            nsTitle: z
+                .string()
+                .min(1, t('errors.nsTitle.required'))
+                .max(50, t('errors.nsTitle.max'))
+                .optional()
+                .default('Nightscout'),
+            apiSecret: apiSecretSchema(t),
+            dataSource: z.enum(['Dexcom', 'API'], {
+                error: t('errors.dataSource.invalid'),
+            }),
+            dexcomServer: z.enum(['EU', 'US'], { error: t('errors.dexcomServer.invalid') }).optional(),
+            dexcomUsername: z.string().optional(),
+            dexcomPassword: z.string().optional(),
+        })
+        .check((ctx) => {
+            if (ctx.value.dataSource === 'Dexcom') {
+                // Username validation
+                if (!ctx.value.dexcomUsername) {
+                    ctx.issues.push({
+                        code: 'custom',
+                        path: ['dexcomUsername'],
+                        message: t('errors.dexcomUsername.required'),
+                        input: ctx.value.dexcomUsername,
+                    });
+                } else {
+                    const parsed = dexcomCredentialsSchema(t).safeParse(ctx.value.dexcomUsername);
 
-                if (!parsed.success) {
-                    parsed.error.issues.forEach((err) => {
-                        ctx.issues.push({
-                            code: 'custom',
-                            path: ['dexcomUsername'],
-                            message: err.message,
-                            input: ctx.value.dexcomUsername,
+                    if (!parsed.success) {
+                        parsed.error.issues.forEach((err) => {
+                            ctx.issues.push({
+                                code: 'custom',
+                                path: ['dexcomUsername'],
+                                message: err.message,
+                                input: ctx.value.dexcomUsername,
+                            });
                         });
+                    }
+                }
+
+                // Password validation
+                if (!ctx.value.dexcomPassword) {
+                    ctx.issues.push({
+                        code: 'custom',
+                        path: ['dexcomPassword'],
+                        message: t('errors.dexcomPassword.required'),
+                        input: ctx.value.dexcomPassword,
+                    });
+                } else if (ctx.value.dexcomPassword.length < 5) {
+                    ctx.issues.push({
+                        code: 'custom',
+                        path: ['dexcomPassword'],
+                        message: t('errors.dexcomPassword.min'),
+                        input: ctx.value.dexcomPassword,
                     });
                 }
             }
-
-            // Password validation
-            if (!ctx.value.dexcomPassword) {
-                ctx.issues.push({
-                    code: 'custom',
-                    path: ['dexcomPassword'],
-                    message: 'Dexcom password is required when using Dexcom as data source',
-                    input: ctx.value.dexcomPassword,
-                });
-            } else if (ctx.value.dexcomPassword.length < 5) {
-                ctx.issues.push({
-                    code: 'custom',
-                    path: ['dexcomPassword'],
-                    message: 'Password must be at least 5 characters long',
-                    input: ctx.value.dexcomPassword,
-                });
-            }
-        }
-    });
+        });
 
 // Schemas for API requests bodies
-export const validateSubdomainRequestSchema = z.object({
-    token: reCAPTCHATokenSchema,
-    subdomain: subdomainSchema,
-});
+export const validateSubdomainRequestSchema = (t: T) =>
+    z.object({
+        subdomain: subdomainSchema(t),
+        token: reCAPTCHATokenSchema(t),
+    });
+
+export const validateEmailRequestSchema = (t: T) =>
+    z.object({
+        email: emailSchema(t),
+        token: reCAPTCHATokenSchema(t),
+    });
+
+export const validateVerificationCodeRequestSchema = (t: T) =>
+    z.object({
+        email: emailSchema(t),
+        token: reCAPTCHATokenSchema(t),
+        code: validationCodeSchema(t),
+    });
 
 //TODO add schemas for the other API requests as needed
 
 // Type exports for TypeScript
-export type RegistrationFormData = z.infer<typeof registrationFormSchema>;
+export type RegistrationFormData = z.infer<ReturnType<typeof registrationFormSchema>>;

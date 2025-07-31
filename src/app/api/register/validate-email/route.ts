@@ -1,20 +1,38 @@
 import { NextRequest } from 'next/server';
 import { initiateEmailValidation } from '@/lib/services/registration';
 import { validateCaptcha } from '@/lib/services/recaptcha';
+import { validateEmailRequestSchema } from '@/lib/validations';
+import { getTranslations } from 'next-intl/server';
+import { hasLocale } from 'next-intl';
+import { locales } from '@/i18n/config';
 
 export async function POST(req: NextRequest) {
-    const { email, token } = await req.json();
+    // Setting up the translation
+    const locale = req.headers.get('accept-language') ?? '';
 
-    // if email does not like like an email (reges validation) or token is small or empty, return an error
-    if (!email || !token || !email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) || token.length < 10) {
-        return new Response(JSON.stringify({ error: 'Invalid email or token' }), {
+    if (!hasLocale(locales, locale)) {
+        return new Response(JSON.stringify({ error: 'Invalid locale' }), {
+            status: 400,
+        });
+    }
+
+    const t = await getTranslations({ locale, namespace: 'RegisterPage' });
+
+    // Parsing the request body
+    const body = await req.json();
+
+    const parsed = validateEmailRequestSchema(t).safeParse(body);
+
+    if (!parsed.success) {
+        return new Response(JSON.stringify({ error: parsed.error.issues[0].message }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
         });
     }
 
+    const { email, token } = parsed.data;
     if (process.env.NODE_ENV !== 'development' && !(await validateCaptcha(token))) {
-        return new Response(JSON.stringify({ message: 'Failed to verify' }), {
+        return new Response(JSON.stringify({ error: t('errors.reCAPTCHA.failed') }), {
             status: 405,
         });
     }
@@ -27,7 +45,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
         });
     } else {
-        return new Response(JSON.stringify({ error: 'Failed to initialize email validation' }), {
+        return new Response(JSON.stringify({ error: t('validationEmailFailed') }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });

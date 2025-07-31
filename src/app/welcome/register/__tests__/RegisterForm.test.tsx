@@ -10,6 +10,7 @@ jest.mock('next-intl', () => ({
         t.rich = (key: string, { icon }: any) => (icon ? [icon(), key] : key);
         return t;
     },
+    useLocale: () => 'en',
 }));
 
 // Mock react-google-recaptcha-v3
@@ -34,18 +35,23 @@ describe('RegisterForm', () => {
         });
     });
 
-    it('validates email format', () => {
+    it('validates email format', async () => {
         render(<RegisterForm />);
         const emailInput = screen.getByRole('textbox', { name: 'ownerEmail' });
         fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-        expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+        // Wait for validation error to be applied
+        await waitFor(() => {
+            expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+        });
     });
 
-    it('validates owner name format', () => {
+    it('validates owner name format', async () => {
         render(<RegisterForm />);
         const nameInput = screen.getByRole('textbox', { name: 'ownerName' });
         fireEvent.change(nameInput, { target: { value: '!!!' } });
-        expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+        await waitFor(() => {
+            expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+        });
     });
 
     it('submits correct data on submit button press', async () => {
@@ -53,13 +59,13 @@ describe('RegisterForm', () => {
         global.fetch = jest
             .fn()
             // validate-email
-            .mockResolvedValueOnce({ json: async () => ({}), status: 200 })
+            .mockResolvedValueOnce({ status: 200, ok: true, json: async () => ({}) })
             // validate-verification-code
-            .mockResolvedValueOnce({ json: async () => ({}), status: 200 })
+            .mockResolvedValueOnce({ status: 200, ok: true, json: async () => ({}) })
             // validate-subdomain
-            .mockResolvedValueOnce({ status: 200, json: async () => ({}) })
+            .mockResolvedValueOnce({ status: 200, ok: true, json: async () => ({}) })
             // register
-            .mockResolvedValueOnce({ json: async () => ({ success: true }), status: 200 });
+            .mockResolvedValueOnce({ status: 200, ok: true, json: async () => ({ success: true }) });
 
         render(<RegisterForm />);
 
@@ -100,7 +106,8 @@ describe('RegisterForm', () => {
         fireEvent.click(screen.getByText('register'));
 
         await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
+            expect(global.fetch).toHaveBeenNthCalledWith(
+                4,
                 '/api/register',
                 expect.objectContaining({
                     method: 'POST',
@@ -124,7 +131,7 @@ describe('RegisterForm', () => {
             dataSource: 'Dexcom',
             dexcomServer: 'EU',
             emailVerificationToken: '123456',
-            reCAPTCHAToken: '1234567890',
+            reCAPTCHAToken: 'mock-token',
             title: 'Nightscout',
         });
     });

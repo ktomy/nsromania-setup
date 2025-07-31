@@ -8,6 +8,7 @@ import { createMockTranslator, extractTranslationKeys, validateTranslationKeys }
 // Mock next-intl
 jest.mock('next-intl', () => ({
     useTranslations: () => createMockTranslator(),
+    useLocale: () => 'en',
 }));
 
 describe('Translations', () => {

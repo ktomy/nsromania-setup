@@ -8,7 +8,7 @@
         "start": "next start",
         "storybook": "storybook dev -p 6006",
         "build-storybook": "storybook build",
-        "test": "NODE_ENV=development jest",
+        "test": "jest",
         "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
         "clear_jest": "jest --clearCache"
     },

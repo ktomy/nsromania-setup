@@ -5,51 +5,63 @@ import {
     validateEmail,
     validateSubdomain,
 } from '@/lib/services/registration';
-import { RegisterDomainRequest } from '@/types/domains';
 import { auth } from '@/auth';
 import { User } from '@prisma/client';
+import { hasLocale } from 'next-intl';
+import { locales } from '@/i18n/config';
+import { getTranslations } from 'next-intl/server';
+import { serverRegistrationRequestSchema } from '@/lib/validations';
+import z from 'zod';
 
 export async function POST(req: Request) {
-    const registrationRequest = (await req.json()) as RegisterDomainRequest;
-
     // email should look like an email, token should be long enough
     // domain should be an alphanumeric string of 2 to 16 characters, can only contain dashes, lowecase letters and numbers
     // data source can only be "Dexcom" or "API"
     // name can only contain letters and spaces
     // API secret should be a string of 12 characters
 
-    console.log('Received registration request:', registrationRequest);
+    // Setting up the translation
+    const locale = req.headers.get('accept-language') ?? '';
+    if (!hasLocale(locales, locale)) {
+        return new Response(JSON.stringify({ error: 'Invalid locale' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+    const t = await getTranslations({ locale, namespace: 'RegisterPage' });
 
-    if (
-        !registrationRequest.ownerEmail ||
-        !registrationRequest.reCAPTCHAToken ||
-        !registrationRequest.domain ||
-        !registrationRequest.dataSource ||
-        !registrationRequest.ownerName ||
-        !registrationRequest.apiSecret ||
-        registrationRequest.apiSecret.length < 12 ||
-        !registrationRequest.domain.match(/^[a-z0-9-]{2,16}$/) ||
-        !registrationRequest.ownerName.match(/^[a-zA-Z ]{2,64}$/) ||
-        !['Dexcom', 'API'].includes(registrationRequest.dataSource) ||
-        !registrationRequest.ownerEmail.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) ||
-        registrationRequest.reCAPTCHAToken.length < 10 ||
-        !(process.env.NODE_ENV === 'development' ? true : await validateCaptcha(registrationRequest.reCAPTCHAToken))
-    ) {
-        return new Response(JSON.stringify({ error: 'Invalid input parameters' }), {
+    const body = await req.json();
+
+    // Validate the request body using the Zod schema
+    const parsed = serverRegistrationRequestSchema(t).safeParse(body);
+
+    if (!parsed.success) {
+        return new Response(JSON.stringify({ zodErrors: z.flattenError(parsed.error) }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
         });
     }
 
+    const registrationRequest = parsed.data;
+
+    console.log('Registration request:', registrationRequest);
+
+    if (process.env.NODE_ENV !== 'development' && !(await validateCaptcha(registrationRequest.reCAPTCHAToken))) {
+        return new Response(JSON.stringify({ error: t('errors.reCAPTCHA.failed') }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+
     if (!(await validateEmail(registrationRequest.ownerEmail, registrationRequest.emailVerificationToken))) {
-        return new Response(JSON.stringify({ error: 'Email not validated' }), {
+        return new Response(JSON.stringify({ error: t('emailValidationCodeInvalid') }), {
             status: 403,
             headers: { 'Content-Type': 'application/json' },
         });
     }
 
     if (!(await validateSubdomain(registrationRequest.domain))) {
-        return new Response(JSON.stringify({ error: 'Subdomain already in use' }), {
+        return new Response(JSON.stringify({ error: t('subDomainAlreadyInUse') }), {
             status: 409,
             headers: { 'Content-Type': 'application/json' },
         });
@@ -61,7 +73,7 @@ export async function POST(req: Request) {
             headers: { 'Content-Type': 'application/json' },
         });
     } else {
-        return new Response(JSON.stringify({ error: 'Failed to create registration request' }), {
+        return new Response(JSON.stringify({ error: t('registrationFailed') }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });

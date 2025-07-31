@@ -3,7 +3,7 @@ import * as React from 'react';
 import Typography from '@mui/material/Typography';
 import { Alert, Box, Button, Grid, MenuItem, Snackbar } from '@mui/material';
 import { useTranslations, useLocale } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { RegisterDomainRequest } from '@/types/domains';
 import NSInput from '@/lib/components/general/NSInput/NSInput';
@@ -32,6 +32,7 @@ export default function RegisterForm() {
         handleSubmit,
         watch,
         getValues,
+        setValue,
         formState: { errors },
         setError,
     } = useForm({
@@ -40,9 +41,9 @@ export default function RegisterForm() {
         defaultValues: {
             ownerName: '',
             ownerEmail: '',
-            emailValidationCode: '',
-            subDomain: '',
-            nsTitle: 'Nightscout',
+            emailVerificationToken: '',
+            domain: '',
+            title: 'Nightscout',
             apiSecret: '',
             dataSource: 'Dexcom',
             dexcomServer: 'EU',
@@ -52,6 +53,15 @@ export default function RegisterForm() {
     });
 
     const dataSource = watch('dataSource');
+
+    // Reset Dexcom fields when dataSource changes
+    useEffect(() => {
+        if (dataSource !== 'Dexcom') {
+            setValue('dexcomServer', undefined);
+            setValue('dexcomUsername', undefined);
+            setValue('dexcomPassword', undefined);
+        }
+    }, [dataSource, setValue]);
 
     // Send validation email
     const handleSendValidationEmail = async () => {
@@ -88,7 +98,7 @@ export default function RegisterForm() {
 
     // Check email verification code
     const handleCheckValidationCode = async () => {
-        const { ownerEmail, emailValidationCode } = getValues();
+        const { ownerEmail, emailVerificationToken } = getValues();
 
         if (!executeRecaptcha) return;
 
@@ -97,13 +107,13 @@ export default function RegisterForm() {
 
         const res = await fetch('/api/register/validate-verification-code', {
             method: 'POST',
-            body: JSON.stringify({ email: ownerEmail, token: token, code: emailValidationCode }),
+            body: JSON.stringify({ email: ownerEmail, token: token, code: emailVerificationToken }),
             headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
         });
 
         const data = await res.json();
         if (data.error) {
-            setError('emailValidationCode', {
+            setError('emailVerificationToken', {
                 type: 'manual',
                 message: data.error,
             });
@@ -130,12 +140,12 @@ export default function RegisterForm() {
             const availRes = await fetch('/api/register/validate-subdomain', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
-                body: JSON.stringify({ subdomain: values.subDomain, token: recaptcha }),
+                body: JSON.stringify({ subdomain: values.domain, token: recaptcha }),
             });
 
             if (!availRes.ok) {
                 const errorData = await availRes.json();
-                setError('subDomain', {
+                setError('domain', {
                     type: 'manual',
                     message: errorData.error,
                 });
@@ -145,7 +155,7 @@ export default function RegisterForm() {
                 return;
             }
         } catch {
-            setError('subDomain', {
+            setError('domain', {
                 type: 'manual',
                 message: t('errors.subdomain.availability'),
             });
@@ -162,17 +172,8 @@ export default function RegisterForm() {
                 process.env.NODE_ENV === 'development' ? '1234567890' : await executeRecaptcha('register');
 
             const registerRequest: RegisterDomainRequest = {
-                domain: values.subDomain,
-                ownerEmail: values.ownerEmail,
-                ownerName: values.ownerName,
-                dataSource: values.dataSource,
-                dexcomUsername: values.dexcomUsername,
-                dexcomPassword: values.dexcomPassword,
-                dexcomServer: values.dexcomServer,
-                emailVerificationToken: values.emailValidationCode,
+                ...values,
                 reCAPTCHAToken: recaptcha,
-                apiSecret: values.apiSecret,
-                title: values.nsTitle,
             };
 
             const res = await fetch('/api/register', {
@@ -189,7 +190,29 @@ export default function RegisterForm() {
                     window.location.href = '/welcome/registrationsuccess';
                 }, 1000);
             } else {
-                openSnack(t('registrationFailed'), 'error');
+                // Handle zod errors
+                if (data.zodErrors) {
+                    const { formErrors, fieldErrors } = data.zodErrors;
+
+                    if (formErrors && formErrors.length > 0) {
+                        openSnack(formErrors.join(' '), 'error');
+                    }
+
+                    if (fieldErrors) {
+                        Object.entries(fieldErrors).forEach(([field, messages]) => {
+                            setError(
+                                field as keyof RegistrationFormData,
+                                { type: 'server', message: (messages as string[]).join(' ') },
+                                { shouldFocus: true }
+                            );
+                        });
+                    }
+                } else if (data.error) {
+                    openSnack(data.error, 'error');
+                }
+
+                setIsSubmitting(false);
+                return;
             }
         } catch {
             openSnack(t('registrationFailed'), 'error');
@@ -276,15 +299,15 @@ export default function RegisterForm() {
                         <>
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Controller
-                                    name="emailValidationCode"
+                                    name="emailVerificationToken"
                                     control={control}
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
                                             size="small"
                                             label={t('emailValidationCode')}
-                                            error={!!errors.emailValidationCode}
-                                            helperText={errors.emailValidationCode?.message}
+                                            error={!!errors.emailVerificationToken}
+                                            helperText={errors.emailVerificationToken?.message}
                                             moreInformation={t('details.emailValidationCode')}
                                             {...field}
                                         />
@@ -293,7 +316,7 @@ export default function RegisterForm() {
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Button
-                                    disabled={emailValidated || !!errors.emailValidationCode}
+                                    disabled={emailValidated || !!errors.emailVerificationToken}
                                     fullWidth
                                     type="button"
                                     variant="contained"
@@ -310,15 +333,15 @@ export default function RegisterForm() {
                         <>
                             <Grid size={12}>
                                 <Controller
-                                    name="subDomain"
+                                    name="domain"
                                     control={control}
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
                                             size="small"
                                             label={t('subDomain')}
-                                            error={!!errors.subDomain || !subdomainIsValid}
-                                            helperText={errors.subDomain?.message}
+                                            error={!!errors.domain || !subdomainIsValid}
+                                            helperText={errors.domain?.message}
                                             moreInformation={t('details.subDomain')}
                                             {...field}
                                         />
@@ -327,15 +350,15 @@ export default function RegisterForm() {
                             </Grid>
                             <Grid size={12}>
                                 <Controller
-                                    name="nsTitle"
+                                    name="title"
                                     control={control}
                                     render={({ field }) => (
                                         <NSInput
                                             fullWidth
                                             size="small"
                                             label={t('title')}
-                                            error={!!errors.nsTitle}
-                                            helperText={errors.nsTitle?.message}
+                                            error={!!errors.title}
+                                            helperText={errors.title?.message}
                                             moreInformation={t('details.title')}
                                             {...field}
                                         />

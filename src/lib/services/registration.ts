@@ -104,9 +104,14 @@ export async function createRegistrationRequest(request: RegisterDomainRequest):
             name: admin.name || admin.email!,
         };
     });
-    // send an email to each admin
-
-    await sendRegistrationNotificationEmail(request, adminEmails);
+    
+    // send an email to each admin if not in development mode
+    if (process.env.NODE_ENV !== 'development') {
+        await sendRegistrationNotificationEmail(request, adminEmails);
+    }
+    else {
+        console.log('Skipping email notification in development mode');
+    }
 
     return true;
 }

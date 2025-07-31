@@ -65,7 +65,7 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
-    const [owner, ] = useState(domainData.authUser?.email ?? '?');
+    const [owner] = useState(domainData.authUser?.email ?? '?');
 
     // Fetch available versions on component mount
     React.useEffect(() => {
@@ -182,13 +182,13 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
 
     return (
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <FormControlLabel
-                        control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />}
-                        label={t('active')}
-                    />
-                </Grid> 
-                <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 4 }}>
+                <FormControlLabel
+                    control={<Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} />}
+                    label={t('active')}
+                />
+            </Grid>
+            <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Box sx={{ display: 'flex' }} alignItems="center">
                         <NSInput
@@ -355,7 +355,9 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
                                                 value={env.value}
                                                 onEdit={(value) => {
                                                     setEnvironments(
-                                                        environments.map((e, i) => (i === index ? { ...e, value } : e))
+                                                        environments.map((e, i) =>
+                                                            i === index ? { ...e, value: value ?? null } : e
+                                                        )
                                                     );
                                                 }}
                                                 placeholder={t('value')}

@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-// TODO double check the validation schemas with the original github code
-
 // Type for translation function
 type T = (key: string) => string;
 
@@ -30,7 +28,7 @@ export const apiSecretSchema = (t: T) =>
         .string()
         .min(12, t('errors.apiSecret.min'))
         .max(32, t('errors.apiSecret.max'))
-        .regex(/^[a-zA-Z0-9\-_\.]+$/, t('errors.apiSecret.pattern'));
+        .regex(/^[a-zA-Z0-9-\_\.]+$/, t('errors.apiSecret.pattern'));
 
 export const validationCodeSchema = (t: T) =>
     z

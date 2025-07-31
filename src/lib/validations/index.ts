@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-// TODO server-side validations should be consistent with client-side validations
-// TODO Return the error messages from the server-side and use it in the client-side
-// TODO disable email sending if in DEVELOPMENT mode
+// TODO double check the validation schemas with the original github code
 
 // Type for translation function
 type T = (key: string) => string;
@@ -55,9 +53,9 @@ export const registrationFormSchema = (t: T) =>
         .object({
             ownerName: nameSchema(t),
             ownerEmail: emailSchema(t),
-            emailValidationCode: validationCodeSchema(t),
-            subDomain: subdomainSchema(t),
-            nsTitle: z
+            emailVerificationToken: validationCodeSchema(t),
+            domain: subdomainSchema(t),
+            title: z
                 .string()
                 .min(1, t('errors.nsTitle.required'))
                 .max(50, t('errors.nsTitle.max'))
@@ -135,7 +133,10 @@ export const validateVerificationCodeRequestSchema = (t: T) =>
         code: validationCodeSchema(t),
     });
 
-//TODO add schemas for the other API requests as needed
+export const serverRegistrationRequestSchema = (t: T) =>
+    registrationFormSchema(t).extend({
+        reCAPTCHAToken: reCAPTCHATokenSchema(t),
+    });
 
 // Type exports for TypeScript
 export type RegistrationFormData = z.infer<ReturnType<typeof registrationFormSchema>>;

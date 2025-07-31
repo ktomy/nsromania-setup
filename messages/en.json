@@ -129,6 +129,59 @@
             "invalidSubdomain": "Subdomain is not valid",
             "invalidTitle": "Title is not valid"
         },
+        "errors": {
+            "email": {
+                "invalid": "Email must be a valid email address",
+                "required": "Email is required"
+            },
+            "name": {
+                "required": "Name is required",
+                "max": "Name must be 64 characters or less",
+                "pattern": "Name can only contain letters, numbers, and spaces"
+            },
+            "subdomain": {
+                "required": "Subdomain is required",
+                "max": "Subdomain must be 63 characters or less",
+                "pattern": "Subdomain can only contain lowercase letters, numbers, and hyphens",
+                "hyphen": "Subdomain cannot start or end with a hyphen",
+                "taken": "Subdomain is already taken, please choose another one",
+                "availability": "Could not check sub-domain availability. Try again."
+            },
+            "apiSecret": {
+                "min": "API secret must be at least 12 characters",
+                "max": "API secret must be 32 characters or less",
+                "pattern": "API secret can only contain letters, numbers, hyphens, underscores, and dots"
+            },
+            "validationCode": {
+                "pattern": "Validation code must be exactly 6 digits"
+            },
+            "dexcomCredentials": {
+                "min": "Dexcom username must be at least 5 characters",
+                "max": "Dexcom username must be 32 characters or less",
+                "pattern": "Invalid characters in credentials"
+            },
+            "reCAPTCHA": {
+                "invalid": "Invalid reCAPTCHA token",
+                "failed": "reCAPTCHA verification failed, please try again"
+            },
+            "nsTitle": {
+                "required": "Title is required",
+                "max": "Title must be 50 characters or less"
+            },
+            "dataSource": {
+                "invalid": "Data source must be either Dexcom or API"
+            },
+            "dexcomServer": {
+                "invalid": "Dexcom server must be either EU or US"
+            },
+            "dexcomUsername": {
+                "required": "Dexcom username is required when using Dexcom as data source"
+            },
+            "dexcomPassword": {
+                "required": "Dexcom password is required when using Dexcom as data source",
+                "min": "Dexcom password must be at least 5 characters long"
+            }
+        },
         "ownerEmail": "Email",
         "ownerName": "Name",
         "ownerNameAndEmailRequired": "Name and email have to be filled in to proceed further",

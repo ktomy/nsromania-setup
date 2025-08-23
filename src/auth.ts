@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import type { Provider } from 'next-auth/providers';
 import Google from 'next-auth/providers/google';
-import Sendgrid from 'next-auth/providers/sendgrid';
+// Removed Sendgrid; email magic-link now sent via Brevo using local templates.
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './lib/prisma';
 import { User } from '@prisma/client';
@@ -20,14 +20,15 @@ const providers: Provider[] = [
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         allowDangerousEmailAccountLinking: true,
     }),
-    Sendgrid({
-        apiKey: process.env.SENDGRID_API_KEY,
+    // Custom Email magic-link provider using Brevo (via sendSignInEmail)
+    {
         id: 'nodemailer',
         name: 'Email',
+        type: 'email',
         sendVerificationRequest: async ({ identifier: email, url }) => {
-            return sendSignInEmail(email, url);
+            await sendSignInEmail(email, url);
         },
-    }),
+    } as Provider,
     process.env.NODE_ENV === 'development'
         ? Credentials({
               name: 'Test User',
@@ -65,14 +66,7 @@ export const providerMap = providers
     .map((provider) => {
         if (typeof provider === 'function') {
             const providerData = provider();
-            if (providerData.id === 'sendgrid') {
-                return { id: 'nodemailer', name: 'Email' };
-            }
             return { id: providerData.id, name: providerData.name };
-        }
-
-        if (provider.id === 'sendgrid') {
-            return { id: 'nodemailer', name: 'Email' };
         }
 
         return { id: provider.id, name: provider.name };

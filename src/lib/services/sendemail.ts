@@ -3,15 +3,21 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 // Brevo (Sendinblue) transactional email API client
-import Brevo from '@getbrevo/brevo';
+import { TransactionalEmailsApi } from '@getbrevo/brevo';
 
-// Basic singleton client so we don't re-init for every email
-let brevoClient: Brevo.TransactionalEmailsApi | null = null;
+// Allow test API to force real sending even in development via a global flag.
+// (We avoid changing every public send* function signature.)
+declare global {
+    // eslint-disable-next-line no-var
+    var __forceSendEmails: boolean | undefined;
+}
 
-function getClient() {
+let brevoClient: TransactionalEmailsApi | null = null;
+function getClient(): TransactionalEmailsApi {
     if (!brevoClient) {
-        brevoClient = new Brevo.TransactionalEmailsApi();
-        brevoClient.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
+        brevoClient = new TransactionalEmailsApi();
+        // Direct assignment into authentications map (see brevo/dist/api/transactionalEmailsApi.js)
+        (brevoClient as any).authentications.apiKey.apiKey = process.env.BREVO_API_KEY || '';
     }
     return brevoClient;
 }
@@ -45,6 +51,15 @@ async function sendEmailViaBrevo(opts: SendEmailOptions): Promise<boolean> {
         }
         const htmlRaw = await loadTemplate(opts.template);
         const html = renderTemplate(htmlRaw, opts.variables);
+        const isDev = process.env.NODE_ENV === 'development';
+        const force = (globalThis as any).__forceSendEmails;
+        // If in dev environment, normally we just log. Force flag allows real sending for manual tests.
+        if (isDev && !force) {
+            console.log('Email suppressed (dev mode). Pass force=true in test-email API to actually send.');
+            console.log('Email options (dev mode suppressed):', opts);
+            console.log('Email content (dev mode suppressed):', html);
+            return true;
+        }
 
         const client = getClient();
         await client.sendTransacEmail({

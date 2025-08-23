@@ -18,6 +18,7 @@
         "@emotion/styled": "^11.14.0",
         "@fontsource/material-icons": "^5.2.5",
         "@fontsource/roboto": "^5.2.6",
+        "@getbrevo/brevo": "^2.0.0",
         "@hookform/resolvers": "^5.1.1",
         "@mailchimp/mailchimp_transactional": "^1.0.59",
         "@mui/icons-material": "^7.0.2",
@@ -27,7 +28,6 @@
         "@prisma/client": "^6.7.0",
         "@sendgrid/mail": "^8.1.5",
         "@toolpad/core": "^0.14.0",
-    "@getbrevo/brevo": "^2.0.0",
         "invariant": "^2.2.4",
         "mailersend": "^2.5.0",
         "mongodb": "^6.17.0",
@@ -57,7 +57,6 @@
         "@storybook/nextjs": "^8.6.12",
         "@storybook/react": "^8.6.12",
         "@storybook/test": "^8.6.12",
-        "storybook": "^8.6.12",
         "@testing-library/dom": "^10.4.0",
         "@testing-library/jest-dom": "^6.6.4",
         "@testing-library/react": "^16.3.0",
@@ -75,7 +74,9 @@
         "jest-fetch-mock": "^3.0.3",
         "prettier": "^3.5.3",
         "prisma": "^6.6.0",
+        "storybook": "^8.6.12",
         "ts-node": "^10.9.2",
+        "tsx": "^4.20.4",
         "typescript": "^5.8.3"
     },
     "pnpm": {

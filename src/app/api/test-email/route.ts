@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendWelcomeEmail, sendValidationEmail, sendSignInEmail } from '@/lib/services/sendemail';
 import { sendRegistrationNotificationEmail } from '@/lib/services/sendemail';
 
+declare global {
+  // Flag used only for local test endpoint to force real email sending in dev.
+  // Defined also in sendemail.ts but redeclared here to satisfy the compiler without casting to any.
+  var __forceSendEmails: boolean | undefined; // NOSONAR test utility flag
+}
+
 export async function POST(req: NextRequest) {
 
 // This should work only on a dev server
@@ -15,7 +21,7 @@ if (process.env.NODE_ENV !== 'development') {
   let ok = false;
   // Allow forcing real email send in development: { force: true }
   if (process.env.NODE_ENV === 'development' && body.force) {
-    (globalThis as any).__forceSendEmails = true;
+    globalThis.__forceSendEmails = true;
   }
   if (type === 'welcome') {
     ok = await sendWelcomeEmail(to, body.subdomain || 'demo', body.api_secret || 'secret');
@@ -41,8 +47,8 @@ if (process.env.NODE_ENV !== 'development') {
   }
 
   // Clear force flag to avoid affecting other requests
-  if ((globalThis as any).__forceSendEmails) {
-    delete (globalThis as any).__forceSendEmails;
+  if (globalThis.__forceSendEmails) {
+    delete globalThis.__forceSendEmails;
   }
 
   return NextResponse.json({ sent: ok, type, forced: !!body.force });

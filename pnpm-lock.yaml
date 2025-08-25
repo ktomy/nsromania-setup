@@ -93,8 +93,8 @@ importers:
         specifier: 6.3.5
         version: 6.3.5(@types/node@22.15.29)(jiti@2.4.2)(terser@5.40.0)(tsx@4.20.4)(yaml@2.5.1)
       zod:
-        specifier: ^4.0.5
-        version: 4.0.5
+        specifier: ^4.1.1
+        version: 4.1.1
     devDependencies:
       '@chromatic-com/storybook':
         specifier: ^3.2.6
@@ -7263,8 +7263,8 @@ packages:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
 
-  zod@4.0.5:
-    resolution: {integrity: sha512-/5UuuRPStvHXu7RS+gmvRf4NXrNxpSllGwDnCBcJZtQsKrviYXm54yDGV2KYNLT5kq0lHGcl7lqWJLgSaG+tgA==}
+  zod@4.1.1:
+    resolution: {integrity: sha512-SgMZK/h8Tigt9nnKkfJMvB/mKjiJXaX26xegP4sa+0wHIFVFWVlsQGdhklDmuargBD3Hsi3rsQRIzwJIhTPJHA==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -15814,6 +15814,6 @@ snapshots:
       compress-commons: 4.1.2
       readable-stream: 3.6.2
 
-  zod@4.0.5: {}
+  zod@4.1.1: {}
 
   zwitch@2.0.4: {}

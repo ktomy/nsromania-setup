@@ -27,7 +27,7 @@
         "@mui/x-data-grid": "^8.10.2",
         "@prisma/client": "^6.7.0",
         "@sendgrid/mail": "^8.1.5",
-        "@toolpad/core": "^0.14.0",
+        "@toolpad/core": "^0.16.0",
         "invariant": "^2.2.4",
         "mailersend": "^2.5.0",
         "mongodb": "^6.17.0",

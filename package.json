@@ -35,12 +35,12 @@
         "next-auth": "5.0.0-beta.29",
         "next-extra": "^0.6.2",
         "next-intl": "^4.3.4",
-        "pm2": "^6.0.8",
+        "pm2": "^6.0.9",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-google-recaptcha-v3": "^1.10.1",
         "react-hook-form": "^7.62.0",
-        "vite": "6.3.5",
+        "vite": "6.3.6",
         "zod": "^4.1.12"
     },
     "devDependencies": {

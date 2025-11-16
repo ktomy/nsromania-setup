@@ -90,6 +90,10 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
             });
 
             if (res.ok) {
+                if (action === 'delete') {
+                    router.push('/domains');
+                    return;
+                }
                 openSnack('Action successfull', 'success');
                 // reload the domain
                 const updatedDomain = await fetch(`/api/domains/${idNumber}`).then((res) => res.json());

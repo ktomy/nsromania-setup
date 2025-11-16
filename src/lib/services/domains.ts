@@ -226,9 +226,10 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
 
 export async function deleteNSDomainAndRelated(id: number) {
     try {
-        await prisma.nSDomainEnvironment.deleteMany({
+        let result = await prisma.nSDomainEnvironment.deleteMany({
             where: { nsDomainId: id },
         });
+        console.log(`Deleted ${result.count} NSDomainEnvironment records for NSDomain ID ${id}`);
 
         // is it the only domain of the user?
         const domain = await prisma.nSDomain.findUnique({
@@ -240,20 +241,23 @@ export async function deleteNSDomainAndRelated(id: number) {
             });
             if (userDomains.length === 1) {
                 // delete the user as well
-                await prisma.user.delete({
+                let result = await prisma.user.delete({
                     where: { id: domain.authUserId },
                 });
+                console.log(`Deleted User ID ${domain.authUserId} as it had only this domain, deleted rows: ${result ? 1 : 0}`);
 
                 // is there a related request? delete that one as well
-                await prisma.register_request.deleteMany({
+                let deleteRequestResult = await prisma.register_request.deleteMany({
                     where: { subdomain: domain.domain },
                 });
+                console.log(`Deleted ${deleteRequestResult.count} register_request records for subdomain ${domain.domain}`);
             }
         }
 
-        await prisma.nSDomain.delete({
+        let domainSeleteResult = await prisma.nSDomain.delete({
             where: { id },
         });
+        console.log(`Deleted NSDomain ID ${id}, deleted rows: ${domainSeleteResult ? 1 : 0}`);
 
 
     } catch (error) {

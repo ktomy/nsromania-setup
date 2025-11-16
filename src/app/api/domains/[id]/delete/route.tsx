@@ -1,5 +1,5 @@
 import { auth } from '@/auth';
-import { getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
+import { deleteNSDomainAndRelated, getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
 import { User } from '@prisma/client';
 import { NextRequest } from 'next/server';
 
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest, props: Props) {
 
     try {
         console.log('Deleting domain from the database:', domain.domain);
+        await deleteNSDomainAndRelated(domain.id);
 
 
 

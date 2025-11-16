@@ -1,250 +1,251 @@
 {
-    "App": {
-        "domains": "Site-uri",
-        "home": "Acasă",
-        "menu": "Meniu",
-        "myDomains": "Site-urile mele",
-        "newDomain": "Site nou",
-        "requests": "Cereri de înregistrare"
+  "App": {
+    "domains": "Site-uri",
+    "home": "Acasă",
+    "menu": "Meniu",
+    "myDomains": "Site-urile mele",
+    "newDomain": "Site nou",
+    "requests": "Cereri de înregistrare"
+  },
+  "DomainPage": {
+    "actionsButtonLabel": "Options",
+    "advancedSettings": "Setări avansate (variabile de mediu)",
+    "basicData": "Date de bază",
+    "destroy": "Distrugeți",
+    "edit": "Editați",
+    "initialize": "Inițializați",
+    "loading": "Se încarcă...",
+    "start": "Porniți",
+    "stop": "Opriți",
+    "welcome": "Greet",
+    "delete": "Delete"
+  },
+  "DomainsPage": {
+    "actionFailed": "Acțiunea a eșuat",
+    "actionSuccess": "Acțiunea a fost realizată cu succes",
+    "active": "Activ",
+    "created": "Creat",
+    "dataSource": "Sursă de date",
+    "details": "Detalii",
+    "id": "Id",
+    "loading": "Se încarcă...",
+    "newDomain": "Domeniu nou",
+    "notSignedIn": "Nu sunteți autentificat. Vă rugăm să vă autentificați pentru a accesa această pagină.",
+    "startAllActive": "Pornește toate active",
+    "status": "Stare",
+    "subdomain": "Subdomeniu",
+    "title": "Titlu",
+    "updated": "Actualizat",
+    "welcomeMessage": "Bine ați venit la Nightscout România, {name} ({id}). Rol: {role}"
+  },
+  "EditDomainPage": {
+    "actions": "Acțiuni",
+    "active": "Activ",
+    "add": "Adaugă",
+    "apiSecret": "Secret API",
+    "cancel": "Anulează",
+    "dataSource": "Sursă de date",
+    "defaultVersion": "Default",
+    "dexcomPassword": "Parolă Dexcom",
+    "dexcomServer": "Server Dexcom",
+    "dexcomUsername": "Nume utilizator Dexcom",
+    "domainName": "Nume domeniu",
+    "enable": "Activează",
+    "environments": "Mediu",
+    "loading": "Se încarcă...",
+    "nsversion": "Nightscout Version",
+    "owner": "Proprietar",
+    "remove": "Elimină",
+    "save": "Salvează",
+    "showPlugins": "Afișează pluginuri",
+    "title": "Titlu",
+    "value": "Valoare",
+    "variable": "Variabilă",
+    "notSignedIn": "Please sign in first",
+    "notAuthorized": "Not authorized"
+  },
+  "HomePage": {
+    "title": "Salut, lume!",
+    "welcomeMessage": "Welcome to Nightscout Romania, {name} ({role}), id: {id}!"
+  },
+  "LocaleSwitcher": {
+    "en": "Engleza",
+    "label": "Limba",
+    "ro": "Romana"
+  },
+  "NewDomainPage": {
+    "active": "Activ",
+    "api": "API (xDrip/Libre/640GConnect)",
+    "apiSecret": "Secret API",
+    "create": "Creează",
+    "custom": "Personalizat",
+    "dataSource": "Sursă de date",
+    "dexcom": "Dexcom",
+    "dexcomPassword": "Parolă Dexcom",
+    "dexcomServer": "Server Dexcom",
+    "dexcomUsername": "Nume utilizator Dexcom",
+    "domainName": "Nume domeniu",
+    "domainOwner": "E-mailul proprietarului",
+    "domainOwnerName": "Numele proprietarului",
+    "enable": "Activează",
+    "eu": "EU",
+    "showPlugins": "Afișează pluginuri",
+    "title": "Titlu",
+    "us": "SUA"
+  },
+  "RegisterPage": {
+    "anythingElse": "Orice altceva",
+    "apiSecret": "Secret API",
+    "checkValidationCode": "Verificați codul de validare",
+    "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
+    "dataSource": "Sursă de date",
+    "details": {
+      "apiSecret": "This is like a password which will be used to make changes to the website, e.g. to enter carbs, to upload glucose values through xDrip or to update the profile (basal rates, glucose targets, etc). Keep this password safe. This field must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
+      "dataSource": "Data Source",
+      "dexcom": "Dexcom",
+      "dexcomPassword": "Dexcom Password",
+      "dexcomServer": "Dexcom Server",
+      "dexcomUsername": "Dexcom Username",
+      "emailValidationCode": "Fill in the validation code you received by email. Open your inbox, check it for the email you received from this website, copy the validation code and paste it in this field. We need this code in order to make sure that the email add-resss you entered earlier is indeed yours",
+      "ownerEmail": "Your e-mail address. It has to be a real e-mail address you have access to. We will send a confirmation code to this address to verify that it is yours, so it is impoertant to be careful when filling it in",
+      "ownerName": "The name of the Nightscout website owner, preferrably the one by which the administrators could find you on Facebook or other social media platforms in case we need to contact you",
+      "subDomain": "Subdomain is the first part of your Nightscout website. e.g. if you enter john, your Nightscout website will be john.nsromania.info , this name has to be unique, e.g. maria is already taken. You can only small letters, digits and dashes when filling it in. an example would be my-bg , then the website will be my-bd.nsromania.info",
+      "title": "Site title. This title will be displayed on the Nightscout page header. Usually people use the firstname of the person monitored by the website. Or you can just leave this as-is, then \"Nightscout\" will be displayed"
     },
-    "DomainPage": {
-        "actionsButtonLabel": "Options",
-        "advancedSettings": "Setări avansate (variabile de mediu)",
-        "basicData": "Date de bază",
-        "destroy": "Distrugeți",
-        "edit": "Editați",
-        "initialize": "Inițializați",
-        "loading": "Se încarcă...",
-        "start": "Porniți",
-        "stop": "Opriți",
-        "welcome": "Greet"
+    "dexcom": "Dexcom",
+    "dexcomPassword": "Parolă Dexcom",
+    "dexcomServer": "Regiune server Dexcom",
+    "dexcomUsername": "Nume utilizator Dexcom",
+    "emailValidated": "Adresa de e-mail validată cu succes",
+    "emailValidationCode": "Email validation code",
+    "emailValidationCodeInvalid": "Codul de validare e-mail nu este valid",
+    "emailVerificationCodeValidated": "Adresa de e-mail validată cu succes",
+    "eu": "UE",
+    "formValidation": {
+      "apiSecretHelperText": "API secret must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
+      "invalidEmail": "Email is not valid",
+      "invalidName": "Name is not valid",
+      "invalidOwnerEmail": "Owner's email is not valid",
+      "invalidOwnerName": " Owner's name is not valid",
+      "invalidSubdomain": "Subdomain is not valid",
+      "invalidTitle": "Title is not valid"
     },
-    "DomainsPage": {
-        "actionFailed": "Acțiunea a eșuat",
-        "actionSuccess": "Acțiunea a fost realizată cu succes",
-        "active": "Activ",
-        "created": "Creat",
-        "dataSource": "Sursă de date",
-        "details": "Detalii",
-        "id": "Id",
-        "loading": "Se încarcă...",
-        "newDomain": "Domeniu nou",
-        "notSignedIn": "Nu sunteți autentificat. Vă rugăm să vă autentificați pentru a accesa această pagină.",
-        "startAllActive": "Pornește toate active",
-        "status": "Stare",
-        "subdomain": "Subdomeniu",
-        "title": "Titlu",
-        "updated": "Actualizat",
-        "welcomeMessage": "Bine ați venit la Nightscout România, {name} ({id}). Rol: {role}"
+    "errors": {
+      "email": {
+        "invalid": "Email must be a valid email address",
+        "required": "Email is required"
+      },
+      "name": {
+        "required": "Name is required",
+        "max": "Name must be 64 characters or less",
+        "pattern": "Name can only contain letters, numbers, and spaces"
+      },
+      "subdomain": {
+        "required": "Subdomain is required",
+        "max": "Subdomain must be 63 characters or less",
+        "pattern": "Subdomain can only contain lowercase letters, numbers, and hyphens",
+        "hyphen": "Subdomain cannot start or end with a hyphen",
+        "taken": "Subdomain is already taken, please choose another one",
+        "availability": "Could not check sub-domain availability. Try again."
+      },
+      "apiSecret": {
+        "min": "API secret must be at least 12 characters",
+        "max": "API secret must be 32 characters or less",
+        "pattern": "API secret can only contain letters, numbers, hyphens, underscores, and dots"
+      },
+      "validationCode": {
+        "pattern": "Validation code must be exactly 6 digits"
+      },
+      "dexcomCredentials": {
+        "min": "Dexcom username must be at least 5 characters",
+        "max": "Dexcom username must be 32 characters or less",
+        "pattern": "Invalid characters in credentials"
+      },
+      "reCAPTCHA": {
+        "invalid": "Invalid reCAPTCHA token",
+        "failed": "reCAPTCHA verification failed, please try again"
+      },
+      "nsTitle": {
+        "required": "Title is required",
+        "max": "Title must be 50 characters or less"
+      },
+      "dataSource": {
+        "invalid": "Data source must be either Dexcom or API"
+      },
+      "dexcomServer": {
+        "invalid": "Dexcom server must be either EU or US"
+      },
+      "dexcomUsername": {
+        "required": "Dexcom username is required when using Dexcom as data source"
+      },
+      "dexcomPassword": {
+        "required": "Dexcom password is required when using Dexcom as data source",
+        "min": "Dexcom password must be at least 5 characters long"
+      }
     },
-    "EditDomainPage": {
-        "actions": "Acțiuni",
-        "active": "Activ",
-        "add": "Adaugă",
-        "apiSecret": "Secret API",
-        "cancel": "Anulează",
-        "dataSource": "Sursă de date",
-        "defaultVersion": "Default",
-        "dexcomPassword": "Parolă Dexcom",
-        "dexcomServer": "Server Dexcom",
-        "dexcomUsername": "Nume utilizator Dexcom",
-        "domainName": "Nume domeniu",
-        "enable": "Activează",
-        "environments": "Mediu",
-        "loading": "Se încarcă...",
-        "nsversion": "Nightscout Version",
-        "owner": "Proprietar",
-        "remove": "Elimină",
-        "save": "Salvează",
-        "showPlugins": "Afișează pluginuri",
-        "title": "Titlu",
-        "value": "Valoare",
-        "variable": "Variabilă",
-        "notSignedIn": "Please sign in first",
-        "notAuthorized": "Not authorized"
-    },
-    "HomePage": {
-        "title": "Salut, lume!",
-        "welcomeMessage": "Welcome to Nightscout Romania, {name} ({role}), id: {id}!"
-    },
-    "LocaleSwitcher": {
-        "en": "Engleza",
-        "label": "Limba",
-        "ro": "Romana"
-    },
-    "NewDomainPage": {
-        "active": "Activ",
-        "api": "API (xDrip/Libre/640GConnect)",
-        "apiSecret": "Secret API",
-        "create": "Creează",
-        "custom": "Personalizat",
-        "dataSource": "Sursă de date",
-        "dexcom": "Dexcom",
-        "dexcomPassword": "Parolă Dexcom",
-        "dexcomServer": "Server Dexcom",
-        "dexcomUsername": "Nume utilizator Dexcom",
-        "domainName": "Nume domeniu",
-        "domainOwner": "E-mailul proprietarului",
-        "domainOwnerName": "Numele proprietarului",
-        "enable": "Activează",
-        "eu": "EU",
-        "showPlugins": "Afișează pluginuri",
-        "title": "Titlu",
-        "us": "SUA"
-    },
-    "RegisterPage": {
-        "anythingElse": "Orice altceva",
-        "apiSecret": "Secret API",
-        "checkValidationCode": "Verificați codul de validare",
-        "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
-        "dataSource": "Sursă de date",
-        "details": {
-            "apiSecret": "This is like a password which will be used to make changes to the website, e.g. to enter carbs, to upload glucose values through xDrip or to update the profile (basal rates, glucose targets, etc). Keep this password safe. This field must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
-            "dataSource": "Data Source",
-            "dexcom": "Dexcom",
-            "dexcomPassword": "Dexcom Password",
-            "dexcomServer": "Dexcom Server",
-            "dexcomUsername": "Dexcom Username",
-            "emailValidationCode": "Fill in the validation code you received by email. Open your inbox, check it for the email you received from this website, copy the validation code and paste it in this field. We need this code in order to make sure that the email add-resss you entered earlier is indeed yours",
-            "ownerEmail": "Your e-mail address. It has to be a real e-mail address you have access to. We will send a confirmation code to this address to verify that it is yours, so it is impoertant to be careful when filling it in",
-            "ownerName": "The name of the Nightscout website owner, preferrably the one by which the administrators could find you on Facebook or other social media platforms in case we need to contact you",
-            "subDomain": "Subdomain is the first part of your Nightscout website. e.g. if you enter john, your Nightscout website will be john.nsromania.info , this name has to be unique, e.g. maria is already taken. You can only small letters, digits and dashes when filling it in. an example would be my-bg , then the website will be my-bd.nsromania.info",
-            "title": "Site title. This title will be displayed on the Nightscout page header. Usually people use the firstname of the person monitored by the website. Or you can just leave this as-is, then \"Nightscout\" will be displayed"
-        },
-        "dexcom": "Dexcom",
-        "dexcomPassword": "Parolă Dexcom",
-        "dexcomServer": "Regiune server Dexcom",
-        "dexcomUsername": "Nume utilizator Dexcom",
-        "emailValidated": "Adresa de e-mail validată cu succes",
-        "emailValidationCode": "Email validation code",
-        "emailValidationCodeInvalid": "Codul de validare e-mail nu este valid",
-        "emailVerificationCodeValidated": "Adresa de e-mail validată cu succes",
-        "eu": "UE",
-        "formValidation": {
-            "apiSecretHelperText": "API secret must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
-            "invalidEmail": "Email is not valid",
-            "invalidName": "Name is not valid",
-            "invalidOwnerEmail": "Owner's email is not valid",
-            "invalidOwnerName": " Owner's name is not valid",
-            "invalidSubdomain": "Subdomain is not valid",
-            "invalidTitle": "Title is not valid"
-        },
-        "errors": {
-            "email": {
-                "invalid": "Email must be a valid email address",
-                "required": "Email is required"
-            },
-            "name": {
-                "required": "Name is required",
-                "max": "Name must be 64 characters or less",
-                "pattern": "Name can only contain letters, numbers, and spaces"
-            },
-            "subdomain": {
-                "required": "Subdomain is required",
-                "max": "Subdomain must be 63 characters or less",
-                "pattern": "Subdomain can only contain lowercase letters, numbers, and hyphens",
-                "hyphen": "Subdomain cannot start or end with a hyphen",
-                "taken": "Subdomain is already taken, please choose another one",
-                "availability": "Could not check sub-domain availability. Try again."
-            },
-            "apiSecret": {
-                "min": "API secret must be at least 12 characters",
-                "max": "API secret must be 32 characters or less",
-                "pattern": "API secret can only contain letters, numbers, hyphens, underscores, and dots"
-            },
-            "validationCode": {
-                "pattern": "Validation code must be exactly 6 digits"
-            },
-            "dexcomCredentials": {
-                "min": "Dexcom username must be at least 5 characters",
-                "max": "Dexcom username must be 32 characters or less",
-                "pattern": "Invalid characters in credentials"
-            },
-            "reCAPTCHA": {
-                "invalid": "Invalid reCAPTCHA token",
-                "failed": "reCAPTCHA verification failed, please try again"
-            },
-            "nsTitle": {
-                "required": "Title is required",
-                "max": "Title must be 50 characters or less"
-            },
-            "dataSource": {
-                "invalid": "Data source must be either Dexcom or API"
-            },
-            "dexcomServer": {
-                "invalid": "Dexcom server must be either EU or US"
-            },
-            "dexcomUsername": {
-                "required": "Dexcom username is required when using Dexcom as data source"
-            },
-            "dexcomPassword": {
-                "required": "Dexcom password is required when using Dexcom as data source",
-                "min": "Dexcom password must be at least 5 characters long"
-            }
-        },
-        "ownerEmail": "E-mail",
-        "ownerName": "Nume",
-        "ownerNameAndEmailRequired": "Name and email have to be filled in to proceed further",
-        "register": "Înregistrare",
-        "registrationDescription": "Vă rugăm să completați acest formular pentru a solicita crearea unui site Nightscout pe NSRomânia.info. Odată completat, formularul va fi verificat şi probabil aprobat de echipa de administrare. Odată ce se va întâmpla acest lucru, veți primi un e-mail și un site Nightscout va fi creat în numele dvs.",
-        "registrationFailed": "Înregistrarea a eșuat, te rugăm să îți verifici datele",
-        "registrationForm": "acest formular",
-        "registrationHint": "If you are not sure what each field means, please click on the <icon></icon> icon and it will provide you with additional help",
-        "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",
-        "registrationSuccess": "Înregistrare efectuată cu succes",
-        "registrationTitle": "Înregistrare",
-        "sendingValidationEmail": "Se trimite e-mail de validare, verificați inbox-ul și folderul de spam",
-        "subDomain": "Subdomeniu",
-        "title": "Titlul Site-ului",
-        "us": "SUA",
-        "validateEmail": "Validează",
-        "validationEmailFailed": "E-mail pentru a iniția validarea nu a putut fi trimis"
-    },
-    "RegistrationSuccessPage": {
-        "home": "Home",
-        "registrationSuccess": "Registration successful",
-        "registrationSuccessMessage": "You have successfully registered. The administrator will review your registration and approve it shortly. You will receive an email notification once your registration is approved."
-    },
-    "RequestsPage": {
-        "actionFailed": "Acțiunea a eșuat",
-        "actionSuccess": "Acțiunea a fost realizată cu succes",
-        "actionedAt": "Acționat la",
-        "actions": "Acțiuni",
-        "approve": "Aprobă",
-        "approved": "Aprobat",
-        "createdAt": "Solicitat la",
-        "dataSource": "Sursa de date",
-        "details": "Details",
-        "domain": "Subdomeniu",
-        "loading": "Se încarcă...",
-        "notSignedIn": "Te rugăm să te autentifici mai întâi",
-        "ownerEmail": "E-mail",
-        "ownerName": "Proprietar",
-        "pending": "Pending",
-        "reject": "Refuză",
-        "rejected": "Rejected",
-        "status": "Status",
-        "visit": "Visit",
-        "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați",
-        "siteInformation": "Site information",
-        "notAuthorized": "Not authorized",
-        "requestDetails": "request details",
-        "basicData": "Main details",
-        "dexcomSettings": "Dexcom settings"
-    },
-    "SignOutComponent": {
-        "alreadySignedIn": "Sunteți deja logat(a).",
-        "home": "Acasă",
-        "signOut": "Iesire"
-    },
-    "WelcomePage": {
-        "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
-        "register": "Înregistrare",
-        "signIn": "Autentificare",
-        "welcomeMessage1": "Acesta este un serviciu de găzduire Nightscout condus de comunitate.",
-        "welcomeMessage2": "Acest serviciu este oferit pentru îngrijitorii persoanelor cu diabet de tip 1.",
-        "welcomeMessage3": "Acesta este un server comunitar gestionat de voluntari.",
-        "welcomeMessage4": "Vă rugăm să-l folosiți cu grijă și respect.",
-        "welcomeTitle": "Bun venit la NSRomânia"
-    }
+    "ownerEmail": "E-mail",
+    "ownerName": "Nume",
+    "ownerNameAndEmailRequired": "Name and email have to be filled in to proceed further",
+    "register": "Înregistrare",
+    "registrationDescription": "Vă rugăm să completați acest formular pentru a solicita crearea unui site Nightscout pe NSRomânia.info. Odată completat, formularul va fi verificat şi probabil aprobat de echipa de administrare. Odată ce se va întâmpla acest lucru, veți primi un e-mail și un site Nightscout va fi creat în numele dvs.",
+    "registrationFailed": "Înregistrarea a eșuat, te rugăm să îți verifici datele",
+    "registrationForm": "acest formular",
+    "registrationHint": "If you are not sure what each field means, please click on the <icon></icon> icon and it will provide you with additional help",
+    "registrationPrompt": "Dacă totuși doriți să vă înregistrați, vă rugăm să completați",
+    "registrationSuccess": "Înregistrare efectuată cu succes",
+    "registrationTitle": "Înregistrare",
+    "sendingValidationEmail": "Se trimite e-mail de validare, verificați inbox-ul și folderul de spam",
+    "subDomain": "Subdomeniu",
+    "title": "Titlul Site-ului",
+    "us": "SUA",
+    "validateEmail": "Validează",
+    "validationEmailFailed": "E-mail pentru a iniția validarea nu a putut fi trimis"
+  },
+  "RegistrationSuccessPage": {
+    "home": "Home",
+    "registrationSuccess": "Registration successful",
+    "registrationSuccessMessage": "You have successfully registered. The administrator will review your registration and approve it shortly. You will receive an email notification once your registration is approved."
+  },
+  "RequestsPage": {
+    "actionFailed": "Acțiunea a eșuat",
+    "actionSuccess": "Acțiunea a fost realizată cu succes",
+    "actionedAt": "Acționat la",
+    "actions": "Acțiuni",
+    "approve": "Aprobă",
+    "approved": "Aprobat",
+    "createdAt": "Solicitat la",
+    "dataSource": "Sursa de date",
+    "details": "Details",
+    "domain": "Subdomeniu",
+    "loading": "Se încarcă...",
+    "notSignedIn": "Te rugăm să te autentifici mai întâi",
+    "ownerEmail": "E-mail",
+    "ownerName": "Proprietar",
+    "pending": "Pending",
+    "reject": "Refuză",
+    "rejected": "Rejected",
+    "status": "Status",
+    "visit": "Visit",
+    "welcomeMessage": "Aici este solicitarea de înregistrare, vă rugăm să fiți atenți când evaluați",
+    "siteInformation": "Site information",
+    "notAuthorized": "Not authorized",
+    "requestDetails": "request details",
+    "basicData": "Main details",
+    "dexcomSettings": "Dexcom settings"
+  },
+  "SignOutComponent": {
+    "alreadySignedIn": "Sunteți deja logat(a).",
+    "home": "Acasă",
+    "signOut": "Iesire"
+  },
+  "WelcomePage": {
+    "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
+    "register": "Înregistrare",
+    "signIn": "Autentificare",
+    "welcomeMessage1": "Acesta este un serviciu de găzduire Nightscout condus de comunitate.",
+    "welcomeMessage2": "Acest serviciu este oferit pentru îngrijitorii persoanelor cu diabet de tip 1.",
+    "welcomeMessage3": "Acesta este un server comunitar gestionat de voluntari.",
+    "welcomeMessage4": "Vă rugăm să-l folosiți cu grijă și respect.",
+    "welcomeTitle": "Bun venit la NSRomânia"
+  }
 }

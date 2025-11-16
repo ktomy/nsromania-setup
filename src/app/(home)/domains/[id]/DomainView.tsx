@@ -11,6 +11,7 @@ import NSActionsMenu, { ActionsMenuItem } from '@/lib/components/general/NSActio
 import StopRoundedIcon from '@mui/icons-material/StopRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
+import FolderDeleteRoundedIcon from '@mui/icons-material/FolderDeleteRounded';
 import WavingHandRoundedIcon from '@mui/icons-material/WavingHandRounded';
 import SettingsInputComponentRoundedIcon from '@mui/icons-material/SettingsInputComponentRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -75,11 +76,11 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
         setSnackOpen(false);
     };
 
-    const handleDomainActions = async (action: 'start' | 'stop' | 'initialize' | 'destroy' | 'welcome') => {
+    const handleDomainActions = async (action: 'start' | 'stop' | 'initialize' | 'destroy' | 'welcome' | 'delete') => {
         try {
-            if (action === 'destroy') {
+            if (action === 'destroy' || action === 'delete') {
                 //TODO: Add a modal to confirm the action (Good first issue)
-                if (!confirm('Are you sure you want to destroy this domain?')) {
+                if (!confirm("Are you sure you want to " + action + " this domain?")) {
                     return;
                 }
             }
@@ -195,6 +196,13 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
             action: async () => await handleDomainActions('destroy'),
             icon: <DeleteForeverRoundedIcon />,
             disabled: domain?.status === 'online' || domain?.dbInitialized === false || actionInProgress,
+        },
+                {
+            label: t('delete'),
+            id: 'delete',
+            action: async () => await handleDomainActions('delete'),
+            icon: <FolderDeleteRoundedIcon />,
+            disabled: domain?.status === 'online' || domain?.dbInitialized === true || actionInProgress,
         },
     ];
 

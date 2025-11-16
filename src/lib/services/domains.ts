@@ -223,3 +223,43 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
         await prisma.$disconnect();
     }
 }
+
+export async function deleteNSDomainAndRelated(id: number) {
+    try {
+        await prisma.nSDomainEnvironment.deleteMany({
+            where: { nsDomainId: id },
+        });
+
+        // is it the only domain of the user?
+        const domain = await prisma.nSDomain.findUnique({
+            where: { id },
+        });
+        if (domain && domain.authUserId) {
+            const userDomains = await prisma.nSDomain.findMany({
+                where: { authUserId: domain.authUserId },
+            });
+            if (userDomains.length === 1) {
+                // delete the user as well
+                await prisma.user.delete({
+                    where: { id: domain.authUserId },
+                });
+
+                // is there a related request? delete that one as well
+                await prisma.register_request.deleteMany({
+                    where: { subdomain: domain.domain },
+                });
+            }
+        }
+
+        await prisma.nSDomain.delete({
+            where: { id },
+        });
+
+
+    } catch (error) {
+        console.error('Error deleting NSDomain and related records:', error);
+        throw error;
+    } finally {
+        await prisma.$disconnect();
+    }
+}

@@ -24,7 +24,7 @@
         "@mui/icons-material": "^7.3.5",
         "@mui/material": "^7.3.5",
         "@mui/material-nextjs": "^7.3.5",
-        "@mui/x-data-grid": "^8.18.0",
+        "@mui/x-data-grid": "^8.19.0",
         "@prisma/client": "^6.19.0",
         "@sendgrid/mail": "^8.1.6",
         "@toolpad/core": "^0.16.0",

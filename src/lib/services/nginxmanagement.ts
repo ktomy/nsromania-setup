@@ -62,16 +62,9 @@ export async function deleteVirtualHost(domain: string) {
         throw new Error('Domain name is required');
     }
 
-    if (domain.length < 3) {
-        throw new Error('Domain name must be at least 3 characters long');
-    }
-
-    if (domain.length > 253) {
-        throw new Error('Domain name must be at most 253 characters long');
-    }
-
-    if (!/^[a-z0-9-\.]+$/.test(domain)) {
-        throw new Error('Domain name must only contain lowercase letters, numbers, dots and hyphens');
+    const virtualHosts = await getVirtualHosts();
+    if (!virtualHosts.includes(domain)) {
+        throw new Error('Virtual host ' + domain + ' does not exist');
     }
 
     console.log('Deleting virtual host:', domain);

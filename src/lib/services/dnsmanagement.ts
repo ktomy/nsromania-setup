@@ -43,17 +43,9 @@ export async function deleteSubdomain(subdomain: string) {
     if (!subdomain) {
         throw new Error('Subdomain name is required');
     }
-
-    if (subdomain.length < 3) {
-        throw new Error('Subdomain name must be at least 3 characters long');
-    }
-
-    if (subdomain.length > 32) {
-        throw new Error('Subdomain name must be at most 63 characters long');
-    }
-
-    if (!/^[a-z0-9-]+$/.test(subdomain)) {
-        throw new Error('Subdomain name must only contain lowercase letters, numbers and hyphens');
+    const subdomains = await listSubdomains();
+    if (!subdomains.includes(subdomain)) {
+        throw new Error('Subdomain does not exist');
     }
 
     // Read and modify the zone file

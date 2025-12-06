@@ -6,7 +6,7 @@ import {
     validateSubdomain,
 } from '@/lib/services/registration';
 import { auth } from '@/auth';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { hasLocale } from 'next-intl';
 import { locales } from '@/i18n/config';
 import { getTranslations } from 'next-intl/server';

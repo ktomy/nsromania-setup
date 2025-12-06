@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { deleteNSDomainAndRelated, getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
 type Props = {

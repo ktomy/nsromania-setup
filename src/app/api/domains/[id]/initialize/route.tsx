@@ -3,7 +3,7 @@ import { createSubdomain } from '@/lib/services/dnsmanagement';
 import { getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
 import { createVirtualHost } from '@/lib/services/nginxmanagement';
 import { createDatabaseAndUser } from '@/lib/services/nsdatbasea';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
 type Props = {

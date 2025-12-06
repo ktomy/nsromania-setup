@@ -5,7 +5,7 @@ import Google from 'next-auth/providers/google';
 // Removed Sendgrid; email magic-link now sent via Brevo using local templates.
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './lib/prisma';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import Credentials from 'next-auth/providers/credentials';
 import { sendSignInEmail } from './lib/services/sendemail';
 

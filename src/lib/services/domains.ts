@@ -1,7 +1,7 @@
 import { CreateDomainRequest, GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { prisma } from '../prisma';
-import { NSDomain, User } from '@prisma/client';
 import { getProcessesList } from './nsruntime';
+import { NSDomain, User } from '@/generated/client';
 import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from './nsdatbasea';
 
 export async function getAllNSDomains() {

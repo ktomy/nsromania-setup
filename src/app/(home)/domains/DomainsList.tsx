@@ -3,7 +3,7 @@ import Typography from '@mui/material/Typography';
 import { Alert, Box, Button, Chip, Grid, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowId, GridRowsProp } from '@mui/x-data-grid';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { NSDomain, User } from '@prisma/client';
+import { NSDomain, User } from '@/generated/client';
 import { useRouter } from 'next/navigation';
 import { formatDate } from '@/lib/utils';
 import { useState, useCallback, useEffect } from 'react';

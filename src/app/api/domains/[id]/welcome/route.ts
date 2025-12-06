@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { getNSDomainById } from '@/lib/services/domains';
 import { sendWelcomeEmail } from '@/lib/services/sendemail';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
 type Props = {

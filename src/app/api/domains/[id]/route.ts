@@ -1,7 +1,7 @@
 // /src/app/api/domains/[id]/route.ts
 import { getFullDOmainData, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
 import { auth } from '@/auth';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import {  PartialNSDomainWithEnvironments } from '@/types/domains';
 
 type Props = {

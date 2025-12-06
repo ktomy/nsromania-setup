@@ -2,7 +2,7 @@
 import RegistrationRequestsList from './RegistrationRequestsList';
 import { getTranslations } from 'next-intl/server';
 import { auth } from '@/auth';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 
 export default async function RequestsPage() {
     const t = await getTranslations('RequestsPage');

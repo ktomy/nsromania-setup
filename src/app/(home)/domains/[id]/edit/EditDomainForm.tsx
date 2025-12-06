@@ -26,7 +26,7 @@ import {
     Grid,
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
-import { NSDomainEnvironment } from '@prisma/client';
+import { NSDomainEnvironment } from '@/generated/client';
 import { GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { useTranslations } from 'next-intl';
 import NSInput from '@/lib/components/general/NSInput/NSInput';

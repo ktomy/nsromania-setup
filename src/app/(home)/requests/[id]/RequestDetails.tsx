@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { formatDate } from '@/lib/utils';
-import { register_request, User } from '@prisma/client';
+import { register_request, User } from '@/generated/client';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';

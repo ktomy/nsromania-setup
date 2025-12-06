@@ -4,7 +4,7 @@ import {
     getRegistrationRequestById,
     rejectRegistrationRequest,
 } from '@/lib/services/registration';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 
 type Props = {
     params: Promise<{

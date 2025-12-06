@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { getNSDomainById, isMyDOmain } from '@/lib/services/domains';
 import { isDomainRunning, tryStartDomain } from '@/lib/services/nsruntime';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
 type Props = {

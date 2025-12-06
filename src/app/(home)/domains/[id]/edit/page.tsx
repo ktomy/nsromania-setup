@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import EditDomainForm from './EditDomainForm';
 import { Typography } from '@mui/material';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { getFullDOmainData } from '@/lib/services/domains';
 
 

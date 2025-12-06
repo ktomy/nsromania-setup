@@ -1,4 +1,4 @@
-import { NSDomain, NSDomainEnvironment, User } from '@prisma/client';
+import { NSDomain, NSDomainEnvironment, User } from '@/generated/client';
 
 export interface GetDomainByIdResponse extends NSDomain {
     environments?: NSDomainEnvironment[];

@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import { Alert, Box, Chip, Grid, Snackbar } from '@mui/material';
 import { DataGrid, GridActionsCellItem, GridColDef, GridRenderCellParams, GridRowsProp } from '@mui/x-data-grid';
 import { Info, OpenInNew, Settings, ThumbDown, ThumbUp } from '@mui/icons-material';
-import { register_request, User } from '@prisma/client';
+import { register_request, User } from '@/generated/client';
 import { formatDate } from '@/lib/utils';
 import { Key, MouseEventHandler, ReactElement, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';

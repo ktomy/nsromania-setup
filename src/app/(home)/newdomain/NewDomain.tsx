@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { CreateDomainRequest } from '@/types/domains';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 
 interface NewDomainProps {
     user: User;

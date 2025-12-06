@@ -1,6 +1,6 @@
 import { getAllNSDomains, getNSDomainsByUserId, createNSDomain } from '@/lib/services/domains';
 import { auth } from '@/auth';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 import { getProcessesList } from '@/lib/services/nsruntime';
 import { CreateDomainRequest } from '@/types/domains';

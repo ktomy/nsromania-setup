@@ -1,5 +1,5 @@
 import { auth } from '@/auth';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import DomainsList from './DomainsList';
 import { getTranslations } from 'next-intl/server';
 

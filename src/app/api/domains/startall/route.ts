@@ -1,6 +1,6 @@
 import { getAllNSDomains, getNSDomainById } from '@/lib/services/domains';
 import { auth } from '@/auth';
-import { NSDomain, User } from '@prisma/client';
+import { NSDomain, User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 import { getProcessesList, tryStartDomain } from '@/lib/services/nsruntime';
 

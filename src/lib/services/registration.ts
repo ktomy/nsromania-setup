@@ -1,5 +1,5 @@
 import { prisma } from '../prisma';
-import { NSDomain, register_request, User } from '@prisma/client';
+import { NSDomain, register_request, User } from '@/generated/client';
 import { sendRegistrationNotificationEmail, sendValidationEmail } from './sendemail';
 import { RegisterDomainRequest } from '@/types/domains';
 

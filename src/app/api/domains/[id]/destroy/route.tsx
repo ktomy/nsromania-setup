@@ -4,7 +4,7 @@ import { getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/doma
 import { deleteVirtualHost, getVirtualHosts } from '@/lib/services/nginxmanagement';
 import { checkMongoDatabaseAndUser, deleteDatabaseAndUser } from '@/lib/services/nsdatbasea';
 import { isDomainRunning, tryStopDomain } from '@/lib/services/nsruntime';
-import { User } from '@prisma/client';
+import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
 type Props = {

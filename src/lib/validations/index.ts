@@ -132,7 +132,7 @@ export const validateVerificationCodeRequestSchema = (t: T) =>
     });
 
 export const serverRegistrationRequestSchema = (t: T) =>
-    registrationFormSchema(t).extend({
+    registrationFormSchema(t).safeExtend({
         reCAPTCHAToken: reCAPTCHATokenSchema(t),
     });
 

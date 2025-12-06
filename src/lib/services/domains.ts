@@ -236,21 +236,36 @@ export async function deleteNSDomainAndRelated(id: number) {
             where: { id },
         });
         if (domain && domain.authUserId) {
-            const userDomains = await prisma.nSDomain.findMany({
-                where: { authUserId: domain.authUserId },
+            const user = await prisma.user.findUnique({
+                where: { id: domain.authUserId },
             });
-            if (userDomains.length === 1) {
-                // delete the user as well
-                let result = await prisma.user.delete({
-                    where: { id: domain.authUserId },
+            if (user != null && user.role !== 'admin') {
+            
+                const userDomains = await prisma.nSDomain.findMany({
+                    where: { authUserId: domain.authUserId },
                 });
-                console.log(`Deleted User ID ${domain.authUserId} as it had only this domain, deleted rows: ${result ? 1 : 0}`);
+                if (userDomains.length === 1) {
+                    // delete the user as well
+                    const result1 = await prisma.account.deleteMany({
+                        where: { userId: domain.authUserId },
+                    });
+                    const result2 = await prisma.authenticator.deleteMany({
+                        where: { userId: domain.authUserId },
+                    });
+                    const result3 = await prisma.session.deleteMany({
+                        where: { userId: domain.authUserId },
+                    });
+                    const result9 = await prisma.user.delete({
+                        where: { id: domain.authUserId },
+                    });
+                    console.log(`Deleted User ID ${domain.authUserId} as it had only this domain, deleted rows: ${result ? 1 : 0}`);
 
-                // is there a related request? delete that one as well
-                let deleteRequestResult = await prisma.register_request.deleteMany({
-                    where: { subdomain: domain.domain },
-                });
-                console.log(`Deleted ${deleteRequestResult.count} register_request records for subdomain ${domain.domain}`);
+                    // is there a related request? delete that one as well
+                    let deleteRequestResult = await prisma.register_request.deleteMany({
+                        where: { subdomain: domain.domain },
+                    });
+                    console.log(`Deleted ${deleteRequestResult.count} register_request records for subdomain ${domain.domain}`);
+                }
             }
         }
 

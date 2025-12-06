@@ -51,10 +51,14 @@ export async function POST(req: NextRequest) {
 
     const user = session.user as User;
     if (user.role !== 'admin') {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        // get number of domains for this user
+        let domains = await getNSDomainsByUserId(user.id);
+        if (domains.length >= 5) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
     }
 
     try {

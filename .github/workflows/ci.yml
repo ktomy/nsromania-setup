@@ -31,6 +31,8 @@ jobs:
 
       - name: Generate prisma client
         run: pnpm prisma generate
+        env:
+          DATABASE_URL: mysql://user:password@localhost:1234/dummy_db
 
       - name: Run the tests
         run: pnpm run test

@@ -155,7 +155,7 @@ chmod 600 /root/.secrets/porkbun.ini
 
 # Request wildcard certificate using Porkbun DNS challenge
 certbot certonly \
-    --dns-porkbun \
+    --authenticator dns-porkbun \
     --dns-porkbun-credentials /root/.secrets/porkbun.ini \
     --dns-porkbun-propagation-seconds 60 \
     -d "${DOMAIN}" \

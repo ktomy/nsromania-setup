@@ -227,8 +227,37 @@ chown -R mongodb:mongodb /var/lib/mongodb
 mkdir -p /var/log/mongodb
 chown -R mongodb:mongodb /var/log/mongodb
 
-# Start MongoDB
-systemctl start mongod
+# Write MongoDB configuration file (ensure no invalid options)
+log_info "Writing MongoDB configuration..."
+
+cat > /etc/mongod.conf << 'EOF'
+# mongod.conf - MongoDB 7.0 Configuration
+
+# Where and how to store data
+storage:
+  dbPath: /var/lib/mongodb
+
+# Where to write logging data
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongod.log
+
+# Network interfaces
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+
+# Process management options
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+EOF
+
+log_success "MongoDB configuration written"
+
+# Start MongoDB (without authentication first to create users)
+log_info "Starting MongoDB..."
+systemctl restart mongod
 systemctl enable mongod
 
 # Wait for MongoDB to be ready and verify it's running
@@ -284,34 +313,22 @@ fi
 # Enable authentication in MongoDB config
 log_info "Enabling MongoDB authentication..."
 
-cat > /etc/mongod.conf << 'EOF'
-# mongod.conf - MongoDB 7.0 Configuration
-
-# Where and how to store data
-storage:
-  dbPath: /var/lib/mongodb
-
-# Where to write logging data
-systemLog:
-  destination: file
-  logAppend: true
-  path: /var/log/mongodb/mongod.log
-
-# Network interfaces
-net:
-  port: 27017
-  bindIp: 127.0.0.1
-
-# Process management options
-processManagement:
-  timeZoneInfo: /usr/share/zoneinfo
+# Check if authentication is already enabled
+if grep -q "authorization: enabled" /etc/mongod.conf 2>/dev/null; then
+    log_info "MongoDB authentication already enabled in config"
+else
+    # Add security section to config
+    cat >> /etc/mongod.conf << 'EOF'
 
 # Security options
 security:
   authorization: enabled
 EOF
+    log_success "Authentication enabled in config"
+fi
 
 # Restart MongoDB with authentication enabled
+log_info "Restarting MongoDB with authentication..."
 systemctl restart mongod
 
 # Wait for MongoDB to be ready after restart

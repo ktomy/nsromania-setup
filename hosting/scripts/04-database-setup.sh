@@ -285,24 +285,28 @@ fi
 log_info "Enabling MongoDB authentication..."
 
 cat > /etc/mongod.conf << 'EOF'
-# mongod.conf
+# mongod.conf - MongoDB 7.0 Configuration
+
+# Where and how to store data
 storage:
   dbPath: /var/lib/mongodb
-  journal:
-    enabled: true
 
+# Where to write logging data
 systemLog:
   destination: file
   logAppend: true
   path: /var/log/mongodb/mongod.log
 
+# Network interfaces
 net:
   port: 27017
   bindIp: 127.0.0.1
 
+# Process management options
 processManagement:
   timeZoneInfo: /usr/share/zoneinfo
 
+# Security options
 security:
   authorization: enabled
 EOF

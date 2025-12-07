@@ -49,6 +49,43 @@ fi
 
 log_info "Creating nightscout database and user..."
 
+# Check if database already exists
+DB_EXISTS=$(mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SHOW DATABASES LIKE 'nightscout';" 2>/dev/null | grep -c nightscout || echo "0")
+
+if [[ "$DB_EXISTS" -gt 0 ]]; then
+    log_warning "Database 'nightscout' already exists"
+    echo ""
+    echo "Options:"
+    echo "  1. Drop and recreate (will delete all existing data)"
+    echo "  2. Keep existing database and skip seeding"
+    echo "  3. Exit installation"
+    echo ""
+    read -p "Choose option (1/2/3): " db_option
+    
+    case "$db_option" in
+        1)
+            log_warning "Dropping existing database..."
+            mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "DROP DATABASE nightscout;" 2>/dev/null || true
+            log_success "Database dropped"
+            ;;
+        2)
+            log_info "Keeping existing database, will skip seeding"
+            SKIP_SEEDING=true
+            ;;
+        3)
+            log_error "Installation cancelled by user"
+            exit 1
+            ;;
+        *)
+            log_error "Invalid option"
+            exit 1
+            ;;
+    esac
+else
+    SKIP_SEEDING=false
+fi
+
+# Create database and user
 mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" << EOF
 CREATE DATABASE IF NOT EXISTS nightscout CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
@@ -59,33 +96,38 @@ EOF
 log_success "Database nightscout created"
 
 # Download and execute seed SQL files
-log_info "Downloading and executing seed SQL files..."
+if [[ "$SKIP_SEEDING" == "false" ]]; then
+    log_info "Downloading and executing seed SQL files..."
 
-SEED_DIR="/tmp/nsromania-seed-data"
-mkdir -p "$SEED_DIR"
+    SEED_DIR="/tmp/nsromania-seed-data"
+    mkdir -p "$SEED_DIR"
 
-GITHUB_RAW="https://raw.githubusercontent.com/ktomy/nsromania-setup/main/seed-data"
+    GITHUB_RAW="https://raw.githubusercontent.com/ktomy/nsromania-setup/main/seed-data"
 
-for sql_file in 01-auth-tables.sql 02-domains-tables.sql 03-registration-tables.sql 04-example-data.sql; do
-    log_info "Downloading $sql_file..."
-    if ! curl -fsSL "$GITHUB_RAW/$sql_file" -o "$SEED_DIR/$sql_file"; then
-        log_error "Failed to download $sql_file"
-        exit 1
-    fi
-    
-    log_info "Executing $sql_file..."
-    mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout < "$SEED_DIR/$sql_file"
-done
+    for sql_file in 01-auth-tables.sql 02-domains-tables.sql 03-registration-tables.sql 04-example-data.sql; do
+        log_info "Downloading $sql_file..."
+        if ! curl -fsSL "$GITHUB_RAW/$sql_file" -o "$SEED_DIR/$sql_file"; then
+            log_error "Failed to download $sql_file"
+            exit 1
+        fi
+        
+        log_info "Executing $sql_file..."
+        mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout < "$SEED_DIR/$sql_file"
+    done
 
-log_success "Seed data imported"
+    log_success "Seed data imported"
+else
+    log_info "Skipping seed data import (using existing database)"
+fi
 
 # Insert admin user
-log_info "Creating admin user..."
+if [[ "$SKIP_SEEDING" == "false" ]]; then
+    log_info "Creating admin user..."
 
-# Generate a unique user ID
-ADMIN_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+    # Generate a unique user ID
+    ADMIN_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
 
-mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout << EOF
+    mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout << EOF
 INSERT INTO auth_user (id, email, name, email_verified, login_allowed, role, created_at, updated_at)
 VALUES (
     '${ADMIN_ID}',
@@ -102,7 +144,39 @@ VALUES (
     login_allowed = 1;
 EOF
 
-log_success "Admin user created: $ADMIN_EMAIL"
+    log_success "Admin user created: $ADMIN_EMAIL"
+else
+    # Check if admin user exists when using existing database
+    ADMIN_EXISTS=$(mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout -N -e "SELECT COUNT(*) FROM auth_user WHERE email='${ADMIN_EMAIL}' AND role='admin';" 2>/dev/null || echo "0")
+    
+    if [[ "$ADMIN_EXISTS" -gt 0 ]]; then
+        log_info "Admin user already exists: $ADMIN_EMAIL"
+    else
+        log_warning "Admin user not found in existing database"
+        read -p "Create admin user now? (yes/no): " create_admin
+        
+        if [[ "$create_admin" == "yes" ]]; then
+            ADMIN_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+            
+            mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout << EOF
+INSERT INTO auth_user (id, email, name, email_verified, login_allowed, role, created_at, updated_at)
+VALUES (
+    '${ADMIN_ID}',
+    '${ADMIN_EMAIL}',
+    '${ADMIN_NAME}',
+    NOW(),
+    1,
+    'admin',
+    NOW(),
+    NOW()
+);
+EOF
+            log_success "Admin user created: $ADMIN_EMAIL"
+        else
+            log_warning "Skipping admin user creation"
+        fi
+    fi
+fi
 
 # ============================================================================
 # MongoDB Installation

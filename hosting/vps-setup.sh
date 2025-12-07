@@ -256,29 +256,31 @@ run_wizard() {
     
     log_info "Starting configuration wizard..."
     
-    # Try to load previous progress
-    if load_wizard_progress; then
-        log_info "Found previous wizard session"
-        echo ""
-        read -p "Resume from previous session? (yes/no): " resume_wizard
-        if [[ "$resume_wizard" != "yes" ]]; then
-            # Clear all loaded values
-            DOMAIN=""
-            MYSQL_USER=""
-            ADMIN_EMAIL=""
-            ADMIN_NAME=""
-            BREVO_API_KEY=""
-            RECAPTCHA_SITE_KEY=""
-            RECAPTCHA_SECRET_KEY=""
-            GITHUB_CLIENT_ID=""
-            GITHUB_CLIENT_SECRET=""
-            GOOGLE_CLIENT_ID=""
-            GOOGLE_CLIENT_SECRET=""
-            DNS_PROVIDER=""
-            CF_API_TOKEN=""
-            CF_EMAIL=""
-            AWS_ACCESS_KEY_ID=""
-            AWS_SECRET_ACCESS_KEY=""
+    # Try to load previous progress (use || true to prevent set -e from exiting)
+    if load_wizard_progress || true; then
+        if [[ -f "${INSTALL_DIR}/.wizard-progress.json" ]]; then
+            log_info "Found previous wizard session"
+            echo ""
+            read -p "Resume from previous session? (yes/no): " resume_wizard
+            if [[ "$resume_wizard" != "yes" ]]; then
+                # Clear all loaded values
+                DOMAIN=""
+                MYSQL_USER=""
+                ADMIN_EMAIL=""
+                ADMIN_NAME=""
+                BREVO_API_KEY=""
+                RECAPTCHA_SITE_KEY=""
+                RECAPTCHA_SECRET_KEY=""
+                GITHUB_CLIENT_ID=""
+                GITHUB_CLIENT_SECRET=""
+                GOOGLE_CLIENT_ID=""
+                GOOGLE_CLIENT_SECRET=""
+                DNS_PROVIDER=""
+                CF_API_TOKEN=""
+                CF_EMAIL=""
+                AWS_ACCESS_KEY_ID=""
+                AWS_SECRET_ACCESS_KEY=""
+            fi
         fi
     fi
     

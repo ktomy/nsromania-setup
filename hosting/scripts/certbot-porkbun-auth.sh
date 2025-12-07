@@ -47,7 +47,7 @@ echo "  Record name: $RECORD_NAME"
 echo "  Validation: $VALIDATION"
 
 # Create TXT record via Porkbun API
-RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$BASE_DOMAIN" \
+RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$BASE_DOMAIN" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
@@ -55,7 +55,7 @@ RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$BASE_DOM
         \"name\": \"$RECORD_NAME\",
         \"type\": \"TXT\",
         \"content\": \"$VALIDATION\",
-        \"ttl\": \"60\"
+        \"ttl\": \"600\"
     }")
 
 if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then

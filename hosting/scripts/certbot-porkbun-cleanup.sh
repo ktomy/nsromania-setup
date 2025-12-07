@@ -44,7 +44,7 @@ echo "  Base domain: $BASE_DOMAIN"
 echo "  Record name: $RECORD_NAME"
 
 # Get all TXT records to find the one we created
-RECORDS=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/retrieve/$BASE_DOMAIN" \
+RECORDS=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/retrieve/$BASE_DOMAIN" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
@@ -60,7 +60,7 @@ if [[ -z "$RECORD_ID" ]]; then
 fi
 
 # Delete the TXT record
-RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/delete/$BASE_DOMAIN/$RECORD_ID" \
+RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/delete/$BASE_DOMAIN/$RECORD_ID" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",

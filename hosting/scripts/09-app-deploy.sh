@@ -50,6 +50,8 @@ GOOGLE_CLIENT_ID=$(jq -r '.google_client_id' "$CONFIG_FILE")
 GOOGLE_CLIENT_SECRET=$(jq -r '.google_client_secret' "$CONFIG_FILE")
 AUTH_SECRET=$(jq -r '.auth_secret' "$CONFIG_FILE")
 NS_NODE_PATH=$(jq -r '.ns_node_path' "$CONFIG_FILE")
+PORKBUN_API_KEY=$(jq -r '.porkbun_api_key' "$CONFIG_FILE")
+PORKBUN_SECRET_KEY=$(jq -r '.porkbun_secret_key' "$CONFIG_FILE")
 
 cat > "$SETUP_DIR/.env" << EOF
 # Database Configuration
@@ -84,6 +86,11 @@ BREVO_SMTP_PASSWORD="${BREVO_SMTP_PASSWORD}"
 # reCAPTCHA
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY="${RECAPTCHA_SITE_KEY}"
 RECAPTCHA_SECRET_KEY="${RECAPTCHA_SECRET_KEY}"
+
+# DNS Management (Porkbun)
+PORKBUN_API_KEY="${PORKBUN_API_KEY}"
+PORKBUN_SECRET_KEY="${PORKBUN_SECRET_KEY}"
+DOMAIN="${DOMAIN}"
 
 # Application URLs
 NEXT_PUBLIC_APP_URL="https://${DOMAIN}"

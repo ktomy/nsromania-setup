@@ -21,24 +21,14 @@ systemctl enable nginx
 log_success "Nginx installed and started"
 
 # Install Certbot for Let's Encrypt SSL
-log_info "Installing Certbot..."
+log_info "Installing Certbot and Porkbun DNS plugin..."
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot python3-pip
 
-# Install DNS plugin based on provider
-case "$DNS_PROVIDER" in
-    cloudflare)
-        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-certbot-dns-cloudflare
-        ;;
-    route53)
-        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-certbot-dns-route53
-        ;;
-    *)
-        log_info "Manual DNS challenge will be used for SSL certificate"
-        ;;
-esac
+# Install Porkbun DNS plugin
+pip3 install certbot-dns-porkbun --break-system-packages
 
-log_success "Certbot installed"
+log_success "Certbot and Porkbun plugin installed"
 
 # Copy Nginx configuration templates
 log_info "Installing Nginx configuration templates..."
@@ -153,54 +143,28 @@ EOF
 log_success "Nginx templates installed"
 
 # Obtain SSL certificate
-log_info "Obtaining SSL certificate for $DOMAIN..."
+log_info "Obtaining wildcard SSL certificate for $DOMAIN..."
 
-case "$DNS_PROVIDER" in
-    cloudflare)
-        # Create Cloudflare credentials file
-        mkdir -p /etc/letsencrypt
-        cat > /etc/letsencrypt/cloudflare.ini << EOF
-dns_cloudflare_api_token = ${CF_API_TOKEN}
+# Create Porkbun credentials file
+mkdir -p /root/.secrets
+cat > /root/.secrets/porkbun.ini << EOF
+dns_porkbun_key = ${PORKBUN_API_KEY}
+dns_porkbun_secret = ${PORKBUN_SECRET_KEY}
 EOF
-        chmod 600 /etc/letsencrypt/cloudflare.ini
-        
-        certbot certonly \
-            --dns-cloudflare \
-            --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
-            -d "${DOMAIN}" \
-            -d "*.${DOMAIN}" \
-            --non-interactive \
-            --agree-tos \
-            --email "${ADMIN_EMAIL}"
-        ;;
-        
-    route53)
-        # Use AWS credentials from environment
-        export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
-        export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
-        
-        certbot certonly \
-            --dns-route53 \
-            -d "${DOMAIN}" \
-            -d "*.${DOMAIN}" \
-            --non-interactive \
-            --agree-tos \
-            --email "${ADMIN_EMAIL}"
-        ;;
-        
-    manual)
-        log_info "Manual DNS challenge required"
-        certbot certonly \
-            --manual \
-            --preferred-challenges dns \
-            -d "${DOMAIN}" \
-            -d "*.${DOMAIN}" \
-            --agree-tos \
-            --email "${ADMIN_EMAIL}"
-        ;;
-esac
+chmod 600 /root/.secrets/porkbun.ini
 
-log_success "SSL certificate obtained for $DOMAIN"
+# Request wildcard certificate using Porkbun DNS challenge
+certbot certonly \
+    --dns-porkbun \
+    --dns-porkbun-credentials /root/.secrets/porkbun.ini \
+    --dns-porkbun-propagation-seconds 60 \
+    -d "${DOMAIN}" \
+    -d "*.${DOMAIN}" \
+    --non-interactive \
+    --agree-tos \
+    --email "${ADMIN_EMAIL}"
+
+log_success "SSL certificate obtained for $DOMAIN and *.${DOMAIN}"
 
 # Update template with actual domain
 sed -i "s/DOMAIN/${DOMAIN}/g" /etc/nginx/sites-available/_template

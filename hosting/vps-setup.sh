@@ -54,11 +54,8 @@ GITHUB_CLIENT_ID=""
 GITHUB_CLIENT_SECRET=""
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
-DNS_PROVIDER=""
-CF_API_TOKEN=""
-CF_EMAIL=""
-AWS_ACCESS_KEY_ID=""
-AWS_SECRET_ACCESS_KEY=""
+PORKBUN_API_KEY=""
+PORKBUN_SECRET_KEY=""
 AUTH_SECRET=""
 
 # Function to print colored messages
@@ -130,48 +127,37 @@ check_dns_preflight() {
     
     log_info "Performing DNS preflight check for $domain..."
     
-    # Get VPS public IP
-    local vps_ip=$(curl -s -4 ifconfig.me || echo "")
+    # Check if domain nameservers are pointing to Porkbun
+    local nameservers=$(dig +short NS "$domain" @8.8.8.8 | sort || echo "")
     
-    if [[ -z "$vps_ip" ]]; then
-        log_warning "Could not determine VPS public IP address"
+    if [[ -z "$nameservers" ]]; then
+        log_warning "No nameservers found for $domain"
+        log_warning "Please ensure your domain is using Porkbun nameservers:"
+        log_warning "  - curitiba.ns.porkbun.com"
+        log_warning "  - fortaleza.ns.porkbun.com"
+        log_warning "  - maceio.ns.porkbun.com"
+        log_warning "  - salvador.ns.porkbun.com"
         return 1
     fi
     
-    log_info "VPS public IP: $vps_ip"
+    log_info "Current nameservers for $domain:"
+    echo "$nameservers" | while read ns; do
+        log_info "  - $ns"
+    done
     
-    # Check NS records for ns1 and ns2 subdomains
-    local ns1_ip=$(dig +short A "ns1.$domain" @8.8.8.8 | head -n1 || echo "")
-    local ns2_ip=$(dig +short A "ns2.$domain" @8.8.8.8 | head -n1 || echo "")
-    
-    local ns_check_failed=0
-    
-    if [[ -z "$ns1_ip" ]]; then
-        log_warning "DNS A record for ns1.$domain not found"
-        log_warning "Please create an A record: ns1.$domain -> $vps_ip"
-        ns_check_failed=1
-    elif [[ "$ns1_ip" != "$vps_ip" ]]; then
-        log_warning "ns1.$domain points to $ns1_ip but VPS IP is $vps_ip"
-        log_warning "Please update the A record to point to $vps_ip"
-        ns_check_failed=1
-    fi
-    
-    if [[ -z "$ns2_ip" ]]; then
-        log_warning "DNS A record for ns2.$domain not found"
-        log_warning "Please create an A record: ns2.$domain -> $vps_ip"
-        ns_check_failed=1
-    elif [[ "$ns2_ip" != "$vps_ip" ]]; then
-        log_warning "ns2.$domain points to $ns2_ip but VPS IP is $vps_ip"
-        log_warning "Please update the A record to point to $vps_ip"
-        ns_check_failed=1
-    fi
-    
-    if [[ $ns_check_failed -eq 1 ]]; then
+    # Check if any Porkbun nameserver is present
+    if echo "$nameservers" | grep -qi "porkbun.com"; then
+        log_success "Domain is using Porkbun nameservers"
+        return 0
+    else
+        log_warning "Domain is not using Porkbun nameservers"
+        log_warning "Please update your domain's nameservers to:"
+        log_warning "  - curitiba.ns.porkbun.com"
+        log_warning "  - fortaleza.ns.porkbun.com"
+        log_warning "  - maceio.ns.porkbun.com"
+        log_warning "  - salvador.ns.porkbun.com"
         return 1
     fi
-    
-    log_success "DNS preflight check passed"
-    return 0
 }
 
 # Function to save wizard progress
@@ -194,11 +180,8 @@ save_wizard_progress() {
   "github_client_secret": "${GITHUB_CLIENT_SECRET:-}",
   "google_client_id": "${GOOGLE_CLIENT_ID:-}",
   "google_client_secret": "${GOOGLE_CLIENT_SECRET:-}",
-  "dns_provider": "${DNS_PROVIDER:-}",
-  "cf_api_token": "${CF_API_TOKEN:-}",
-  "cf_email": "${CF_EMAIL:-}",
-  "aws_access_key_id": "${AWS_ACCESS_KEY_ID:-}",
-  "aws_secret_access_key": "${AWS_SECRET_ACCESS_KEY:-}"
+  "porkbun_api_key": "${PORKBUN_API_KEY:-}",
+  "porkbun_secret_key": "${PORKBUN_SECRET_KEY:-}"
 }
 EOF
     chmod 600 "$progress_file"
@@ -223,11 +206,8 @@ load_wizard_progress() {
     GITHUB_CLIENT_SECRET=$(jq -r '.github_client_secret // ""' "$progress_file")
     GOOGLE_CLIENT_ID=$(jq -r '.google_client_id // ""' "$progress_file")
     GOOGLE_CLIENT_SECRET=$(jq -r '.google_client_secret // ""' "$progress_file")
-    DNS_PROVIDER=$(jq -r '.dns_provider // ""' "$progress_file")
-    CF_API_TOKEN=$(jq -r '.cf_api_token // ""' "$progress_file")
-    CF_EMAIL=$(jq -r '.cf_email // ""' "$progress_file")
-    AWS_ACCESS_KEY_ID=$(jq -r '.aws_access_key_id // ""' "$progress_file")
-    AWS_SECRET_ACCESS_KEY=$(jq -r '.aws_secret_access_key // ""' "$progress_file")
+    PORKBUN_API_KEY=$(jq -r '.porkbun_api_key // ""' "$progress_file")
+    PORKBUN_SECRET_KEY=$(jq -r '.porkbun_secret_key // ""' "$progress_file")
     
     return 0
 }
@@ -273,18 +253,13 @@ run_wizard() {
                 RECAPTCHA_SECRET_KEY=""
                 GITHUB_CLIENT_ID=""
                 GITHUB_CLIENT_SECRET=""
-                GOOGLE_CLIENT_ID=""
-                GOOGLE_CLIENT_SECRET=""
-                DNS_PROVIDER=""
-                CF_API_TOKEN=""
-                CF_EMAIL=""
-                AWS_ACCESS_KEY_ID=""
-                AWS_SECRET_ACCESS_KEY=""
-            fi
+            GOOGLE_CLIENT_ID=""
+            GOOGLE_CLIENT_SECRET=""
+            PORKBUN_API_KEY=""
+            PORKBUN_SECRET_KEY=""
         fi
     fi
-    
-    echo ""
+fi    echo ""
     
     # Domain configuration
     echo -e "${BLUE}━━━ Domain Configuration ━━━${NC}"
@@ -527,67 +502,42 @@ run_wizard() {
     
     echo ""
     
-    # DNS provider for SSL wildcard certificate
-    echo -e "${BLUE}━━━ SSL Certificate Configuration ━━━${NC}"
-    echo "For wildcard SSL certificate, we need DNS API access."
-    echo "Supported providers: cloudflare, route53, manual"
+    # Porkbun DNS Configuration for SSL and DNS management
+    echo -e "${BLUE}━━━ Porkbun DNS Configuration ━━━${NC}"
+    echo "Porkbun will be used for DNS management and SSL certificate validation."
     echo ""
     
-    if [[ -n "$DNS_PROVIDER" ]]; then
-        log_info "Previous DNS provider: $DNS_PROVIDER"
-        read -p "Press Enter to keep, or enter new provider: " new_provider
-        if [[ -n "$new_provider" ]]; then
-            DNS_PROVIDER="$new_provider"
+    if [[ -n "$PORKBUN_API_KEY" ]]; then
+        log_info "Previous Porkbun API Key found"
+        read -p "Press Enter to keep, or enter new API key: " new_pb_key
+        if [[ -n "$new_pb_key" ]]; then
+            PORKBUN_API_KEY="$new_pb_key"
         fi
     else
-        read -p "DNS provider (cloudflare/route53/manual): " DNS_PROVIDER
-        DNS_PROVIDER=${DNS_PROVIDER:-manual}
+        read -p "Porkbun API Key: " PORKBUN_API_KEY
     fi
     
-    if [[ "$DNS_PROVIDER" == "cloudflare" ]]; then
-        if [[ -n "$CF_API_TOKEN" ]]; then
-            log_info "Previous Cloudflare API Token found"
-            read -p "Press Enter to keep, or enter new token: " new_token
-            if [[ -n "$new_token" ]]; then
-                CF_API_TOKEN="$new_token"
-            fi
-        else
-            read -p "Cloudflare API Token: " CF_API_TOKEN
+    while [[ -z "$PORKBUN_API_KEY" ]]; do
+        log_error "Porkbun API Key is required"
+        read -p "Porkbun API Key: " PORKBUN_API_KEY
+    done
+    
+    if [[ -n "$PORKBUN_SECRET_KEY" ]]; then
+        log_info "Previous Porkbun Secret Key found"
+        read -p "Press Enter to keep, or enter new secret key: " new_pb_secret
+        if [[ -n "$new_pb_secret" ]]; then
+            PORKBUN_SECRET_KEY="$new_pb_secret"
         fi
-        
-        if [[ -n "$CF_EMAIL" ]]; then
-            log_info "Previous Cloudflare Email: $CF_EMAIL"
-            read -p "Press Enter to keep, or enter new email: " new_cf_email
-            if [[ -n "$new_cf_email" ]]; then
-                CF_EMAIL="$new_cf_email"
-            fi
-        else
-            read -p "Cloudflare Email: " CF_EMAIL
-        fi
-    elif [[ "$DNS_PROVIDER" == "route53" ]]; then
-        if [[ -n "$AWS_ACCESS_KEY_ID" ]]; then
-            log_info "Previous AWS Access Key ID found"
-            read -p "Press Enter to keep, or enter new key: " new_aws_key
-            if [[ -n "$new_aws_key" ]]; then
-                AWS_ACCESS_KEY_ID="$new_aws_key"
-            fi
-        else
-            read -p "AWS Access Key ID: " AWS_ACCESS_KEY_ID
-        fi
-        
-        if [[ -n "$AWS_SECRET_ACCESS_KEY" ]]; then
-            log_info "Previous AWS Secret Access Key found"
-            read -p "Press Enter to keep, or enter new secret: " new_aws_secret
-            if [[ -n "$new_aws_secret" ]]; then
-                AWS_SECRET_ACCESS_KEY="$new_aws_secret"
-            fi
-        else
-            read -p "AWS Secret Access Key: " -s AWS_SECRET_ACCESS_KEY
-            echo ""
-        fi
+    else
+        read -p "Porkbun Secret Key: " PORKBUN_SECRET_KEY
     fi
     
-    save_wizard_progress "ssl"
+    while [[ -z "$PORKBUN_SECRET_KEY" ]]; do
+        log_error "Porkbun Secret Key is required"
+        read -p "Porkbun Secret Key: " PORKBUN_SECRET_KEY
+    done
+    
+    save_wizard_progress "porkbun"
     
     # Generate AUTH_SECRET (32 random bytes, base64 encoded)
     AUTH_SECRET=$(openssl rand -base64 32)
@@ -611,7 +561,8 @@ run_wizard() {
   "google_client_id": "$GOOGLE_CLIENT_ID",
   "google_client_secret": "$GOOGLE_CLIENT_SECRET",
   "auth_secret": "$AUTH_SECRET",
-  "dns_provider": "$DNS_PROVIDER",
+  "porkbun_api_key": "$PORKBUN_API_KEY",
+  "porkbun_secret_key": "$PORKBUN_SECRET_KEY",
   "install_dir": "$INSTALL_DIR",
   "setup_dir": "$SETUP_DIR",
   "ns_home": "$NS_HOME"
@@ -629,7 +580,7 @@ EOF
     echo "MySQL User: $MYSQL_USER"
     echo "Admin Email: $ADMIN_EMAIL"
     echo "Admin Name: $ADMIN_NAME"
-    echo "DNS Provider: $DNS_PROVIDER"
+    echo "DNS Provider: Porkbun"
     echo "Install Directory: $INSTALL_DIR"
     echo ""
     
@@ -677,7 +628,8 @@ load_config() {
     export GOOGLE_CLIENT_ID=$(jq -r '.google_client_id' "$CONFIG_FILE")
     export GOOGLE_CLIENT_SECRET=$(jq -r '.google_client_secret' "$CONFIG_FILE")
     export AUTH_SECRET=$(jq -r '.auth_secret' "$CONFIG_FILE")
-    export DNS_PROVIDER=$(jq -r '.dns_provider' "$CONFIG_FILE")
+    export PORKBUN_API_KEY=$(jq -r '.porkbun_api_key' "$CONFIG_FILE")
+    export PORKBUN_SECRET_KEY=$(jq -r '.porkbun_secret_key' "$CONFIG_FILE")
 }
 
 # Main installation function
@@ -768,7 +720,7 @@ main() {
     export BREVO_API_KEY RECAPTCHA_SITE_KEY RECAPTCHA_SECRET_KEY
     export GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET
     export GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
-    export AUTH_SECRET DNS_PROVIDER
+    export AUTH_SECRET PORKBUN_API_KEY PORKBUN_SECRET_KEY
     export CF_API_TOKEN CF_EMAIL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
     
     # Execute installation scripts in sequence
@@ -800,10 +752,10 @@ main() {
     show_progress $current_step $total_steps "Nginx Web Server Configuration"
     bash "$SCRIPTS_DIR/05-nginx-setup.sh"
     
-    # Step 6: BIND9 DNS Setup
+    # Step 6: DNS Setup (Porkbun API)
     current_step=$((current_step + 1))
-    show_progress $current_step $total_steps "BIND9 DNS Server Configuration"
-    bash "$SCRIPTS_DIR/06-bind-setup.sh"
+    show_progress $current_step $total_steps "Porkbun DNS Configuration"
+    bash "$SCRIPTS_DIR/06-porkbun-setup.sh"
     
     # Step 7: PM2 Setup
     current_step=$((current_step + 1))

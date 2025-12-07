@@ -1,0 +1,216 @@
+#!/bin/bash
+
+################################################################################
+# Porkbun DNS Configuration via API
+################################################################################
+
+set -e
+
+# Source parent script if functions not available
+if ! type log_info >/dev/null 2>&1; then
+    source "$(dirname "$0")/../vps-setup.sh"
+fi
+
+log_info "Configuring Porkbun DNS..."
+
+# Get VPS public IP
+VPS_IP=$(curl -s -4 ifconfig.me)
+
+if [[ -z "$VPS_IP" ]]; then
+    log_error "Could not determine VPS public IP address"
+    exit 1
+fi
+
+log_info "VPS Public IP: $VPS_IP"
+
+# Create DNS record management script
+log_info "Creating Porkbun DNS management helper script..."
+
+cat > /usr/local/bin/porkbun-dns << 'EOF'
+#!/bin/bash
+
+# Porkbun DNS Management Script
+# Usage: porkbun-dns <action> <subdomain> <ip>
+# Actions: create, update, delete, list
+
+PORKBUN_API_KEY="${PORKBUN_API_KEY}"
+PORKBUN_SECRET_KEY="${PORKBUN_SECRET_KEY}"
+DOMAIN="${DOMAIN}"
+API_URL="https://porkbun.com/api/json/v3"
+
+if [[ -z "$PORKBUN_API_KEY" || -z "$PORKBUN_SECRET_KEY" || -z "$DOMAIN" ]]; then
+    echo "Error: Environment variables not set"
+    echo "Required: PORKBUN_API_KEY, PORKBUN_SECRET_KEY, DOMAIN"
+    exit 1
+fi
+
+ACTION=$1
+SUBDOMAIN=$2
+IP=$3
+
+case "$ACTION" in
+    create|update)
+        if [[ -z "$SUBDOMAIN" || -z "$IP" ]]; then
+            echo "Usage: $0 create|update <subdomain> <ip>"
+            exit 1
+        fi
+        
+        echo "Creating/Updating A record: $SUBDOMAIN.$DOMAIN -> $IP"
+        
+        RESPONSE=$(curl -s -X POST "$API_URL/dns/create/$DOMAIN" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+                \"apikey\": \"$PORKBUN_API_KEY\",
+                \"name\": \"$SUBDOMAIN\",
+                \"type\": \"A\",
+                \"content\": \"$IP\",
+                \"ttl\": \"300\"
+            }")
+        
+        if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+            echo "✓ DNS record created/updated successfully"
+        else
+            echo "✗ Failed to create DNS record"
+            echo "$RESPONSE"
+            exit 1
+        fi
+        ;;
+        
+    delete)
+        if [[ -z "$SUBDOMAIN" ]]; then
+            echo "Usage: $0 delete <subdomain>"
+            exit 1
+        fi
+        
+        echo "Deleting A record: $SUBDOMAIN.$DOMAIN"
+        
+        # Get record ID first
+        RECORDS=$(curl -s -X POST "$API_URL/dns/retrieve/$DOMAIN" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+                \"apikey\": \"$PORKBUN_API_KEY\"
+            }")
+        
+        RECORD_ID=$(echo "$RECORDS" | jq -r ".records[] | select(.name==\"$SUBDOMAIN.$DOMAIN\" and .type==\"A\") | .id" | head -n1)
+        
+        if [[ -z "$RECORD_ID" || "$RECORD_ID" == "null" ]]; then
+            echo "Record not found"
+            exit 1
+        fi
+        
+        RESPONSE=$(curl -s -X POST "$API_URL/dns/delete/$DOMAIN/$RECORD_ID" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+                \"apikey\": \"$PORKBUN_API_KEY\"
+            }")
+        
+        if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+            echo "✓ DNS record deleted successfully"
+        else
+            echo "✗ Failed to delete DNS record"
+            echo "$RESPONSE"
+            exit 1
+        fi
+        ;;
+        
+    list)
+        echo "Listing DNS records for $DOMAIN"
+        
+        RESPONSE=$(curl -s -X POST "$API_URL/dns/retrieve/$DOMAIN" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+                \"apikey\": \"$PORKBUN_API_KEY\"
+            }")
+        
+        echo "$RESPONSE" | jq -r '.records[] | "\(.type)\t\(.name)\t\(.content)"'
+        ;;
+        
+    *)
+        echo "Usage: $0 <action> [subdomain] [ip]"
+        echo "Actions:"
+        echo "  create <subdomain> <ip>  - Create or update A record"
+        echo "  update <subdomain> <ip>  - Same as create"
+        echo "  delete <subdomain>       - Delete A record"
+        echo "  list                     - List all DNS records"
+        exit 1
+        ;;
+esac
+EOF
+
+chmod +x /usr/local/bin/porkbun-dns
+
+log_success "Porkbun DNS helper script created"
+
+# Create environment file for the script
+cat > /etc/porkbun-dns.env << EOF
+PORKBUN_API_KEY="${PORKBUN_API_KEY}"
+PORKBUN_SECRET_KEY="${PORKBUN_SECRET_KEY}"
+DOMAIN="${DOMAIN}"
+EOF
+
+chmod 600 /etc/porkbun-dns.env
+
+log_success "Porkbun credentials configured"
+
+# Create main domain A record pointing to this VPS
+log_info "Creating A record for $DOMAIN..."
+
+RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+        \"apikey\": \"$PORKBUN_API_KEY\",
+        \"name\": \"\",
+        \"type\": \"A\",
+        \"content\": \"$VPS_IP\",
+        \"ttl\": \"300\"
+    }")
+
+if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+    log_success "Main domain A record created: $DOMAIN -> $VPS_IP"
+else
+    log_warning "Failed to create main domain A record (may already exist)"
+    log_info "Response: $RESPONSE"
+fi
+
+# Create wildcard subdomain record for Nightscout instances
+log_info "Creating wildcard A record for *.ns.$DOMAIN..."
+
+RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+        \"apikey\": \"$PORKBUN_API_KEY\",
+        \"name\": \"*.ns\",
+        \"type\": \"A\",
+        \"content\": \"$VPS_IP\",
+        \"ttl\": \"300\"
+    }")
+
+if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+    log_success "Wildcard A record created: *.ns.$DOMAIN -> $VPS_IP"
+else
+    log_warning "Failed to create wildcard A record (may already exist)"
+    log_info "Response: $RESPONSE"
+fi
+
+log_info "Verifying DNS records..."
+
+# Wait a moment for DNS to propagate
+sleep 2
+
+# List all DNS records
+log_info "Current DNS records:"
+source /etc/porkbun-dns.env
+/usr/local/bin/porkbun-dns list | grep -E "^A\s" || log_warning "Could not retrieve DNS records"
+
+log_success "Porkbun DNS configuration completed"
+
+echo ""
+log_info "You can manage DNS records using: porkbun-dns <action> <subdomain> <ip>"
+log_info "Example: porkbun-dns create test 1.2.3.4"
+echo ""

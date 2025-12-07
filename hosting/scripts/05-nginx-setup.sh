@@ -153,16 +153,85 @@ dns_porkbun_secret=${PORKBUN_SECRET_KEY}
 EOF
 chmod 600 /root/.secrets/porkbun.ini
 
+# Copy auth/cleanup hooks to system
+log_info "Installing Porkbun certbot hooks..."
+
+SCRIPTS_DIR="$(dirname "$0")"
+
+cp "$SCRIPTS_DIR/certbot-porkbun-auth.sh" /usr/local/bin/certbot-porkbun-auth.sh
+cp "$SCRIPTS_DIR/certbot-porkbun-cleanup.sh" /usr/local/bin/certbot-porkbun-cleanup.sh
+
+chmod +x /usr/local/bin/certbot-porkbun-auth.sh
+chmod +x /usr/local/bin/certbot-porkbun-cleanup.sh
+
+log_success "Certbot hooks installed"
+
+# Test Porkbun API authentication before running certbot
+log_info "Testing Porkbun API authentication..."
+
+TEST_RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/domain/listAll" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+        \"apikey\": \"$PORKBUN_API_KEY\"
+    }")
+
+if echo "$TEST_RESPONSE" | grep -q '"status":"ERROR"'; then
+    ERROR_MSG=$(echo "$TEST_RESPONSE" | grep -o '"message":"[^"]*"')
+    log_error "Porkbun API authentication failed: $ERROR_MSG"
+    log_error "Please verify your API key and secret"
+    exit 1
+fi
+
+if echo "$TEST_RESPONSE" | grep -q '"status":"SUCCESS"'; then
+    log_success "Porkbun API authentication successful"
+else
+    log_error "Unexpected Porkbun API response: $TEST_RESPONSE"
+    exit 1
+fi
+
+# Verify domain is in account
+log_info "Verifying domain exists in Porkbun account..."
+
+DOMAIN_RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/domain/get" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+        \"apikey\": \"$PORKBUN_API_KEY\",
+        \"domain\": \"$DOMAIN\"
+    }")
+
+if echo "$DOMAIN_RESPONSE" | grep -q '"status":"ERROR"'; then
+    ERROR_MSG=$(echo "$DOMAIN_RESPONSE" | grep -o '"message":"[^"]*"')
+    log_warning "Domain verification failed: $ERROR_MSG"
+    log_warning "Make sure the domain is registered in your Porkbun account"
+else
+    log_success "Domain $DOMAIN verified in Porkbun account"
+fi
+
 # Request wildcard certificate using Porkbun DNS challenge
+# Using --manual mode with certbot and porkbun-dns helper script
+log_info "Creating DNS records for ACME challenge..."
+
+# First, let's use a custom approach with the porkbun-dns helper
+# We'll request the cert with manual mode and handle DNS ourselves
 certbot certonly \
-    --authenticator dns-porkbun \
-    --dns-porkbun-credentials /root/.secrets/porkbun.ini \
-    --dns-porkbun-propagation-seconds 600 \
-    -d "${DOMAIN}" \
-    -d "*.${DOMAIN}" \
+    --manual \
+    --preferred-challenges dns \
+    --manual-auth-hook "/usr/local/bin/certbot-porkbun-auth.sh" \
+    --manual-cleanup-hook "/usr/local/bin/certbot-porkbun-cleanup.sh" \
     --non-interactive \
     --agree-tos \
-    --email "${ADMIN_EMAIL}"
+    --email "${ADMIN_EMAIL}" \
+    -d "${DOMAIN}" \
+    -d "*.${DOMAIN}" || {
+    
+    log_warning "Automated DNS challenge failed. Please create DNS records manually or re-run with interactive mode."
+    log_info "For manual DNS challenge, you'll need to create TXT records for:"
+    log_info "  _acme-challenge.${DOMAIN}"
+    log_info "  _acme-challenge.*.${DOMAIN}"
+    exit 1
+}
 
 log_success "SSL certificate obtained for $DOMAIN and *.${DOMAIN}"
 

@@ -259,7 +259,9 @@ run_wizard() {
             PORKBUN_SECRET_KEY=""
         fi
     fi
-fi    echo ""
+fi
+
+echo ""
     
     # Domain configuration
     echo -e "${BLUE}━━━ Domain Configuration ━━━${NC}"

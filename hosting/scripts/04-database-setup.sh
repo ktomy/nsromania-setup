@@ -185,41 +185,91 @@ fi
 
 log_info "Installing MongoDB..."
 
-# Import MongoDB GPG key
-curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
-   gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+# Check if MongoDB is already installed
+if command -v mongod >/dev/null 2>&1; then
+    log_info "MongoDB is already installed"
+    MONGO_ALREADY_INSTALLED=true
+else
+    MONGO_ALREADY_INSTALLED=false
+    
+    # Import MongoDB GPG key (force overwrite if exists)
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+       gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor --yes 2>/dev/null || \
+       curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+       gpg --dearmor > /usr/share/keyrings/mongodb-server-7.0.gpg
 
-# Add MongoDB repository
-echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
-    tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    # Add MongoDB repository (only if not already added)
+    if [[ ! -f /etc/apt/sources.list.d/mongodb-org-7.0.list ]]; then
+        echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
+            tee /etc/apt/sources.list.d/mongodb-org-7.0.list > /dev/null
+    fi
 
-# Update package list
-apt-get update -qq
+    # Update package list
+    apt-get update -qq
 
-# Install MongoDB
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mongodb-org
+    # Install MongoDB
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mongodb-org
+fi
+
+# Ensure MongoDB data directory exists and has correct permissions
+mkdir -p /var/lib/mongodb
+chown -R mongodb:mongodb /var/lib/mongodb
+mkdir -p /var/log/mongodb
+chown -R mongodb:mongodb /var/log/mongodb
 
 # Start MongoDB
 systemctl start mongod
 systemctl enable mongod
 
+# Wait for MongoDB to be ready and verify it's running
+log_info "Waiting for MongoDB to start..."
+MONGO_START_RETRY=0
+MONGO_START_MAX_RETRIES=10
+
+while [ $MONGO_START_RETRY -lt $MONGO_START_MAX_RETRIES ]; do
+    if systemctl is-active --quiet mongod && mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+        break
+    fi
+    MONGO_START_RETRY=$((MONGO_START_RETRY + 1))
+    if [ $MONGO_START_RETRY -lt $MONGO_START_MAX_RETRIES ]; then
+        sleep 2
+    fi
+done
+
+if ! systemctl is-active --quiet mongod; then
+    log_error "MongoDB failed to start"
+    log_error "Check status: systemctl status mongod"
+    log_error "Check logs: journalctl -u mongod -n 50"
+    exit 1
+fi
+
+if ! mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+    log_error "MongoDB is running but not accepting connections"
+    log_error "Check logs: tail -n 50 /var/log/mongodb/mongod.log"
+    exit 1
+fi
+
 log_success "MongoDB installed and started"
 
 log_info "Configuring MongoDB authentication..."
 
-# Wait for MongoDB to be ready
-sleep 3
+# Check if root user already exists
+ROOT_EXISTS=$(mongosh admin --quiet --eval "db.getUser('root')" 2>/dev/null | grep -c "user" || echo "0")
 
-# Create root user
-mongosh --eval "
-db.getSiblingDB('admin').createUser({
-  user: 'root',
-  pwd: '${MONGO_ROOT_PASSWORD}',
-  roles: [ { role: 'root', db: 'admin' } ]
-})
-"
-
-log_success "MongoDB root user created"
+if [[ "$ROOT_EXISTS" -gt 0 ]]; then
+    log_info "MongoDB root user already exists"
+else
+    # Create root user
+    mongosh --eval "
+    db.getSiblingDB('admin').createUser({
+      user: 'root',
+      pwd: '${MONGO_ROOT_PASSWORD}',
+      roles: [ { role: 'root', db: 'admin' } ]
+    })
+    "
+    
+    log_success "MongoDB root user created"
+fi
 
 # Enable authentication in MongoDB config
 log_info "Enabling MongoDB authentication..."

@@ -98,17 +98,27 @@ log_success "Database nightscout created"
 
 # Download and execute seed SQL files
 if [[ "$SKIP_SEEDING" == "false" ]]; then
-    log_info "Downloading and executing seed SQL files..."
+    log_info "Executing seed SQL files..."
 
-    SEED_DIR="/tmp/nsromania-seed-data"
-    mkdir -p "$SEED_DIR"
-
-    GITHUB_RAW="https://raw.githubusercontent.com/ktomy/nsromania-setup/main/seed-data"
+    # Use seed files from cloned repository
+    if [[ -n "${SEED_DATA_DIR:-}" && -d "$SEED_DATA_DIR" ]]; then
+        SEED_DIR="$SEED_DATA_DIR"
+        log_info "Using seed data from repository: $SEED_DIR"
+    else
+        # Fallback: look for seed-data in common locations
+        if [[ -d "/tmp/nsromania-setup-repo/seed-data" ]]; then
+            SEED_DIR="/tmp/nsromania-setup-repo/seed-data"
+        elif [[ -d "$(dirname "$(dirname "$0")")/seed-data" ]]; then
+            SEED_DIR="$(dirname "$(dirname "$0")")/seed-data"
+        else
+            log_error "Could not find seed-data directory"
+            exit 1
+        fi
+    fi
 
     for sql_file in 01-auth-tables.sql 02-domains-tables.sql 03-registration-tables.sql 04-example-data.sql; do
-        log_info "Downloading $sql_file..."
-        if ! curl -fsSL "$GITHUB_RAW/$sql_file" -o "$SEED_DIR/$sql_file"; then
-            log_error "Failed to download $sql_file"
+        if [[ ! -f "$SEED_DIR/$sql_file" ]]; then
+            log_error "Seed file not found: $SEED_DIR/$sql_file"
             exit 1
         fi
         

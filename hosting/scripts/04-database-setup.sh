@@ -175,6 +175,17 @@ EOF
 # Restart MongoDB with authentication enabled
 systemctl restart mongod
 
+# Wait for MongoDB to be ready after restart
+log_info "Waiting for MongoDB to restart..."
+sleep 5
+
+# Check if MongoDB is running
+if ! systemctl is-active --quiet mongod; then
+    log_error "MongoDB failed to start after enabling authentication"
+    log_error "Check logs: journalctl -u mongod -n 50"
+    exit 1
+fi
+
 log_success "MongoDB authentication enabled"
 
 # Verify database connections
@@ -188,11 +199,30 @@ else
     exit 1
 fi
 
-# Test MongoDB connection
-if mongosh -u root -p "${MONGO_ROOT_PASSWORD}" --authenticationDatabase admin --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+# Test MongoDB connection with retries
+log_info "Testing MongoDB connection..."
+MONGO_RETRY=0
+MONGO_MAX_RETRIES=5
+MONGO_CONNECTED=false
+
+while [ $MONGO_RETRY -lt $MONGO_MAX_RETRIES ]; do
+    if mongosh -u root -p "${MONGO_ROOT_PASSWORD}" --authenticationDatabase admin --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+        MONGO_CONNECTED=true
+        break
+    fi
+    MONGO_RETRY=$((MONGO_RETRY + 1))
+    if [ $MONGO_RETRY -lt $MONGO_MAX_RETRIES ]; then
+        log_info "MongoDB not ready yet, retrying in 2 seconds... (attempt $MONGO_RETRY/$MONGO_MAX_RETRIES)"
+        sleep 2
+    fi
+done
+
+if [ "$MONGO_CONNECTED" = true ]; then
     log_success "MongoDB connection verified"
 else
-    log_error "MongoDB connection failed"
+    log_error "MongoDB connection failed after $MONGO_MAX_RETRIES attempts"
+    log_error "Check MongoDB status: systemctl status mongod"
+    log_error "Check MongoDB logs: tail -n 50 /var/log/mongodb/mongod.log"
     exit 1
 fi
 

@@ -118,22 +118,95 @@ check_dns_preflight() {
     
     log_info "VPS public IP: $vps_ip"
     
-    # Check A record for main domain
-    local domain_ip=$(dig +short A "$domain" @8.8.8.8 | head -n1 || echo "")
+    # Check NS records for ns1 and ns2 subdomains
+    local ns1_ip=$(dig +short A "ns1.$domain" @8.8.8.8 | head -n1 || echo "")
+    local ns2_ip=$(dig +short A "ns2.$domain" @8.8.8.8 | head -n1 || echo "")
     
-    if [[ -z "$domain_ip" ]]; then
-        log_warning "DNS A record for $domain not found"
-        log_warning "Please ensure you have created an A record pointing $domain to $vps_ip"
-        return 1
+    local ns_check_failed=0
+    
+    if [[ -z "$ns1_ip" ]]; then
+        log_warning "DNS A record for ns1.$domain not found"
+        log_warning "Please create an A record: ns1.$domain -> $vps_ip"
+        ns_check_failed=1
+    elif [[ "$ns1_ip" != "$vps_ip" ]]; then
+        log_warning "ns1.$domain points to $ns1_ip but VPS IP is $vps_ip"
+        log_warning "Please update the A record to point to $vps_ip"
+        ns_check_failed=1
     fi
     
-    if [[ "$domain_ip" != "$vps_ip" ]]; then
-        log_warning "DNS A record for $domain points to $domain_ip but VPS IP is $vps_ip"
-        log_warning "Please update your DNS A record to point to $vps_ip"
+    if [[ -z "$ns2_ip" ]]; then
+        log_warning "DNS A record for ns2.$domain not found"
+        log_warning "Please create an A record: ns2.$domain -> $vps_ip"
+        ns_check_failed=1
+    elif [[ "$ns2_ip" != "$vps_ip" ]]; then
+        log_warning "ns2.$domain points to $ns2_ip but VPS IP is $vps_ip"
+        log_warning "Please update the A record to point to $vps_ip"
+        ns_check_failed=1
+    fi
+    
+    if [[ $ns_check_failed -eq 1 ]]; then
         return 1
     fi
     
     log_success "DNS preflight check passed"
+    return 0
+}
+
+# Function to save wizard progress
+save_wizard_progress() {
+    local step=$1
+    local progress_file="${INSTALL_DIR}/.wizard-progress.json"
+    mkdir -p "$(dirname "$progress_file")"
+    
+    cat > "$progress_file" << EOF
+{
+  "last_step": "$step",
+  "domain": "${DOMAIN:-}",
+  "mysql_user": "${MYSQL_USER:-}",
+  "admin_email": "${ADMIN_EMAIL:-}",
+  "admin_name": "${ADMIN_NAME:-}",
+  "brevo_api_key": "${BREVO_API_KEY:-}",
+  "recaptcha_site_key": "${RECAPTCHA_SITE_KEY:-}",
+  "recaptcha_secret_key": "${RECAPTCHA_SECRET_KEY:-}",
+  "github_client_id": "${GITHUB_CLIENT_ID:-}",
+  "github_client_secret": "${GITHUB_CLIENT_SECRET:-}",
+  "google_client_id": "${GOOGLE_CLIENT_ID:-}",
+  "google_client_secret": "${GOOGLE_CLIENT_SECRET:-}",
+  "dns_provider": "${DNS_PROVIDER:-}",
+  "cf_api_token": "${CF_API_TOKEN:-}",
+  "cf_email": "${CF_EMAIL:-}",
+  "aws_access_key_id": "${AWS_ACCESS_KEY_ID:-}",
+  "aws_secret_access_key": "${AWS_SECRET_ACCESS_KEY:-}"
+}
+EOF
+    chmod 600 "$progress_file"
+}
+
+# Function to load wizard progress
+load_wizard_progress() {
+    local progress_file="${INSTALL_DIR}/.wizard-progress.json"
+    
+    if [[ ! -f "$progress_file" ]]; then
+        return 1
+    fi
+    
+    DOMAIN=$(jq -r '.domain // ""' "$progress_file")
+    MYSQL_USER=$(jq -r '.mysql_user // ""' "$progress_file")
+    ADMIN_EMAIL=$(jq -r '.admin_email // ""' "$progress_file")
+    ADMIN_NAME=$(jq -r '.admin_name // ""' "$progress_file")
+    BREVO_API_KEY=$(jq -r '.brevo_api_key // ""' "$progress_file")
+    RECAPTCHA_SITE_KEY=$(jq -r '.recaptcha_site_key // ""' "$progress_file")
+    RECAPTCHA_SECRET_KEY=$(jq -r '.recaptcha_secret_key // ""' "$progress_file")
+    GITHUB_CLIENT_ID=$(jq -r '.github_client_id // ""' "$progress_file")
+    GITHUB_CLIENT_SECRET=$(jq -r '.github_client_secret // ""' "$progress_file")
+    GOOGLE_CLIENT_ID=$(jq -r '.google_client_id // ""' "$progress_file")
+    GOOGLE_CLIENT_SECRET=$(jq -r '.google_client_secret // ""' "$progress_file")
+    DNS_PROVIDER=$(jq -r '.dns_provider // ""' "$progress_file")
+    CF_API_TOKEN=$(jq -r '.cf_api_token // ""' "$progress_file")
+    CF_EMAIL=$(jq -r '.cf_email // ""' "$progress_file")
+    AWS_ACCESS_KEY_ID=$(jq -r '.aws_access_key_id // ""' "$progress_file")
+    AWS_SECRET_ACCESS_KEY=$(jq -r '.aws_secret_access_key // ""' "$progress_file")
+    
     return 0
 }
 
@@ -160,15 +233,53 @@ run_wizard() {
     show_banner
     
     log_info "Starting configuration wizard..."
+    
+    # Try to load previous progress
+    if load_wizard_progress; then
+        log_info "Found previous wizard session"
+        echo ""
+        read -p "Resume from previous session? (yes/no): " resume_wizard
+        if [[ "$resume_wizard" != "yes" ]]; then
+            # Clear all loaded values
+            DOMAIN=""
+            MYSQL_USER=""
+            ADMIN_EMAIL=""
+            ADMIN_NAME=""
+            BREVO_API_KEY=""
+            RECAPTCHA_SITE_KEY=""
+            RECAPTCHA_SECRET_KEY=""
+            GITHUB_CLIENT_ID=""
+            GITHUB_CLIENT_SECRET=""
+            GOOGLE_CLIENT_ID=""
+            GOOGLE_CLIENT_SECRET=""
+            DNS_PROVIDER=""
+            CF_API_TOKEN=""
+            CF_EMAIL=""
+            AWS_ACCESS_KEY_ID=""
+            AWS_SECRET_ACCESS_KEY=""
+        fi
+    fi
+    
     echo ""
     
     # Domain configuration
     echo -e "${BLUE}━━━ Domain Configuration ━━━${NC}"
-    read -p "Enter your domain name (e.g., nsromania.info): " DOMAIN
+    if [[ -n "$DOMAIN" ]]; then
+        log_info "Previous value: $DOMAIN"
+        read -p "Press Enter to keep, or enter new domain: " new_domain
+        if [[ -n "$new_domain" ]]; then
+            DOMAIN="$new_domain"
+        fi
+    else
+        read -p "Enter your domain name (e.g., nsromania.info): " DOMAIN
+    fi
+    
     while [[ -z "$DOMAIN" || ! "$DOMAIN" =~ ^[a-z0-9.-]+\.[a-z]{2,}$ ]]; do
         log_error "Invalid domain name"
         read -p "Enter your domain name: " DOMAIN
     done
+    
+    save_wizard_progress "domain"
     
     # Perform DNS preflight check (warning only)
     if ! check_dns_preflight "$DOMAIN"; then
@@ -181,79 +292,153 @@ run_wizard() {
     
     # Database configuration
     echo -e "${BLUE}━━━ Database Configuration ━━━${NC}"
-    read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
+    echo -e "${YELLOW}⚠️  IMPORTANT: Generated passwords will be shown once and NOT saved!${NC}"
+    echo -e "${YELLOW}    Please write them down in a secure location.${NC}"
     echo ""
-    while [[ -z "$MYSQL_ROOT_PASSWORD" ]]; do
-        log_error "MySQL root password cannot be empty"
+    
+    read -p "Generate MySQL root password automatically? (yes/no): " gen_mysql_root
+    if [[ "$gen_mysql_root" == "yes" ]]; then
+        MYSQL_ROOT_PASSWORD=$(openssl rand -base64 24)
+        echo -e "${GREEN}Generated MySQL root password: ${MYSQL_ROOT_PASSWORD}${NC}"
+        echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
+        read -p "Press Enter after you have saved this password..." _
+    else
         read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
         echo ""
-    done
+        while [[ -z "$MYSQL_ROOT_PASSWORD" ]]; do
+            log_error "MySQL root password cannot be empty"
+            read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
+            echo ""
+        done
+    fi
     
-    read -p "MySQL database user (default: nsromania): " MYSQL_USER
-    MYSQL_USER=${MYSQL_USER:-nsromania}
+    if [[ -n "$MYSQL_USER" ]]; then
+        log_info "Previous MySQL user: $MYSQL_USER"
+        read -p "Press Enter to keep, or enter new user: " new_user
+        if [[ -n "$new_user" ]]; then
+            MYSQL_USER="$new_user"
+        fi
+    else
+        read -p "MySQL database user (default: nsromania): " MYSQL_USER
+        MYSQL_USER=${MYSQL_USER:-nsromania}
+    fi
     
-    read -p "MySQL database user password: " -s MYSQL_PASSWORD
-    echo ""
-    while [[ -z "$MYSQL_PASSWORD" ]]; do
-        log_error "MySQL user password cannot be empty"
+    read -p "Generate MySQL user password automatically? (yes/no): " gen_mysql_pass
+    if [[ "$gen_mysql_pass" == "yes" ]]; then
+        MYSQL_PASSWORD=$(openssl rand -base64 24)
+        echo -e "${GREEN}Generated MySQL password for $MYSQL_USER: ${MYSQL_PASSWORD}${NC}"
+        echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
+        read -p "Press Enter after you have saved this password..." _
+    else
         read -p "MySQL database user password: " -s MYSQL_PASSWORD
         echo ""
-    done
+        while [[ -z "$MYSQL_PASSWORD" ]]; do
+            log_error "MySQL user password cannot be empty"
+            read -p "MySQL database user password: " -s MYSQL_PASSWORD
+            echo ""
+        done
+    fi
     
-    read -p "MongoDB root password: " -s MONGO_ROOT_PASSWORD
-    echo ""
-    while [[ -z "$MONGO_ROOT_PASSWORD" ]]; do
-        log_error "MongoDB root password cannot be empty"
+    read -p "Generate MongoDB root password automatically? (yes/no): " gen_mongo_pass
+    if [[ "$gen_mongo_pass" == "yes" ]]; then
+        MONGO_ROOT_PASSWORD=$(openssl rand -base64 24)
+        echo -e "${GREEN}Generated MongoDB root password: ${MONGO_ROOT_PASSWORD}${NC}"
+        echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
+        read -p "Press Enter after you have saved this password..." _
+    else
         read -p "MongoDB root password: " -s MONGO_ROOT_PASSWORD
         echo ""
-    done
+        while [[ -z "$MONGO_ROOT_PASSWORD" ]]; do
+            log_error "MongoDB root password cannot be empty"
+            read -p "MongoDB root password: " -s MONGO_ROOT_PASSWORD
+            echo ""
+        done
+    fi
+    
+    save_wizard_progress "database"
     
     echo ""
     
     # Admin user configuration
     echo -e "${BLUE}━━━ Admin User Configuration ━━━${NC}"
-    read -p "Admin email: " ADMIN_EMAIL
+    if [[ -n "$ADMIN_EMAIL" ]]; then
+        log_info "Previous admin email: $ADMIN_EMAIL"
+        read -p "Press Enter to keep, or enter new email: " new_email
+        if [[ -n "$new_email" ]]; then
+            ADMIN_EMAIL="$new_email"
+        fi
+    else
+        read -p "Admin email: " ADMIN_EMAIL
+    fi
+    
     while [[ -z "$ADMIN_EMAIL" || ! "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; do
         log_error "Invalid email address"
         read -p "Admin email: " ADMIN_EMAIL
     done
     
-    read -p "Admin name: " ADMIN_NAME
+    if [[ -n "$ADMIN_NAME" ]]; then
+        log_info "Previous admin name: $ADMIN_NAME"
+        read -p "Press Enter to keep, or enter new name: " new_name
+        if [[ -n "$new_name" ]]; then
+            ADMIN_NAME="$new_name"
+        fi
+    else
+        read -p "Admin name: " ADMIN_NAME
+    fi
+    
     while [[ -z "$ADMIN_NAME" ]]; do
         log_error "Admin name cannot be empty"
         read -p "Admin name: " ADMIN_NAME
     done
     
+    save_wizard_progress "admin"
+    
     echo ""
     
-    # Email service configuration (Brevo)
+    # Email service configuration (Brevo API only)
     echo -e "${BLUE}━━━ Email Service Configuration (Brevo) ━━━${NC}"
-    read -p "Brevo API key: " BREVO_API_KEY
+    if [[ -n "$BREVO_API_KEY" ]]; then
+        log_info "Previous Brevo API key found"
+        read -p "Press Enter to keep, or enter new API key: " new_key
+        if [[ -n "$new_key" ]]; then
+            BREVO_API_KEY="$new_key"
+        fi
+    else
+        read -p "Brevo API key: " BREVO_API_KEY
+    fi
+    
     while [[ -z "$BREVO_API_KEY" ]]; do
         log_error "Brevo API key is required"
         read -p "Brevo API key: " BREVO_API_KEY
     done
     
-    read -p "Brevo SMTP user: " BREVO_SMTP_USER
-    while [[ -z "$BREVO_SMTP_USER" ]]; do
-        log_error "Brevo SMTP user is required"
-        read -p "Brevo SMTP user: " BREVO_SMTP_USER
-    done
-    
-    read -p "Brevo SMTP password: " -s BREVO_SMTP_PASSWORD
-    echo ""
-    while [[ -z "$BREVO_SMTP_PASSWORD" ]]; do
-        log_error "Brevo SMTP password is required"
-        read -p "Brevo SMTP password: " -s BREVO_SMTP_PASSWORD
-        echo ""
-    done
+    save_wizard_progress "email"
     
     echo ""
     
     # reCAPTCHA configuration
     echo -e "${BLUE}━━━ reCAPTCHA Configuration ━━━${NC}"
-    read -p "reCAPTCHA site key: " RECAPTCHA_SITE_KEY
-    read -p "reCAPTCHA secret key: " RECAPTCHA_SECRET_KEY
+    if [[ -n "$RECAPTCHA_SITE_KEY" ]]; then
+        log_info "Previous reCAPTCHA site key found"
+        read -p "Press Enter to keep, or enter new site key: " new_site_key
+        if [[ -n "$new_site_key" ]]; then
+            RECAPTCHA_SITE_KEY="$new_site_key"
+        fi
+    else
+        read -p "reCAPTCHA site key: " RECAPTCHA_SITE_KEY
+    fi
+    
+    if [[ -n "$RECAPTCHA_SECRET_KEY" ]]; then
+        log_info "Previous reCAPTCHA secret key found"
+        read -p "Press Enter to keep, or enter new secret key: " new_secret_key
+        if [[ -n "$new_secret_key" ]]; then
+            RECAPTCHA_SECRET_KEY="$new_secret_key"
+        fi
+    else
+        read -p "reCAPTCHA secret key: " RECAPTCHA_SECRET_KEY
+    fi
+    
+    save_wizard_progress "recaptcha"
     
     echo ""
     
@@ -262,21 +447,59 @@ run_wizard() {
     echo "Press Enter to skip if you don't have OAuth credentials yet"
     echo ""
     
-    read -p "GitHub Client ID (optional): " GITHUB_CLIENT_ID
     if [[ -n "$GITHUB_CLIENT_ID" ]]; then
-        read -p "GitHub Client Secret: " GITHUB_CLIENT_SECRET
+        log_info "Previous GitHub Client ID: $GITHUB_CLIENT_ID"
+        read -p "Press Enter to keep, or enter new ID: " new_gh_id
+        if [[ -n "$new_gh_id" ]]; then
+            GITHUB_CLIENT_ID="$new_gh_id"
+            GITHUB_CLIENT_SECRET=""  # Reset secret if ID changes
+        fi
+    else
+        read -p "GitHub Client ID (optional): " GITHUB_CLIENT_ID
+    fi
+    
+    if [[ -n "$GITHUB_CLIENT_ID" ]]; then
+        if [[ -n "$GITHUB_CLIENT_SECRET" ]]; then
+            log_info "Previous GitHub Client Secret found"
+            read -p "Press Enter to keep, or enter new secret: " new_gh_secret
+            if [[ -n "$new_gh_secret" ]]; then
+                GITHUB_CLIENT_SECRET="$new_gh_secret"
+            fi
+        else
+            read -p "GitHub Client Secret: " GITHUB_CLIENT_SECRET
+        fi
     else
         GITHUB_CLIENT_SECRET=""
     fi
     
     echo ""
     
-    read -p "Google Client ID (optional): " GOOGLE_CLIENT_ID
     if [[ -n "$GOOGLE_CLIENT_ID" ]]; then
-        read -p "Google Client Secret: " GOOGLE_CLIENT_SECRET
+        log_info "Previous Google Client ID found"
+        read -p "Press Enter to keep, or enter new ID: " new_g_id
+        if [[ -n "$new_g_id" ]]; then
+            GOOGLE_CLIENT_ID="$new_g_id"
+            GOOGLE_CLIENT_SECRET=""  # Reset secret if ID changes
+        fi
+    else
+        read -p "Google Client ID (optional): " GOOGLE_CLIENT_ID
+    fi
+    
+    if [[ -n "$GOOGLE_CLIENT_ID" ]]; then
+        if [[ -n "$GOOGLE_CLIENT_SECRET" ]]; then
+            log_info "Previous Google Client Secret found"
+            read -p "Press Enter to keep, or enter new secret: " new_g_secret
+            if [[ -n "$new_g_secret" ]]; then
+                GOOGLE_CLIENT_SECRET="$new_g_secret"
+            fi
+        else
+            read -p "Google Client Secret: " GOOGLE_CLIENT_SECRET
+        fi
     else
         GOOGLE_CLIENT_SECRET=""
     fi
+    
+    save_wizard_progress "oauth"
     
     echo ""
     
@@ -285,17 +508,62 @@ run_wizard() {
     echo "For wildcard SSL certificate, we need DNS API access."
     echo "Supported providers: cloudflare, route53, manual"
     echo ""
-    read -p "DNS provider (cloudflare/route53/manual): " DNS_PROVIDER
-    DNS_PROVIDER=${DNS_PROVIDER:-manual}
+    
+    if [[ -n "$DNS_PROVIDER" ]]; then
+        log_info "Previous DNS provider: $DNS_PROVIDER"
+        read -p "Press Enter to keep, or enter new provider: " new_provider
+        if [[ -n "$new_provider" ]]; then
+            DNS_PROVIDER="$new_provider"
+        fi
+    else
+        read -p "DNS provider (cloudflare/route53/manual): " DNS_PROVIDER
+        DNS_PROVIDER=${DNS_PROVIDER:-manual}
+    fi
     
     if [[ "$DNS_PROVIDER" == "cloudflare" ]]; then
-        read -p "Cloudflare API Token: " CF_API_TOKEN
-        read -p "Cloudflare Email: " CF_EMAIL
+        if [[ -n "$CF_API_TOKEN" ]]; then
+            log_info "Previous Cloudflare API Token found"
+            read -p "Press Enter to keep, or enter new token: " new_token
+            if [[ -n "$new_token" ]]; then
+                CF_API_TOKEN="$new_token"
+            fi
+        else
+            read -p "Cloudflare API Token: " CF_API_TOKEN
+        fi
+        
+        if [[ -n "$CF_EMAIL" ]]; then
+            log_info "Previous Cloudflare Email: $CF_EMAIL"
+            read -p "Press Enter to keep, or enter new email: " new_cf_email
+            if [[ -n "$new_cf_email" ]]; then
+                CF_EMAIL="$new_cf_email"
+            fi
+        else
+            read -p "Cloudflare Email: " CF_EMAIL
+        fi
     elif [[ "$DNS_PROVIDER" == "route53" ]]; then
-        read -p "AWS Access Key ID: " AWS_ACCESS_KEY_ID
-        read -p "AWS Secret Access Key: " -s AWS_SECRET_ACCESS_KEY
-        echo ""
+        if [[ -n "$AWS_ACCESS_KEY_ID" ]]; then
+            log_info "Previous AWS Access Key ID found"
+            read -p "Press Enter to keep, or enter new key: " new_aws_key
+            if [[ -n "$new_aws_key" ]]; then
+                AWS_ACCESS_KEY_ID="$new_aws_key"
+            fi
+        else
+            read -p "AWS Access Key ID: " AWS_ACCESS_KEY_ID
+        fi
+        
+        if [[ -n "$AWS_SECRET_ACCESS_KEY" ]]; then
+            log_info "Previous AWS Secret Access Key found"
+            read -p "Press Enter to keep, or enter new secret: " new_aws_secret
+            if [[ -n "$new_aws_secret" ]]; then
+                AWS_SECRET_ACCESS_KEY="$new_aws_secret"
+            fi
+        else
+            read -p "AWS Secret Access Key: " -s AWS_SECRET_ACCESS_KEY
+            echo ""
+        fi
     fi
+    
+    save_wizard_progress "ssl"
     
     # Generate AUTH_SECRET (32 random bytes, base64 encoded)
     AUTH_SECRET=$(openssl rand -base64 32)
@@ -312,8 +580,6 @@ run_wizard() {
   "admin_email": "$ADMIN_EMAIL",
   "admin_name": "$ADMIN_NAME",
   "brevo_api_key": "$BREVO_API_KEY",
-  "brevo_smtp_user": "$BREVO_SMTP_USER",
-  "brevo_smtp_password": "$BREVO_SMTP_PASSWORD",
   "recaptcha_site_key": "$RECAPTCHA_SITE_KEY",
   "recaptcha_secret_key": "$RECAPTCHA_SECRET_KEY",
   "github_client_id": "$GITHUB_CLIENT_ID",
@@ -343,12 +609,23 @@ EOF
     echo "Install Directory: $INSTALL_DIR"
     echo ""
     
-    read -p "Is this configuration correct? (yes/no): " confirm
-    if [[ "$confirm" != "yes" ]]; then
-        log_error "Installation cancelled by user"
-        rm -f "$CONFIG_FILE"
-        exit 1
-    fi
+    # Validate confirmation input
+    local confirm
+    while true; do
+        read -p "Is this configuration correct? (yes/no): " confirm
+        if [[ "$confirm" == "yes" ]]; then
+            break
+        elif [[ "$confirm" == "no" ]]; then
+            log_error "Installation cancelled by user"
+            rm -f "$CONFIG_FILE"
+            exit 1
+        else
+            log_warning "Please answer 'yes' or 'no'"
+        fi
+    done
+    
+    # Remove wizard progress file after successful completion
+    rm -f "${INSTALL_DIR}/.wizard-progress.json"
     
     log_success "Configuration confirmed"
 }
@@ -369,8 +646,6 @@ load_config() {
     export ADMIN_EMAIL=$(jq -r '.admin_email' "$CONFIG_FILE")
     export ADMIN_NAME=$(jq -r '.admin_name' "$CONFIG_FILE")
     export BREVO_API_KEY=$(jq -r '.brevo_api_key' "$CONFIG_FILE")
-    export BREVO_SMTP_USER=$(jq -r '.brevo_smtp_user' "$CONFIG_FILE")
-    export BREVO_SMTP_PASSWORD=$(jq -r '.brevo_smtp_password' "$CONFIG_FILE")
     export RECAPTCHA_SITE_KEY=$(jq -r '.recaptcha_site_key' "$CONFIG_FILE")
     export RECAPTCHA_SECRET_KEY=$(jq -r '.recaptcha_secret_key' "$CONFIG_FILE")
     export GITHUB_CLIENT_ID=$(jq -r '.github_client_id' "$CONFIG_FILE")

@@ -46,14 +46,23 @@ EOF
 
 log_success "Database nightscout created"
 
-# Execute seed SQL files
-log_info "Executing seed SQL files..."
+# Download and execute seed SQL files
+log_info "Downloading and executing seed SQL files..."
 
-for sql_file in /opt/nsromania/setup/seed-data/*.sql; do
-    if [[ -f "$sql_file" ]]; then
-        log_info "Executing $(basename "$sql_file")..."
-        mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" < "$sql_file"
+SEED_DIR="/tmp/nsromania-seed-data"
+mkdir -p "$SEED_DIR"
+
+GITHUB_RAW="https://raw.githubusercontent.com/ktomy/nsromania-setup/main/seed-data"
+
+for sql_file in 01-auth-tables.sql 02-domains-tables.sql 03-registration-tables.sql 04-example-data.sql; do
+    log_info "Downloading $sql_file..."
+    if ! curl -fsSL "$GITHUB_RAW/$sql_file" -o "$SEED_DIR/$sql_file"; then
+        log_error "Failed to download $sql_file"
+        exit 1
     fi
+    
+    log_info "Executing $sql_file..."
+    mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout < "$SEED_DIR/$sql_file"
 done
 
 log_success "Seed data imported"

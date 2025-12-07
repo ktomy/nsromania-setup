@@ -112,8 +112,9 @@ check_os() {
     
     if [[ "$VERSION_ID" != "24.04" ]]; then
         log_warning "This script is optimized for Ubuntu 24.04. Detected: $VERSION_ID"
-        read -p "Do you want to continue anyway? (yes/no): " continue_anyway
-        if [[ "$continue_anyway" != "yes" ]]; then
+        read -p "Do you want to continue anyway? (Y/n) [Y]: " continue_anyway
+        continue_anyway=${continue_anyway:-y}
+        if [[ "$continue_anyway" =~ ^[Nn] ]]; then
             exit 1
         fi
     fi
@@ -241,8 +242,9 @@ run_wizard() {
         if [[ -f "${INSTALL_DIR}/.wizard-progress.json" ]]; then
             log_info "Found previous wizard session"
             echo ""
-            read -p "Resume from previous session? (yes/no): " resume_wizard
-            if [[ "$resume_wizard" != "yes" ]]; then
+            read -p "Resume from previous session? (Y/n) [Y]: " resume_wizard
+            resume_wizard=${resume_wizard:-y}
+            if [[ "$resume_wizard" =~ ^[Yy] ]]; then
                 # Clear all loaded values
                 DOMAIN=""
                 MYSQL_USER=""
@@ -297,8 +299,9 @@ echo ""
     echo -e "${YELLOW}    Please write them down in a secure location.${NC}"
     echo ""
     
-    read -p "Generate MySQL root password automatically? (yes/no): " gen_mysql_root
-    if [[ "$gen_mysql_root" == "yes" ]]; then
+    read -p "Generate MySQL root password automatically? (Y/n) [Y]: " gen_mysql_root
+    gen_mysql_root=${gen_mysql_root:-y}
+    if [[ "$gen_mysql_root" =~ ^[Yy] ]]; then
         MYSQL_ROOT_PASSWORD=$(openssl rand -base64 24)
         echo -e "${GREEN}Generated MySQL root password: ${MYSQL_ROOT_PASSWORD}${NC}"
         echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
@@ -324,8 +327,9 @@ echo ""
         MYSQL_USER=${MYSQL_USER:-nsromania}
     fi
     
-    read -p "Generate MySQL user password automatically? (yes/no): " gen_mysql_pass
-    if [[ "$gen_mysql_pass" == "yes" ]]; then
+    read -p "Generate MySQL user password automatically? (Y/n) [Y]: " gen_mysql_pass
+    gen_mysql_pass=${gen_mysql_pass:-y}
+    if [[ "$gen_mysql_pass" =~ ^[Yy] ]]; then
         MYSQL_PASSWORD=$(openssl rand -base64 24)
         echo -e "${GREEN}Generated MySQL password for $MYSQL_USER: ${MYSQL_PASSWORD}${NC}"
         echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
@@ -340,8 +344,9 @@ echo ""
         done
     fi
     
-    read -p "Generate MongoDB root password automatically? (yes/no): " gen_mongo_pass
-    if [[ "$gen_mongo_pass" == "yes" ]]; then
+    read -p "Generate MongoDB root password automatically? (Y/n) [Y]: " gen_mongo_pass
+    gen_mongo_pass=${gen_mongo_pass:-y}
+    if [[ "$gen_mongo_pass" =~ ^[Yy] ]]; then
         MONGO_ROOT_PASSWORD=$(openssl rand -base64 24)
         echo -e "${GREEN}Generated MongoDB root password: ${MONGO_ROOT_PASSWORD}${NC}"
         echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
@@ -589,15 +594,16 @@ EOF
     # Validate confirmation input
     local confirm
     while true; do
-        read -p "Is this configuration correct? (yes/no): " confirm
-        if [[ "$confirm" == "yes" ]]; then
+        read -p "Is this configuration correct? (Y/n) [Y]: " confirm
+        confirm=${confirm:-y}
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
             break
-        elif [[ "$confirm" == "no" ]]; then
+        elif [[ "$confirm" =~ ^[Nn]$ ]]; then
             log_error "Installation cancelled by user"
             rm -f "$CONFIG_FILE"
             exit 1
         else
-            log_warning "Please answer 'yes' or 'no'"
+            log_warning "Please answer 'y' or 'n'"
         fi
     done
     
@@ -653,8 +659,9 @@ main() {
         run_wizard
     else
         log_info "Found existing configuration file"
-        read -p "Use existing configuration? (yes/no): " use_existing
-        if [[ "$use_existing" != "yes" ]]; then
+        read -p "Use existing configuration? (Y/n) [Y]: " use_existing
+        use_existing=${use_existing:-y}
+        if [[ "$use_existing" =~ ^[Yy] ]]; then
             rm -f "$CONFIG_FILE"
             run_wizard
         else
@@ -666,8 +673,9 @@ main() {
                 log_warning "2. Remove data directory: rm -rf /var/lib/mysql"
                 log_warning "3. Re-run this script with fresh passwords"
                 echo ""
-                read -p "Continue with existing configuration? (yes/no): " continue_anyway
-                if [[ "$continue_anyway" != "yes" ]]; then
+                read -p "Continue with existing configuration? (Y/n) [Y]: " continue_anyway
+                continue_anyway=${continue_anyway:-y}
+                if [[ "$continue_anyway" =~ ^[Yy] ]]; then
                     log_error "Installation cancelled. Please clean up and start fresh."
                     exit 1
                 fi

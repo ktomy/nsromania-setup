@@ -57,10 +57,11 @@ if [[ "$DB_EXISTS" -gt 0 ]]; then
     echo ""
     echo "Options:"
     echo "  1. Drop and recreate (will delete all existing data)"
-    echo "  2. Keep existing database and skip seeding"
+    echo "  ${GREEN}2. Keep existing database and skip seeding [DEFAULT]${NC}"
     echo "  3. Exit installation"
     echo ""
-    read -p "Choose option (1/2/3): " db_option
+    read -p "Choose option (1/2/3) [2]: " db_option
+    db_option=${db_option:-2}
     
     case "$db_option" in
         1)
@@ -164,9 +165,10 @@ else
         log_info "Admin user already exists: $ADMIN_EMAIL"
     else
         log_warning "Admin user not found in existing database"
-        read -p "Create admin user now? (yes/no): " create_admin
+        read -p "Create admin user now? (Y/n) [Y]: " create_admin
+        create_admin=${create_admin:-y}
         
-        if [[ "$create_admin" == "yes" ]]; then
+        if [[ "$create_admin" =~ ^[Yy] ]]; then
             ADMIN_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
             
             mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" nightscout << EOF

@@ -25,7 +25,7 @@ This is an **automated VPS deployment system** that transforms a fresh Ubuntu 24
 ### Step 2: Run Setup Script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh | sudo bash
+bash <(curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh)
 ```
 
 ### Step 3: Answer Setup Wizard
@@ -203,7 +203,7 @@ certbot renew --force-renewal
 **Ready to get started?**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh | sudo bash
+bash <(curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh)
 ```
 
 Good luck! 🚀

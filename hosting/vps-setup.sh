@@ -13,11 +13,16 @@
 # - Brevo API key for email sending
 # - (Optional) OAuth credentials for GitHub/Google authentication
 #
-# Usage: curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh | sudo bash
+# Usage: 
+#   Direct: sudo bash vps-setup.sh
+#   Remote: bash <(curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh)
 ################################################################################
 
 set -e  # Exit on error
 set -u  # Exit on undefined variable
+
+# Redirect stdin from tty to allow interactive input when piped
+exec < /dev/tty
 
 # Colors for output
 RED='\033[0;31m'

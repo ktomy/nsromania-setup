@@ -36,7 +36,7 @@ ssh root@your-vps-ip
 ### 2. Download and Run Setup Script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh | sudo bash
+bash <(curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh)
 ```
 
 Or if running locally:

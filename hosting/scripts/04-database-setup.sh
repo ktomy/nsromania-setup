@@ -23,8 +23,11 @@ log_success "MySQL Server installed"
 
 log_info "Securing MySQL installation..."
 
-# Set root password and secure installation
-mysql << EOF
+# Check if MySQL root password is already set
+if mysql -uroot -e "SELECT 1" >/dev/null 2>&1; then
+    log_info "MySQL root has no password yet, setting it now..."
+    # Set root password and secure installation
+    mysql << EOF
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASSWORD}';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
@@ -32,8 +35,17 @@ DROP DATABASE IF EXISTS test;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
 FLUSH PRIVILEGES;
 EOF
-
-log_success "MySQL secured"
+    log_success "MySQL secured"
+else
+    log_info "MySQL root password already set, verifying access..."
+    if ! mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
+        log_error "Cannot connect to MySQL with provided password"
+        log_error "Either the password in config is wrong, or MySQL is already configured with a different password"
+        log_error "To fix: systemctl stop mysql && apt-get purge -y mysql-server && rm -rf /var/lib/mysql"
+        exit 1
+    fi
+    log_success "MySQL access verified"
+fi
 
 log_info "Creating nightscout database and user..."
 

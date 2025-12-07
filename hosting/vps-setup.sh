@@ -703,6 +703,21 @@ main() {
         if [[ "$use_existing" != "yes" ]]; then
             rm -f "$CONFIG_FILE"
             run_wizard
+        else
+            # Check if MySQL is already installed and configured
+            if command -v mysql >/dev/null 2>&1; then
+                log_warning "MySQL appears to be already installed."
+                log_warning "If you encounter password errors, you may need to:"
+                log_warning "1. Stop and remove MySQL: systemctl stop mysql && apt-get purge -y mysql-server mysql-client"
+                log_warning "2. Remove data directory: rm -rf /var/lib/mysql"
+                log_warning "3. Re-run this script with fresh passwords"
+                echo ""
+                read -p "Continue with existing configuration? (yes/no): " continue_anyway
+                if [[ "$continue_anyway" != "yes" ]]; then
+                    log_error "Installation cancelled. Please clean up and start fresh."
+                    exit 1
+                fi
+            fi
         fi
     fi
     

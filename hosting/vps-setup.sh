@@ -755,62 +755,62 @@ main() {
     local current_step=0
     
     # Step 1: System Updates
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "System Updates and Package Installation"
     bash "$SCRIPTS_DIR/01-system-updates.sh"
     
     # Step 2: User Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "User and Permissions Setup"
     bash "$SCRIPTS_DIR/02-user-setup.sh"
     
     # Step 3: Node.js Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Node.js and NVM Installation"
     bash "$SCRIPTS_DIR/03-nodejs-setup.sh"
     
     # Step 4: Database Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "MySQL and MongoDB Installation"
     bash "$SCRIPTS_DIR/04-database-setup.sh"
     
     # Step 5: Nginx Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Nginx Web Server Configuration"
     bash "$SCRIPTS_DIR/05-nginx-setup.sh"
     
     # Step 6: BIND9 DNS Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "BIND9 DNS Server Configuration"
     bash "$SCRIPTS_DIR/06-bind-setup.sh"
     
     # Step 7: PM2 Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "PM2 Process Manager Installation"
     bash "$SCRIPTS_DIR/07-pm2-setup.sh"
     
     # Step 8: Nightscout Installation
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Nightscout Master Installation"
     bash "$SCRIPTS_DIR/08-nightscout-install.sh"
     
     # Step 9: Control Panel Deployment
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Control Panel Deployment"
     bash "$SCRIPTS_DIR/09-app-deploy.sh"
     
     # Step 10: Firewall Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Firewall and Security Configuration"
     bash "$SCRIPTS_DIR/10-firewall-setup.sh"
     
     # Step 11: Monitoring Setup
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Logging and Monitoring Setup"
     bash "$SCRIPTS_DIR/11-monitoring-setup.sh"
     
     # Step 12: Post-Install Checks
-    ((current_step++))
+    current_step=$((current_step + 1))
     show_progress $current_step $total_steps "Post-Installation Verification"
     bash "$SCRIPTS_DIR/12-post-install-checks.sh"
     

@@ -750,6 +750,18 @@ main() {
         log_success "All scripts downloaded successfully"
     fi
     
+    # Export functions and variables for child scripts
+    export -f log_info log_success log_warning log_error show_progress
+    export RED GREEN YELLOW BLUE NC
+    export INSTALL_DIR SETUP_DIR NS_HOME LOG_FILE CONFIG_FILE
+    export DOMAIN MYSQL_ROOT_PASSWORD MYSQL_USER MYSQL_PASSWORD
+    export MONGO_ROOT_PASSWORD ADMIN_EMAIL ADMIN_NAME
+    export BREVO_API_KEY RECAPTCHA_SITE_KEY RECAPTCHA_SECRET_KEY
+    export GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET
+    export GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
+    export AUTH_SECRET DNS_PROVIDER
+    export CF_API_TOKEN CF_EMAIL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+    
     # Execute installation scripts in sequence
     local total_steps=12
     local current_step=0

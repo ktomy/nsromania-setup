@@ -6,9 +6,12 @@
 
 set -e
 
-source "$(dirname "$0")/../vps-setup.sh" 2>/dev/null || true
+# Source parent script if functions not available
+if ! type log_info >/dev/null 2>&1; then
+    source "$(dirname "$0")/../vps-setup.sh"
+fi
 
-log_info "Running post-installation verification checks..."
+log_info "Running post-installation checks..."
 
 CHECKS_PASSED=0
 CHECKS_FAILED=0

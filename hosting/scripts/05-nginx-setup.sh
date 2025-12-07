@@ -148,8 +148,8 @@ log_info "Obtaining wildcard SSL certificate for $DOMAIN..."
 # Create Porkbun credentials file
 mkdir -p /root/.secrets
 cat > /root/.secrets/porkbun.ini << EOF
-dns_porkbun_key = ${PORKBUN_API_KEY}
-dns_porkbun_secret = ${PORKBUN_SECRET_KEY}
+dns_porkbun_key=${PORKBUN_API_KEY}
+dns_porkbun_secret=${PORKBUN_SECRET_KEY}
 EOF
 chmod 600 /root/.secrets/porkbun.ini
 
@@ -157,7 +157,7 @@ chmod 600 /root/.secrets/porkbun.ini
 certbot certonly \
     --authenticator dns-porkbun \
     --dns-porkbun-credentials /root/.secrets/porkbun.ini \
-    --dns-porkbun-propagation-seconds 60 \
+    --dns-porkbun-propagation-seconds 600 \
     -d "${DOMAIN}" \
     -d "*.${DOMAIN}" \
     --non-interactive \

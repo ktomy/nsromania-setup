@@ -23,6 +23,30 @@ fi
 
 log_info "VPS Public IP: $VPS_IP"
 
+# Verify Porkbun API credentials
+log_info "Verifying Porkbun API credentials..."
+
+TEST_RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/domain/listAll" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+        \"apikey\": \"$PORKBUN_API_KEY\"
+    }")
+
+if echo "$TEST_RESPONSE" | grep -q '"status":"ERROR"'; then
+    log_error "Porkbun API authentication failed"
+    log_error "Response: $TEST_RESPONSE"
+    exit 1
+fi
+
+if ! echo "$TEST_RESPONSE" | grep -q '"status":"SUCCESS"'; then
+    log_error "Unexpected Porkbun API response"
+    log_error "Response: $TEST_RESPONSE"
+    exit 1
+fi
+
+log_success "Porkbun API credentials verified"
+
 # Create DNS record management script
 log_info "Creating Porkbun DNS management helper script..."
 
@@ -172,6 +196,10 @@ RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$DOMAIN" 
 
 if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
     log_success "Main domain A record created: $DOMAIN -> $VPS_IP"
+elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
+    ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
+    log_warning "Failed to create main domain A record: $ERROR_MSG"
+    log_info "This may be expected if the record already exists"
 else
     log_warning "Failed to create main domain A record (may already exist)"
     log_info "Response: $RESPONSE"
@@ -193,6 +221,10 @@ RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$DOMAIN" 
 
 if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
     log_success "Wildcard A record created: *.ns.$DOMAIN -> $VPS_IP"
+elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
+    ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
+    log_warning "Failed to create wildcard A record: $ERROR_MSG"
+    log_info "This may be expected if the record already exists"
 else
     log_warning "Failed to create wildcard A record (may already exist)"
     log_info "Response: $RESPONSE"
@@ -213,4 +245,10 @@ log_success "Porkbun DNS configuration completed"
 echo ""
 log_info "You can manage DNS records using: porkbun-dns <action> <subdomain> <ip>"
 log_info "Example: porkbun-dns create test 1.2.3.4"
+log_info ""
+log_warning "Important: The domain must be registered in your Porkbun account"
+log_warning "and DNS records must be manually created if API setup fails."
+log_warning "If SSL certificate request fails, you may need to:"
+log_warning "  1. Create DNS records manually in Porkbun dashboard"
+log_warning "  2. Verify domain is in Porkbun account: porkbun-dns list"
 echo ""

@@ -67,6 +67,7 @@ if [[ "$DB_EXISTS" -gt 0 ]]; then
             log_warning "Dropping existing database..."
             mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "DROP DATABASE nightscout;" 2>/dev/null || true
             log_success "Database dropped"
+            SKIP_SEEDING=false
             ;;
         2)
             log_info "Keeping existing database, will skip seeding"

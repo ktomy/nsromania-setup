@@ -39,6 +39,28 @@ NS_HOME="${INSTALL_DIR}/nightscout"
 LOG_FILE="/var/log/nsromania-setup.log"
 CONFIG_FILE="${INSTALL_DIR}/.install-config.json"
 
+# Initialize all variables that will be used in the wizard
+DOMAIN=""
+MYSQL_ROOT_PASSWORD=""
+MYSQL_USER=""
+MYSQL_PASSWORD=""
+MONGO_ROOT_PASSWORD=""
+ADMIN_EMAIL=""
+ADMIN_NAME=""
+BREVO_API_KEY=""
+RECAPTCHA_SITE_KEY=""
+RECAPTCHA_SECRET_KEY=""
+GITHUB_CLIENT_ID=""
+GITHUB_CLIENT_SECRET=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+DNS_PROVIDER=""
+CF_API_TOKEN=""
+CF_EMAIL=""
+AWS_ACCESS_KEY_ID=""
+AWS_SECRET_ACCESS_KEY=""
+AUTH_SECRET=""
+
 # Function to print colored messages
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1" | tee -a "$LOG_FILE"

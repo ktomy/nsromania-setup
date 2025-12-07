@@ -153,6 +153,19 @@ dns_porkbun_secret=${PORKBUN_SECRET_KEY}
 EOF
 chmod 600 /root/.secrets/porkbun.ini
 
+# Create environment file for hook scripts
+log_info "Creating Porkbun environment file for hooks..."
+
+cat > /etc/porkbun-dns.env << EOF
+PORKBUN_API_KEY="${PORKBUN_API_KEY}"
+PORKBUN_SECRET_KEY="${PORKBUN_SECRET_KEY}"
+DOMAIN="${DOMAIN}"
+EOF
+
+chmod 600 /etc/porkbun-dns.env
+
+log_success "Porkbun environment configured"
+
 # Copy auth/cleanup hooks to system
 log_info "Installing Porkbun certbot hooks..."
 

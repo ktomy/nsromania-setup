@@ -169,14 +169,20 @@ chmod +x /usr/local/bin/porkbun-dns
 
 log_success "Porkbun DNS helper script created"
 
-# Create environment file for the script
-cat > /etc/porkbun-dns.env << EOF
+# Create or update environment file for the script
+if [[ -f /etc/porkbun-dns.env ]]; then
+    log_info "Porkbun environment file already exists"
+else
+    log_info "Creating Porkbun environment file..."
+    cat > /etc/porkbun-dns.env << EOF
 PORKBUN_API_KEY="${PORKBUN_API_KEY}"
 PORKBUN_SECRET_KEY="${PORKBUN_SECRET_KEY}"
 DOMAIN="${DOMAIN}"
 EOF
 
-chmod 600 /etc/porkbun-dns.env
+    chmod 600 /etc/porkbun-dns.env
+    log_success "Porkbun environment file created"
+fi
 
 log_success "Porkbun credentials configured"
 

@@ -695,6 +695,7 @@ main() {
         if [[ -d "$REPO_DIR" ]]; then
             log_info "Repository already cloned, pulling latest changes..."
             cd "$REPO_DIR"
+            git stash -q 2>/dev/null || true  # Stash any local changes
             git pull -q origin main || log_warning "Failed to pull latest changes, using existing files"
         else
             log_info "Cloning repository from GitHub..."

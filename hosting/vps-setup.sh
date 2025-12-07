@@ -713,12 +713,41 @@ main() {
     local SCRIPTS_DIR
     if [[ -d "$SCRIPT_DIR/scripts" ]]; then
         SCRIPTS_DIR="$SCRIPT_DIR/scripts"
+        log_info "Using local scripts from $SCRIPTS_DIR"
     else
         # Download scripts from GitHub if not running from repo
         SCRIPTS_DIR="/tmp/nsromania-setup-scripts"
         mkdir -p "$SCRIPTS_DIR"
-        log_info "Downloading installation scripts..."
-        # This will be implemented to download from GitHub releases
+        log_info "Downloading installation scripts from GitHub..."
+        
+        local GITHUB_RAW="https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/scripts"
+        
+        for i in {01..12}; do
+            local script_name=""
+            case $i in
+                01) script_name="01-system-updates.sh" ;;
+                02) script_name="02-user-setup.sh" ;;
+                03) script_name="03-nodejs-setup.sh" ;;
+                04) script_name="04-database-setup.sh" ;;
+                05) script_name="05-nginx-setup.sh" ;;
+                06) script_name="06-bind-setup.sh" ;;
+                07) script_name="07-pm2-setup.sh" ;;
+                08) script_name="08-nightscout-install.sh" ;;
+                09) script_name="09-app-deploy.sh" ;;
+                10) script_name="10-firewall-setup.sh" ;;
+                11) script_name="11-monitoring-setup.sh" ;;
+                12) script_name="12-post-install-checks.sh" ;;
+            esac
+            
+            log_info "Downloading $script_name..."
+            if ! curl -fsSL "$GITHUB_RAW/$script_name" -o "$SCRIPTS_DIR/$script_name"; then
+                log_error "Failed to download $script_name"
+                exit 1
+            fi
+            chmod +x "$SCRIPTS_DIR/$script_name"
+        done
+        
+        log_success "All scripts downloaded successfully"
     fi
     
     # Execute installation scripts in sequence

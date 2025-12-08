@@ -13,30 +13,65 @@ fi
 
 log_info "Installing Nginx..."
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx
+if command -v nginx >/dev/null 2>&1; then
+    log_info "Nginx is already installed"
+    NGINX_VERSION=$(nginx -v 2>&1 | grep -o '[0-9.]*')
+    log_info "Nginx version: $NGINX_VERSION"
+else
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx
+    systemctl start nginx
+    systemctl enable nginx
+    log_success "Nginx installed and started"
+fi
 
-systemctl start nginx
-systemctl enable nginx
+systemctl is-active --quiet nginx || systemctl start nginx
+systemctl is-enabled --quiet nginx || systemctl enable nginx
 
-log_success "Nginx installed and started"
+log_success "Nginx is running"
 
 # Install Certbot for Let's Encrypt SSL
 log_info "Installing Certbot and Porkbun DNS plugin..."
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot python3-pip
+if command -v certbot >/dev/null 2>&1; then
+    log_info "Certbot is already installed"
+    CERTBOT_VERSION=$(certbot --version 2>&1 | grep -o '[0-9.]*' | head -1)
+    log_info "Certbot version: $CERTBOT_VERSION"
+else
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot python3-pip
+    log_success "Certbot installed"
+fi
 
 # Install Porkbun DNS plugin
-pip3 install certbot-dns-porkbun --break-system-packages
+if pip3 list 2>/dev/null | grep -q certbot-dns-porkbun; then
+    log_info "Porkbun DNS plugin is already installed"
+else
+    pip3 install certbot-dns-porkbun --break-system-packages
+    log_success "Porkbun DNS plugin installed"
+fi
 
-log_success "Certbot and Porkbun plugin installed"
+log_success "Certbot setup completed"
 
 # Copy Nginx configuration templates
 log_info "Installing Nginx configuration templates..."
 
 TEMPLATE_DIR="$(dirname "$0")/../templates"
 
-# Install main site configuration for control panel
-cat > /etc/nginx/sites-available/setup << EOF
+# Check if main site config already exists and is properly configured
+if [[ -f /etc/nginx/sites-available/setup ]]; then
+    if grep -q "ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem" /etc/nginx/sites-available/setup; then
+        log_info "Main site configuration already exists and is correctly configured"
+        SKIP_MAIN_CONFIG=true
+    else
+        log_info "Main site configuration exists but needs updating"
+        SKIP_MAIN_CONFIG=false
+    fi
+else
+    SKIP_MAIN_CONFIG=false
+fi
+
+if [[ "$SKIP_MAIN_CONFIG" == "false" ]]; then
+    # Install main site configuration for control panel
+    cat > /etc/nginx/sites-available/setup << EOF
 server {
     listen 80;
     listen [::]:80;
@@ -88,9 +123,24 @@ server {
     error_log /var/log/nginx/${DOMAIN}_error.log;
 }
 EOF
+fi
 
-# Install subdomain template for Nightscout instances
-cat > /etc/nginx/sites-available/_template << 'EOF'
+# Check if subdomain template already exists
+if [[ -f /etc/nginx/sites-available/_template ]]; then
+    if grep -q "ssl_certificate /etc/letsencrypt/live/DOMAIN/fullchain.pem" /etc/nginx/sites-available/_template; then
+        log_info "Subdomain template already exists and is correctly configured"
+        SKIP_TEMPLATE=true
+    else
+        log_info "Subdomain template exists but needs updating"
+        SKIP_TEMPLATE=false
+    fi
+else
+    SKIP_TEMPLATE=false
+fi
+
+if [[ "$SKIP_TEMPLATE" == "false" ]]; then
+    # Install subdomain template for Nightscout instances
+    cat > /etc/nginx/sites-available/_template << 'EOF'
 server {
     listen 80;
     listen [::]:80;
@@ -139,13 +189,36 @@ server {
     error_log /var/log/nginx/[% subdomain %]_error.log;
 }
 EOF
+fi
 
 log_success "Nginx templates installed"
 
 # Obtain SSL certificate
-log_info "Obtaining wildcard SSL certificate for $DOMAIN..."
+log_info "Checking SSL certificate status..."
 
-# Create Porkbun credentials file
+# Check if certificate already exists and is valid
+if [[ -d "/etc/letsencrypt/live/${DOMAIN}" ]]; then
+    log_info "SSL certificate directory exists for $DOMAIN"
+    
+    # Check certificate validity
+    if certbot certificates 2>/dev/null | grep -q "Domains: ${DOMAIN}"; then
+        CERT_EXPIRY=$(certbot certificates 2>/dev/null | grep -A 2 "Certificate Name: ${DOMAIN}" | grep "Expiry Date:" | awk '{print $3}')
+        log_success "Valid SSL certificate found for $DOMAIN"
+        log_info "Certificate expiry: $CERT_EXPIRY"
+        SKIP_CERT=true
+    else
+        log_warning "Certificate exists but may be invalid"
+        SKIP_CERT=false
+    fi
+else
+    log_info "No SSL certificate found for $DOMAIN"
+    SKIP_CERT=false
+fi
+
+if [[ "$SKIP_CERT" == "false" ]]; then
+    log_info "Obtaining wildcard SSL certificate for $DOMAIN..."
+
+    # Create Porkbun credentials file
 mkdir -p /root/.secrets
 cat > /root/.secrets/porkbun.ini << EOF
 dns_porkbun_key=${PORKBUN_API_KEY}
@@ -246,31 +319,50 @@ certbot certonly \
     exit 1
 }
 
-log_success "SSL certificate obtained for $DOMAIN and *.${DOMAIN}"
+    log_success "SSL certificate obtained for $DOMAIN and *.${DOMAIN}"
+else
+    log_info "Skipping certificate request - valid certificate already exists"
+fi
 
 # Update template with actual domain
-sed -i "s/DOMAIN/${DOMAIN}/g" /etc/nginx/sites-available/_template
+if [[ "$SKIP_TEMPLATE" == "false" ]]; then
+    sed -i "s/DOMAIN/${DOMAIN}/g" /etc/nginx/sites-available/_template
+fi
 
 # Enable main site
-ln -sf /etc/nginx/sites-available/setup /etc/nginx/sites-enabled/setup
+if [[ ! -L /etc/nginx/sites-enabled/setup ]]; then
+    ln -sf /etc/nginx/sites-available/setup /etc/nginx/sites-enabled/setup
+    log_success "Main site enabled"
+else
+    log_info "Main site already enabled"
+fi
 
 # Remove default site if exists
-rm -f /etc/nginx/sites-enabled/default
+if [[ -L /etc/nginx/sites-enabled/default ]]; then
+    rm -f /etc/nginx/sites-enabled/default
+    log_success "Default site removed"
+fi
 
 # Test Nginx configuration
+log_info "Testing Nginx configuration..."
 nginx -t
 
 # Reload Nginx
+log_info "Reloading Nginx..."
 systemctl reload nginx
 
 log_success "Nginx configuration completed"
 
 # Setup SSL auto-renewal
-log_info "Setting up SSL auto-renewal..."
+if [[ -f /etc/cron.d/certbot-renew ]]; then
+    log_info "SSL auto-renewal already configured"
+else
+    log_info "Setting up SSL auto-renewal..."
 
-cat > /etc/cron.d/certbot-renew << 'EOF'
+    cat > /etc/cron.d/certbot-renew << 'EOF'
 # Renew Let's Encrypt certificates twice daily
 0 0,12 * * * root certbot renew --quiet --post-hook "systemctl reload nginx"
 EOF
 
-log_success "SSL auto-renewal configured"
+    log_success "SSL auto-renewal configured"
+fi

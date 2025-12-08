@@ -202,7 +202,7 @@ PARKED_IDS=$(echo "$EXISTING_RECORDS" | jq -r --arg dom "$DOMAIN" '
     | select(
             ((.type == "CNAME") or (.type == "ALIAS"))
             and ((.content | ascii_downcase) == "pixie.porkbun.com")
-            and (.name == "" or .name == $dom or .name == "*" or .name == "*" + $dom or .name == "@")
+            and (.name == "" or .name == $dom or .name == "@" or .name == "*" or .name == ("*." + $dom) or (.name | startswith("*")))
         )
     | .id
 ')

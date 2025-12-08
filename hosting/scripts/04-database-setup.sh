@@ -57,7 +57,7 @@ if [[ "$DB_EXISTS" -gt 0 ]]; then
     echo ""
     echo "Options:"
     echo "  1. Drop and recreate (will delete all existing data)"
-    echo "  ${GREEN}2. Keep existing database and skip seeding [DEFAULT]${NC}"
+    echo -e "  ${GREEN}2. Keep existing database and skip seeding [DEFAULT]${NC}"
     echo "  3. Exit installation"
     echo ""
     read -p "Choose option (1/2/3) [2]: " db_option

@@ -26,7 +26,7 @@ log_info "VPS Public IP: $VPS_IP"
 # Verify Porkbun API credentials
 log_info "Verifying Porkbun API credentials..."
 
-TEST_RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/domain/listAll" \
+TEST_RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/domain/listAll" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
@@ -60,7 +60,7 @@ cat > /usr/local/bin/porkbun-dns << 'EOF'
 PORKBUN_API_KEY="${PORKBUN_API_KEY}"
 PORKBUN_SECRET_KEY="${PORKBUN_SECRET_KEY}"
 DOMAIN="${DOMAIN}"
-API_URL="https://porkbun.com/api/json/v3"
+API_URL="https://api.porkbun.com/api/json/v3"
 
 if [[ -z "$PORKBUN_API_KEY" || -z "$PORKBUN_SECRET_KEY" || -z "$DOMAIN" ]]; then
     echo "Error: Environment variables not set"
@@ -189,7 +189,7 @@ log_success "Porkbun credentials configured"
 # Create main domain A record pointing to this VPS
 log_info "Creating A record for $DOMAIN..."
 
-RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
@@ -214,7 +214,7 @@ fi
 # Create wildcard subdomain record for Nightscout instances
 log_info "Creating wildcard A record for *.ns.$DOMAIN..."
 
-RESPONSE=$(curl -s -X POST "https://porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",

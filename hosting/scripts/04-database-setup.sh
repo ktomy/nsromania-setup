@@ -303,9 +303,9 @@ log_success "MongoDB installed and started"
 log_info "Configuring MongoDB authentication..."
 
 # Check if root user already exists
-ROOT_EXISTS=$(mongosh admin --quiet --eval "db.getUser('root')" 2>/dev/null | grep -c "user" || echo "0")
+ROOT_EXISTS=$(mongosh admin --quiet --eval "db.getUser('root') ? 1 : 0" 2>/dev/null | tr -d '\r')
 
-if [[ "$ROOT_EXISTS" -gt 0 ]]; then
+if [[ "$ROOT_EXISTS" == "1" ]]; then
     log_info "MongoDB root user already exists"
 else
     # Create root user

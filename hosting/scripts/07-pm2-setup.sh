@@ -41,17 +41,22 @@ if systemctl is-enabled pm2-nsromania >/dev/null 2>&1; then
 else
     log_info "Configuring PM2 startup..."
     
-    # Get the node version path
+    # Get the node version and path
     NODE_VERSION=$(su - nsromania -c '. ~/.nvm/nvm.sh && node --version' 2>/dev/null | sed 's/^v//')
     NODE_PATH="/home/nsromania/.nvm/versions/node/v${NODE_VERSION}/bin"
     
-    # Run the startup command as nsromania user
-    su - nsromania << EOSU
-. ~/.nvm/nvm.sh
-nvm use default
-pm2 startup systemd -u nsromania --hp /home/nsromania
-EOSU
-
+    # Generate the startup command as nsromania user and capture it
+    STARTUP_CMD=$(su - nsromania -c '. ~/.nvm/nvm.sh && pm2 startup systemd -u nsromania --hp /home/nsromania' 2>&1 | grep '^sudo env' || true)
+    
+    if [[ -z "$STARTUP_CMD" ]]; then
+        log_error "Failed to generate PM2 startup command"
+        exit 1
+    fi
+    
+    log_info "Executing PM2 startup command..."
+    # Remove 'sudo' prefix and execute as root
+    eval "${STARTUP_CMD#sudo }"
+    
     log_success "PM2 startup service configured"
 fi
 

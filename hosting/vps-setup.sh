@@ -303,22 +303,9 @@ echo ""
     echo -e "${YELLOW}    Please write them down in a secure location.${NC}"
     echo ""
     
+    # Collect generation preferences
     read -p "Generate MySQL root password automatically? (Y/n) [Y]: " gen_mysql_root
     gen_mysql_root=${gen_mysql_root:-y}
-    if [[ "$gen_mysql_root" =~ ^[Yy] ]]; then
-        MYSQL_ROOT_PASSWORD=$(openssl rand -base64 24)
-        echo -e "${GREEN}Generated MySQL root password: ${MYSQL_ROOT_PASSWORD}${NC}"
-        echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
-        read -p "Press Enter after you have saved this password..." _
-    else
-        read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
-        echo ""
-        while [[ -z "$MYSQL_ROOT_PASSWORD" ]]; do
-            log_error "MySQL root password cannot be empty"
-            read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
-            echo ""
-        done
-    fi
     
     if [[ -n "$MYSQL_USER" ]]; then
         log_info "Previous MySQL user: $MYSQL_USER"
@@ -333,11 +320,25 @@ echo ""
     
     read -p "Generate MySQL user password automatically? (Y/n) [Y]: " gen_mysql_pass
     gen_mysql_pass=${gen_mysql_pass:-y}
+    
+    read -p "Generate MongoDB root password automatically? (Y/n) [Y]: " gen_mongo_pass
+    gen_mongo_pass=${gen_mongo_pass:-y}
+    
+    # Generate or prompt for passwords
+    if [[ "$gen_mysql_root" =~ ^[Yy] ]]; then
+        MYSQL_ROOT_PASSWORD=$(openssl rand -base64 24)
+    else
+        read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
+        echo ""
+        while [[ -z "$MYSQL_ROOT_PASSWORD" ]]; do
+            log_error "MySQL root password cannot be empty"
+            read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
+            echo ""
+        done
+    fi
+    
     if [[ "$gen_mysql_pass" =~ ^[Yy] ]]; then
         MYSQL_PASSWORD=$(openssl rand -base64 24)
-        echo -e "${GREEN}Generated MySQL password for $MYSQL_USER: ${MYSQL_PASSWORD}${NC}"
-        echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
-        read -p "Press Enter after you have saved this password..." _
     else
         read -p "MySQL database user password: " -s MYSQL_PASSWORD
         echo ""
@@ -348,13 +349,8 @@ echo ""
         done
     fi
     
-    read -p "Generate MongoDB root password automatically? (Y/n) [Y]: " gen_mongo_pass
-    gen_mongo_pass=${gen_mongo_pass:-y}
     if [[ "$gen_mongo_pass" =~ ^[Yy] ]]; then
         MONGO_ROOT_PASSWORD=$(openssl rand -base64 24)
-        echo -e "${GREEN}Generated MongoDB root password: ${MONGO_ROOT_PASSWORD}${NC}"
-        echo -e "${YELLOW}⚠️  WRITE THIS DOWN - It will not be shown again!${NC}"
-        read -p "Press Enter after you have saved this password..." _
     else
         read -p "MongoDB root password: " -s MONGO_ROOT_PASSWORD
         echo ""
@@ -363,6 +359,29 @@ echo ""
             read -p "MongoDB root password: " -s MONGO_ROOT_PASSWORD
             echo ""
         done
+    fi
+    
+    # Display all generated passwords at once
+    local has_generated=false
+    echo ""
+    echo -e "${BLUE}━━━ Generated Passwords ━━━${NC}"
+    if [[ "$gen_mysql_root" =~ ^[Yy] ]]; then
+        echo -e "${GREEN}MySQL root password: ${MYSQL_ROOT_PASSWORD}${NC}"
+        has_generated=true
+    fi
+    if [[ "$gen_mysql_pass" =~ ^[Yy] ]]; then
+        echo -e "${GREEN}MySQL user ($MYSQL_USER) password: ${MYSQL_PASSWORD}${NC}"
+        has_generated=true
+    fi
+    if [[ "$gen_mongo_pass" =~ ^[Yy] ]]; then
+        echo -e "${GREEN}MongoDB root password: ${MONGO_ROOT_PASSWORD}${NC}"
+        has_generated=true
+    fi
+    
+    if [[ "$has_generated" == "true" ]]; then
+        echo ""
+        echo -e "${YELLOW}⚠️  WRITE THESE DOWN - They will not be shown again!${NC}"
+        read -p "Press Enter after you have saved all passwords..." _
     fi
     
     save_wizard_progress "database"

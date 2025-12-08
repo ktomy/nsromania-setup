@@ -197,14 +197,14 @@ EXISTING_RECORDS=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/retr
     }")
 
 # Remove parked records (ALIAS/CNAME to pixie.porkbun.com)
-PARKED_IDS=$(echo "$EXISTING_RECORDS" | jq -r '
-  .records[]
-  | select(
-      ((.type == "CNAME") or (.type == "ALIAS"))
-      and ((.content | ascii_downcase) | test("pixie\\.porkbun\\.com"))
-      and (.name == "" or .name == "*")
-    )
-  | .id
+PARKED_IDS=$(echo "$EXISTING_RECORDS" | jq -r --arg dom "$DOMAIN" '
+    .records[]
+    | select(
+            ((.type == "CNAME") or (.type == "ALIAS"))
+            and ((.content | ascii_downcase) == "pixie.porkbun.com")
+            and (.name == "" or .name == $dom or .name == "*" or .name == "*" + $dom or .name == "@")
+        )
+    | .id
 ')
 
 if [[ -n "$PARKED_IDS" ]]; then
@@ -231,8 +231,8 @@ else
     log_info "No parked pixie.porkbun.com records detected"
 fi
 
-# Check for root domain A record (empty name field means root domain)
-if echo "$EXISTING_RECORDS" | grep -q '"name":"","type":"A"'; then
+# Check for root domain A record (empty name or explicit domain)
+if echo "$EXISTING_RECORDS" | jq -e --arg dom "$DOMAIN" '.records[] | select(.type=="A" and (.name=="" or .name==$dom))' >/dev/null; then
     ROOT_A_EXISTS=true
     log_info "Root domain A record already exists"
 else
@@ -245,6 +245,14 @@ if echo "$EXISTING_RECORDS" | grep -q '"name":"\*.ns","type":"A"'; then
     log_info "Wildcard A record already exists"
 else
     WILDCARD_EXISTS=false
+fi
+
+# Check for www CNAME
+if echo "$EXISTING_RECORDS" | jq -e '.records[] | select(.type=="CNAME" and .name=="www")' >/dev/null; then
+    WWW_EXISTS=true
+    log_info "www CNAME already exists"
+else
+    WWW_EXISTS=false
 fi
 
 # Create main domain A record pointing to this VPS
@@ -303,6 +311,34 @@ else
     log_info "Wildcard A record already exists"
 fi
 
+# Create www CNAME pointing to root domain
+log_info "Ensuring www CNAME points to $DOMAIN..."
+
+if [[ "$WWW_EXISTS" == "false" ]]; then
+    RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+            \"apikey\": \"$PORKBUN_API_KEY\",
+            \"name\": \"www\",
+            \"type\": \"CNAME\",
+            \"content\": \"$DOMAIN\",
+            \"ttl\": \"300\"
+        }")
+
+    if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+        log_success "www CNAME created: www.$DOMAIN -> $DOMAIN"
+    elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
+        ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
+        log_warning "Failed to create www CNAME: $ERROR_MSG"
+    else
+        log_warning "Failed to create www CNAME"
+        log_info "Response: $RESPONSE"
+    fi
+else
+    log_info "www CNAME already exists"
+fi
+
 log_info "Verifying DNS records..."
 
 # Wait a moment for DNS to propagate
@@ -311,7 +347,7 @@ sleep 2
 # List all DNS records
 log_info "Current DNS records:"
 source /etc/porkbun-dns.env
-/usr/local/bin/porkbun-dns list | grep -E "^A\s" || log_warning "Could not retrieve DNS records"
+/usr/local/bin/porkbun-dns list || log_warning "Could not retrieve DNS records"
 
 log_success "Porkbun DNS configuration completed"
 

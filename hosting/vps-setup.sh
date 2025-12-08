@@ -326,7 +326,7 @@ echo ""
     
     # Generate or prompt for passwords
     if [[ "$gen_mysql_root" =~ ^[Yy] ]]; then
-        MYSQL_ROOT_PASSWORD=$(openssl rand -base64 24)
+        MYSQL_ROOT_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c 32)
     else
         read -p "MySQL root password: " -s MYSQL_ROOT_PASSWORD
         echo ""
@@ -338,7 +338,7 @@ echo ""
     fi
     
     if [[ "$gen_mysql_pass" =~ ^[Yy] ]]; then
-        MYSQL_PASSWORD=$(openssl rand -base64 24)
+        MYSQL_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c 32)
     else
         read -p "MySQL database user password: " -s MYSQL_PASSWORD
         echo ""
@@ -350,7 +350,7 @@ echo ""
     fi
     
     if [[ "$gen_mongo_pass" =~ ^[Yy] ]]; then
-        MONGO_ROOT_PASSWORD=$(openssl rand -base64 24)
+        MONGO_ROOT_PASSWORD=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c 32)
     else
         read -p "MongoDB root password: " -s MONGO_ROOT_PASSWORD
         echo ""
@@ -569,8 +569,8 @@ echo ""
     
     save_wizard_progress "porkbun"
     
-    # Generate AUTH_SECRET (32 random bytes, base64 encoded)
-    AUTH_SECRET=$(openssl rand -base64 32)
+    # Generate AUTH_SECRET (32 random bytes, alphanumeric only)
+    AUTH_SECRET=$(< /dev/urandom tr -dc 'A-Za-z0-9' | head -c 32)
     
     # Save configuration
     mkdir -p "$(dirname "$CONFIG_FILE")"

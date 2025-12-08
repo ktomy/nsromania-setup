@@ -72,16 +72,7 @@ run_check "Nightscout package.json" "test -f ${NS_HOME}/master/package.json"
 # Check Control Panel
 run_check "Control panel directory" "test -d ${SETUP_DIR}"
 run_check "Control panel .env" "test -f ${SETUP_DIR}/.env"
-run_check "PM2 process running" "su - nsromania -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\ . \"$NVM_DIR/nvm.sh\" && pm2 list | grep -q nsromania-setup'"
-run_check "PM2 process running" "su - nsromania -c '
-        export NVM_DIR=\"$HOME/.nvm\"
-        [ -s \"$NVM_DIR/nvm.sh\" ] && \\ . \"$NVM_DIR/nvm.sh\"
-        if [ -f \"$NVM_DIR/alias/default\" ]; then
-            NODE_DEFAULT=$(cat \"$NVM_DIR/alias/default\")
-            export PATH=\"$NVM_DIR/versions/node/$NODE_DEFAULT/bin:$PATH\"
-        fi
-        command -v pm2 >/dev/null 2>&1 && pm2 list | grep -q nsromania-setup
-    '"
+run_check "PM2 process running" "su - nsromania -c 'export NVM_DIR=\$HOME/.nvm && [ -s \$NVM_DIR/nvm.sh ] && . \$NVM_DIR/nvm.sh && pm2 list | grep -q nsromania-setup'"
 run_check "Control panel responding" "curl -f -s http://localhost:3000 > /dev/null"
 
 echo ""

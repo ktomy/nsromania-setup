@@ -716,6 +716,16 @@ main() {
         SCRIPTS_DIR="$SCRIPT_DIR/scripts"
         REPO_DIR="$(dirname "$SCRIPT_DIR")"
         log_info "Using local scripts from $SCRIPTS_DIR"
+
+        # If resuming from a later step, ensure repo exists and is up to date
+        if (( start_step > 1 )); then
+            if [[ ! -d "$REPO_DIR/.git" ]]; then
+                log_error "Repository not found at $REPO_DIR. Please clone nsromania-setup or start from step 1."
+                exit 1
+            fi
+            log_info "Updating local repository..."
+            (cd "$REPO_DIR" && git stash -q 2>/dev/null || true && git pull -q origin main || log_warning "Failed to pull latest changes, using existing files")
+        fi
     else
         # Clone the repository
         REPO_DIR="/tmp/nsromania-setup-repo"
@@ -737,6 +747,12 @@ main() {
         
         # Make all scripts executable
         chmod +x "$SCRIPTS_DIR"/*.sh
+
+        # If resuming from a later step, confirm repo exists
+        if (( start_step > 1 )) && [[ ! -d "$SCRIPTS_DIR" ]]; then
+            log_error "Repository clone missing or incomplete. Please re-run from step 1."
+            exit 1
+        fi
     fi
     
     # Export paths for use by scripts

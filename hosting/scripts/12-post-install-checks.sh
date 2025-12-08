@@ -4,7 +4,8 @@
 # Post-Installation Verification
 ################################################################################
 
-set -e
+# Do not exit on first failure; we want to gather all check results
+set +e
 
 # Source parent script if functions not available
 if ! type log_info >/dev/null 2>&1; then

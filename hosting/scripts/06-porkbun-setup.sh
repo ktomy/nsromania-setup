@@ -196,16 +196,26 @@ EXISTING_RECORDS=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/retr
         \"apikey\": \"$PORKBUN_API_KEY\"
     }")
 
-# Check for root domain A record
-ROOT_A_RECORD=$(echo "$EXISTING_RECORDS" | grep -o '"name":"","type":"A","content":"[^"]*"' | head -1 || echo "")
+# Check for root domain A record (empty name field means root domain)
+if echo "$EXISTING_RECORDS" | grep -q '"name":"","type":"A"'; then
+    ROOT_A_EXISTS=true
+    log_info "Root domain A record already exists"
+else
+    ROOT_A_EXISTS=false
+fi
 
-# Check for wildcard A record
-WILDCARD_RECORD=$(echo "$EXISTING_RECORDS" | grep -o '"name":"\*\.ns","type":"A"' | head -1 || echo "")
+# Check for wildcard A record (*.ns subdomain)
+if echo "$EXISTING_RECORDS" | grep -q '"name":"\*.ns","type":"A"'; then
+    WILDCARD_EXISTS=true
+    log_info "Wildcard A record already exists"
+else
+    WILDCARD_EXISTS=false
+fi
 
 # Create main domain A record pointing to this VPS
 log_info "Creating A record for $DOMAIN..."
 
-if [[ -z "$ROOT_A_RECORD" ]]; then
+if [[ "$ROOT_A_EXISTS" == "false" ]]; then
     RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
         -H "Content-Type: application/json" \
         -d "{
@@ -233,7 +243,7 @@ fi
 # Create wildcard subdomain record for Nightscout instances
 log_info "Creating wildcard A record for *.ns.$DOMAIN..."
 
-if [[ -z "$WILDCARD_RECORD" ]]; then
+if [[ "$WILDCARD_EXISTS" == "false" ]]; then
     RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
         -H "Content-Type: application/json" \
         -d "{

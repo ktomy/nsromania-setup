@@ -30,23 +30,15 @@ systemctl is-enabled --quiet nginx || systemctl enable nginx
 log_success "Nginx is running"
 
 # Install Certbot for Let's Encrypt SSL
-log_info "Installing Certbot and Porkbun DNS plugin..."
+log_info "Installing Certbot..."
 
 if command -v certbot >/dev/null 2>&1; then
     log_info "Certbot is already installed"
     CERTBOT_VERSION=$(certbot --version 2>&1 | grep -o '[0-9.]*' | head -1)
     log_info "Certbot version: $CERTBOT_VERSION"
 else
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot python3-pip
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot
     log_success "Certbot installed"
-fi
-
-# Install Porkbun DNS plugin
-if pip3 list 2>/dev/null | grep -q certbot-dns-porkbun; then
-    log_info "Porkbun DNS plugin is already installed"
-else
-    pip3 install certbot-dns-porkbun --break-system-packages
-    log_success "Porkbun DNS plugin installed"
 fi
 
 log_success "Certbot setup completed"

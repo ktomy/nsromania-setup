@@ -87,15 +87,23 @@ else
     SKIP_SEEDING=false
 fi
 
-# Create database and user
-mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" << EOF
+# Create database and user (only if not keeping existing)
+if [[ "$SKIP_SEEDING" != "true" ]] || [[ "$DB_EXISTS" -eq 0 ]]; then
+    mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" << EOF
 CREATE DATABASE IF NOT EXISTS nightscout CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
 GRANT ALL PRIVILEGES ON nightscout.* TO '${MYSQL_USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-log_success "Database nightscout created"
+    if [[ "$DB_EXISTS" -eq 0 ]]; then
+        log_success "Database nightscout created"
+    else
+        log_success "Database user verified and privileges granted"
+    fi
+else
+    log_success "Database nightscout preserved"
+fi
 
 # Download and execute seed SQL files
 if [[ "$SKIP_SEEDING" == "false" ]]; then

@@ -23,6 +23,9 @@ if [[ ! -d "$SETUP_DIR/.git" ]]; then
 else
     log_info "Repository already exists, pulling latest changes..."
     cd "$SETUP_DIR"
+    # Fix git dubious ownership issue when running as root
+    git config --global --add safe.directory "$SETUP_DIR" 2>/dev/null || true
+    git stash -q 2>/dev/null || true
     git pull
 fi
 
@@ -30,6 +33,9 @@ cd "$SETUP_DIR"
 
 # Set ownership
 chown -R nsromania:nsromania "$SETUP_DIR"
+
+# Ensure git can access the repository as nsromania user
+sudo -u nsromania git config --global --add safe.directory "$SETUP_DIR" 2>/dev/null || true
 
 # Generate .env file
 log_info "Generating .env file..."

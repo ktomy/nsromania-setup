@@ -90,11 +90,18 @@ ClientAliveCountMax 2
 PermitEmptyPasswords no
 EOF
 
-# Restart SSH service
+# Ensure SSH server is installed and restart service
+if ! command -v sshd >/dev/null 2>&1 && ! systemctl list-unit-files | grep -q '^ssh\|^sshd'; then
+    log_warning "OpenSSH server not detected; installing openssh-server..."
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server
+fi
+
 if systemctl list-unit-files | grep -q '^ssh\.service'; then
-    systemctl restart ssh
+    systemctl restart ssh || log_warning "Failed to restart ssh.service"
 elif systemctl list-unit-files | grep -q '^sshd\.service'; then
-    systemctl restart sshd
+    systemctl restart sshd || log_warning "Failed to restart sshd.service"
+elif command -v service >/dev/null 2>&1; then
+    service ssh restart || log_warning "Failed to restart ssh via service command"
 else
     log_warning "SSH service unit not found; please restart SSH manually if needed"
 fi

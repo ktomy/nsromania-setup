@@ -20,17 +20,22 @@ CHECKS_FAILED=0
 run_check() {
     local check_name=$1
     local check_command=$2
-    
+
     echo -n "Checking $check_name... "
-    if eval "$check_command" > /dev/null 2>&1; then
+    set +e
+    eval "$check_command" > /dev/null 2>&1
+    local status=$?
+    set -e
+
+    if [[ $status -eq 0 ]]; then
         echo -e "${GREEN}✓ PASSED${NC}"
         ((CHECKS_PASSED++))
-        return 0
     else
         echo -e "${RED}✗ FAILED${NC}"
         ((CHECKS_FAILED++))
-        return 1
     fi
+
+    return 0
 }
 
 echo ""

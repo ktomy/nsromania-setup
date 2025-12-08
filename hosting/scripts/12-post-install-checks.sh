@@ -23,7 +23,8 @@ run_check() {
 
     echo -n "Checking $check_name... "
     set +e
-    eval "$check_command" > /dev/null 2>&1
+    local output
+    output=$(eval "$check_command" 2>&1)
     local status=$?
     set -e
 
@@ -33,6 +34,9 @@ run_check() {
     else
         echo -e "${RED}✗ FAILED${NC}"
         ((CHECKS_FAILED++))
+        if [[ -n "$output" ]]; then
+            echo "    Output: $output"
+        fi
     fi
 
     return 0

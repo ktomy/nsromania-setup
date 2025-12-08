@@ -324,6 +324,14 @@ else
     log_info "Skipping certificate request - valid certificate already exists"
 fi
 
+echo ""
+log_info "SSL certificate configuration completed"
+log_info "If you encountered issues requesting the certificate, ensure:"
+log_info "  1. The domain is registered in your Porkbun account"
+log_info "  2. DNS records exist and are pointing to this VPS IP"
+log_info "  3. You can verify DNS records using: porkbun-dns list"
+echo ""
+
 # Update template with actual domain
 if [[ "$SKIP_TEMPLATE" == "false" ]]; then
     sed -i "s/DOMAIN/${DOMAIN}/g" /etc/nginx/sites-available/_template

@@ -120,9 +120,14 @@ pnpm install
 echo "Generating Prisma client..."
 npx prisma generate
 
-# Run database migrations
-echo "Running database migrations..."
-npx prisma migrate deploy
+# Check if database schema is already initialized
+echo "Checking database schema status..."
+if npx prisma migrate status 2>&1 | grep -q "No migration found"; then
+    echo "Database schema is already initialized, skipping migrations"
+else
+    echo "Running database migrations..."
+    npx prisma migrate deploy
+fi
 
 # Build application
 echo "Building application..."

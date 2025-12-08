@@ -186,54 +186,76 @@ fi
 
 log_success "Porkbun credentials configured"
 
-# Create main domain A record pointing to this VPS
-log_info "Creating A record for $DOMAIN..."
+# Check existing DNS records for the domain
+log_info "Retrieving existing DNS records for $DOMAIN..."
 
-RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+EXISTING_RECORDS=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/retrieve/$DOMAIN" \
     -H "Content-Type: application/json" \
     -d "{
         \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
-        \"apikey\": \"$PORKBUN_API_KEY\",
-        \"name\": \"\",
-        \"type\": \"A\",
-        \"content\": \"$VPS_IP\",
-        \"ttl\": \"300\"
+        \"apikey\": \"$PORKBUN_API_KEY\"
     }")
 
-if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
-    log_success "Main domain A record created: $DOMAIN -> $VPS_IP"
-elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
-    ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
-    log_warning "Failed to create main domain A record: $ERROR_MSG"
-    log_info "This may be expected if the record already exists"
+# Check for root domain A record
+ROOT_A_RECORD=$(echo "$EXISTING_RECORDS" | grep -o '"name":"","type":"A","content":"[^"]*"' | head -1 || echo "")
+
+# Check for wildcard A record
+WILDCARD_RECORD=$(echo "$EXISTING_RECORDS" | grep -o '"name":"\*\.ns","type":"A"' | head -1 || echo "")
+
+# Create main domain A record pointing to this VPS
+log_info "Creating A record for $DOMAIN..."
+
+if [[ -z "$ROOT_A_RECORD" ]]; then
+    RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+            \"apikey\": \"$PORKBUN_API_KEY\",
+            \"name\": \"\",
+            \"type\": \"A\",
+            \"content\": \"$VPS_IP\",
+            \"ttl\": \"300\"
+        }")
+
+    if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+        log_success "Main domain A record created: $DOMAIN -> $VPS_IP"
+    elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
+        ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
+        log_warning "Failed to create main domain A record: $ERROR_MSG"
+    else
+        log_warning "Failed to create main domain A record"
+        log_info "Response: $RESPONSE"
+    fi
 else
-    log_warning "Failed to create main domain A record (may already exist)"
-    log_info "Response: $RESPONSE"
+    log_info "Root domain A record already exists"
 fi
 
 # Create wildcard subdomain record for Nightscout instances
 log_info "Creating wildcard A record for *.ns.$DOMAIN..."
 
-RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
-        \"apikey\": \"$PORKBUN_API_KEY\",
-        \"name\": \"*.ns\",
-        \"type\": \"A\",
-        \"content\": \"$VPS_IP\",
-        \"ttl\": \"300\"
-    }")
+if [[ -z "$WILDCARD_RECORD" ]]; then
+    RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
+            \"apikey\": \"$PORKBUN_API_KEY\",
+            \"name\": \"*.ns\",
+            \"type\": \"A\",
+            \"content\": \"$VPS_IP\",
+            \"ttl\": \"300\"
+        }")
 
-if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
-    log_success "Wildcard A record created: *.ns.$DOMAIN -> $VPS_IP"
-elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
-    ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
-    log_warning "Failed to create wildcard A record: $ERROR_MSG"
-    log_info "This may be expected if the record already exists"
+    if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
+        log_success "Wildcard A record created: *.ns.$DOMAIN -> $VPS_IP"
+    elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
+        ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
+        log_warning "Failed to create wildcard A record: $ERROR_MSG"
+    else
+        log_warning "Failed to create wildcard A record"
+        log_info "Response: $RESPONSE"
+    fi
 else
-    log_warning "Failed to create wildcard A record (may already exist)"
-    log_info "Response: $RESPONSE"
+    log_info "Wildcard A record already exists"
 fi
 
 log_info "Verifying DNS records..."
@@ -251,10 +273,4 @@ log_success "Porkbun DNS configuration completed"
 echo ""
 log_info "You can manage DNS records using: porkbun-dns <action> <subdomain> <ip>"
 log_info "Example: porkbun-dns create test 1.2.3.4"
-log_info ""
-log_warning "Important: The domain must be registered in your Porkbun account"
-log_warning "and DNS records must be manually created if API setup fails."
-log_warning "If SSL certificate request fails, you may need to:"
-log_warning "  1. Create DNS records manually in Porkbun dashboard"
-log_warning "  2. Verify domain is in Porkbun account: porkbun-dns list"
 echo ""

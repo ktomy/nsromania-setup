@@ -18,7 +18,7 @@
         "@emotion/styled": "^11.14.1",
         "@fontsource/material-icons": "^5.2.7",
         "@fontsource/roboto": "^5.2.8",
-        "@getbrevo/brevo": "^2.5.0",
+        "@getbrevo/brevo": "^3.0.1",
         "@hookform/resolvers": "^5.2.2",
         "@mailchimp/mailchimp_transactional": "^1.0.59",
         "@mui/icons-material": "^7.3.5",

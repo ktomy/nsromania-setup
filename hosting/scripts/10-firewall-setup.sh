@@ -91,7 +91,13 @@ PermitEmptyPasswords no
 EOF
 
 # Restart SSH service
-systemctl restart sshd
+if systemctl list-unit-files | grep -q '^ssh\.service'; then
+    systemctl restart ssh
+elif systemctl list-unit-files | grep -q '^sshd\.service'; then
+    systemctl restart sshd
+else
+    log_warning "SSH service unit not found; please restart SSH manually if needed"
+fi
 
 log_success "SSH security enhanced"
 

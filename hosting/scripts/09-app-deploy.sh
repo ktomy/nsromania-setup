@@ -144,6 +144,12 @@ EOSU
 
 log_success "Application built successfully"
 
+# Ensure log directory exists with proper permissions for PM2
+LOG_DIR="/var/log/nsromania"
+mkdir -p "$LOG_DIR"
+chown nsromania:nsromania "$LOG_DIR"
+chmod 755 "$LOG_DIR"
+
 # Create PM2 ecosystem file
 log_info "Creating PM2 ecosystem configuration..."
 
@@ -162,8 +168,8 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
     },
-    error_file: '/var/log/nsromania-setup-error.log',
-    out_file: '/var/log/nsromania-setup-out.log',
+        error_file: '/var/log/nsromania/nsromania-setup-error.log',
+        out_file: '/var/log/nsromania/nsromania-setup-out.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
   }]
 }

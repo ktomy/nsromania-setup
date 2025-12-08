@@ -41,6 +41,7 @@ NS_HOME="${INSTALL_DIR}/nightscout"
 LOG_FILE="/var/log/nsromania-setup.log"
 CONFIG_FILE="${INSTALL_DIR}/.install-config.json"
 SINGLE_STEP=""
+SUMMARY_MODE="full"
 
 # Initialize all variables that will be used in the wizard
 DOMAIN=""
@@ -643,6 +644,85 @@ load_config() {
     export PORKBUN_SECRET_KEY=$(jq -r '.porkbun_secret_key' "$CONFIG_FILE")
 }
 
+print_completion_summary() {
+    local mode=${1:-full}
+    local vps_ip
+    vps_ip=$(curl -s -4 ifconfig.me || true)
+
+    echo ""
+    echo -e "${BLUE}━━━ Access Information ━━━${NC}"
+    echo "Control Panel: https://${DOMAIN}"
+    echo "Local access: http://localhost:3000"
+    [[ -n "$vps_ip" ]] && echo "Public IP: ${vps_ip}"
+    echo "Admin Email: ${ADMIN_EMAIL}"
+    echo "Admin Name: ${ADMIN_NAME}"
+    echo ""
+
+    if [[ "$mode" == "short" ]]; then
+        echo -e "${YELLOW}Use --summary full to see service commands, file locations, and next steps.${NC}"
+        return
+    fi
+
+    echo -e "${BLUE}━━━ Service Management Commands ━━━${NC}"
+    echo ""
+    echo "View PM2 processes:"
+    echo "  sudo su - nsromania -c 'pm2 list'"
+    echo ""
+    echo "View PM2 logs:"
+    echo "  sudo su - nsromania -c 'pm2 logs nsromania-setup'"
+    echo ""
+    echo "Restart control panel:"
+    echo "  sudo su - nsromania -c 'pm2 restart nsromania-setup'"
+    echo ""
+    echo "Check service status:"
+    echo "  systemctl status mysql"
+    echo "  systemctl status mongod"
+    echo "  systemctl status nginx"
+    echo "  systemctl status bind9"
+    echo ""
+
+    echo -e "${BLUE}━━━ Important File Locations ━━━${NC}"
+    echo ""
+    echo "Application: ${SETUP_DIR}"
+    echo "Nightscout: ${NS_HOME}/master"
+    echo "Configuration: ${CONFIG_FILE}"
+    echo "Environment: ${SETUP_DIR}/.env"
+    echo "Installation log: ${LOG_FILE}"
+    echo ""
+    echo "Nginx configs: /etc/nginx/sites-available/"
+    echo "DNS zone: /etc/bind/zones/${DOMAIN}"
+    echo "PM2 logs: /home/nsromania/.pm2/logs/"
+    echo ""
+
+    echo -e "${BLUE}━━━ Next Steps ━━━${NC}"
+    echo ""
+    echo "1. Access your control panel at https://${DOMAIN}"
+    echo ""
+    echo "2. Sign in using one of these methods:"
+    echo "   - Magic link (email)"
+    echo "   - GitHub OAuth"
+    echo "   - Google OAuth"
+    echo ""
+    echo "3. Configure OAuth callback URLs:"
+    echo "   GitHub: https://${DOMAIN}/api/auth/callback/github"
+    echo "   Google: https://${DOMAIN}/api/auth/callback/google"
+    echo ""
+    echo "4. Your admin account (${ADMIN_EMAIL}) should already have admin privileges"
+    echo ""
+    echo "5. Start accepting Nightscout registration requests!"
+    echo ""
+
+    echo -e "${YELLOW}━━━ Security Reminder ━━━${NC}"
+    echo ""
+    echo "Important: The configuration file contains sensitive information:"
+    echo "  ${CONFIG_FILE}"
+    echo ""
+    echo "Consider:"
+    echo "  - Backing it up to a secure location"
+    echo "  - Deleting it from the server: rm ${CONFIG_FILE}"
+    echo ""
+}
+
 # Main installation function
 main() {
     # Parse command-line arguments
@@ -652,17 +732,31 @@ main() {
                 SINGLE_STEP="$2"
                 shift 2
                 ;;
+            --summary)
+                SUMMARY_MODE="${2:-}"
+                if [[ -z "$SUMMARY_MODE" ]]; then
+                    log_error "--summary requires a value: full or short"
+                    exit 1
+                fi
+                if [[ "$SUMMARY_MODE" != "full" && "$SUMMARY_MODE" != "short" ]]; then
+                    log_error "Invalid summary mode: $SUMMARY_MODE (use 'full' or 'short')"
+                    exit 1
+                fi
+                shift 2
+                ;;
             --help)
                 echo "Usage: $0 [OPTIONS]"
                 echo ""
                 echo "Options:"
                 echo "  --step N        Run only step N (1-12) instead of full installation"
+                echo "  --summary MODE  Summary output: full (default) or short"
                 echo "  --help          Show this help message"
                 echo ""
                 echo "Examples:"
-                echo "  $0                  # Run full installation with prompts"
-                echo "  $0 --step 6         # Run only step 6 (Porkbun DNS Configuration)"
-                echo "  $0 --step 12        # Run only step 12 (Post-Installation Verification)"
+                echo "  $0                        # Run full installation with prompts"
+                echo "  $0 --step 6               # Run only step 6 (Porkbun DNS Configuration)"
+                echo "  $0 --step 12              # Run only step 12 (Post-Installation Verification)"
+                echo "  $0 --summary short        # Run with condensed completion summary"
                 exit 0
                 ;;
             *)
@@ -1057,28 +1151,7 @@ EOF
     echo ""
     
     log_success "Installation completed successfully!"
-    echo ""
-    echo -e "${BLUE}━━━ Access Information ━━━${NC}"
-    echo "Control Panel URL: https://$DOMAIN"
-    echo "Admin Email: $ADMIN_EMAIL"
-    echo "Admin Name: $ADMIN_NAME"
-    echo ""
-    echo -e "${BLUE}━━━ Next Steps ━━━${NC}"
-    echo "1. Log in to the control panel using your OAuth provider or magic link"
-    echo "2. Your account should already have admin privileges"
-    echo "3. Review the registration requests and approve new Nightscout instances"
-    echo "4. Configure your OAuth callback URLs in GitHub/Google:"
-    echo "   - GitHub: https://$DOMAIN/api/auth/callback/github"
-    echo "   - Google: https://$DOMAIN/api/auth/callback/google"
-    echo ""
-    echo -e "${BLUE}━━━ Important Files ━━━${NC}"
-    echo "Configuration: $CONFIG_FILE"
-    echo "Application: $SETUP_DIR"
-    echo "Nightscout: $NS_HOME"
-    echo "Logs: $LOG_FILE"
-    echo ""
-    echo -e "${YELLOW}Note: Please save your configuration file securely and delete it after setup!${NC}"
-    echo ""
+    print_completion_summary "$SUMMARY_MODE"
 }
 
 # Run main function

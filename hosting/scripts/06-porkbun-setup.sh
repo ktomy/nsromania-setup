@@ -239,14 +239,6 @@ else
     ROOT_A_EXISTS=false
 fi
 
-# Check for wildcard A record (*.ns subdomain)
-if echo "$EXISTING_RECORDS" | grep -q '"name":"\*.ns","type":"A"'; then
-    WILDCARD_EXISTS=true
-    log_info "Wildcard A record already exists"
-else
-    WILDCARD_EXISTS=false
-fi
-
 # Check for www CNAME
 if echo "$EXISTING_RECORDS" | jq -e '.records[] | select(.type=="CNAME" and .name=="www")' >/dev/null; then
     WWW_EXISTS=true
@@ -281,34 +273,6 @@ if [[ "$ROOT_A_EXISTS" == "false" ]]; then
     fi
 else
     log_info "Root domain A record already exists"
-fi
-
-# Create wildcard subdomain record for Nightscout instances
-log_info "Creating wildcard A record for *.ns.$DOMAIN..."
-
-if [[ "$WILDCARD_EXISTS" == "false" ]]; then
-    RESPONSE=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/create/$DOMAIN" \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"secretapikey\": \"$PORKBUN_SECRET_KEY\",
-            \"apikey\": \"$PORKBUN_API_KEY\",
-            \"name\": \"*.ns\",
-            \"type\": \"A\",
-            \"content\": \"$VPS_IP\",
-            \"ttl\": \"300\"
-        }")
-
-    if echo "$RESPONSE" | grep -q '"status":"SUCCESS"'; then
-        log_success "Wildcard A record created: *.ns.$DOMAIN -> $VPS_IP"
-    elif echo "$RESPONSE" | grep -q '"status":"ERROR"'; then
-        ERROR_MSG=$(echo "$RESPONSE" | grep -o '"message":"[^"]*"' | head -1)
-        log_warning "Failed to create wildcard A record: $ERROR_MSG"
-    else
-        log_warning "Failed to create wildcard A record"
-        log_info "Response: $RESPONSE"
-    fi
-else
-    log_info "Wildcard A record already exists"
 fi
 
 # Create www CNAME pointing to root domain

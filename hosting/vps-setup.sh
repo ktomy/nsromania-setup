@@ -661,7 +661,7 @@ main() {
         log_info "Found existing configuration file"
         read -p "Use existing configuration? (Y/n) [Y]: " use_existing
         use_existing=${use_existing:-y}
-        if [[ "$use_existing" =~ ^[Yy] ]]; then
+        if [[ "$use_existing" =~ ^[Nn] ]]; then
             rm -f "$CONFIG_FILE"
             run_wizard
         else
@@ -675,7 +675,7 @@ main() {
                 echo ""
                 read -p "Continue with existing configuration? (Y/n) [Y]: " continue_anyway
                 continue_anyway=${continue_anyway:-y}
-                if [[ "$continue_anyway" =~ ^[Yy] ]]; then
+                if [[ "$continue_anyway" =~ ^[Nn] ]]; then
                     log_error "Installation cancelled. Please clean up and start fresh."
                     exit 1
                 fi

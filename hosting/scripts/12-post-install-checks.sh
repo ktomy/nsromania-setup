@@ -52,10 +52,6 @@ run_check "MySQL connection" "mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} nightsco
 run_check "MongoDB service" "systemctl is-active --quiet mongod"
 run_check "MongoDB connection" "mongosh -u root -p ${MONGO_ROOT_PASSWORD} --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")' 2>/dev/null"
 
-# Check BIND9
-run_check "BIND9 service" "systemctl is-active --quiet bind9"
-run_check "DNS resolution" "dig @localhost ${DOMAIN} +short | grep -q '.'"
-
 # Check Nginx
 run_check "Nginx service" "systemctl is-active --quiet nginx"
 run_check "Nginx configuration" "nginx -t 2>/dev/null"
@@ -76,7 +72,7 @@ run_check "Nightscout package.json" "test -f ${NS_HOME}/master/package.json"
 # Check Control Panel
 run_check "Control panel directory" "test -d ${SETUP_DIR}"
 run_check "Control panel .env" "test -f ${SETUP_DIR}/.env"
-run_check "PM2 process running" "su - nsromania -c 'pm2 list | grep -q nsromania-setup'"
+run_check "PM2 process running" "su - nsromania -c 'export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \\ . \"$NVM_DIR/nvm.sh\" && pm2 list | grep -q nsromania-setup'"
 run_check "Control panel responding" "curl -f -s http://localhost:3000 > /dev/null"
 
 echo ""
@@ -92,7 +88,6 @@ echo -e "${BLUE}━━━ Configuration Files Checks ━━━${NC}"
 # Check configuration files
 run_check "Nginx main site config" "test -f /etc/nginx/sites-available/setup"
 run_check "Nginx template file" "test -f /etc/nginx/sites-available/_template"
-run_check "BIND zone file" "test -f /etc/bind/zones/${DOMAIN}"
 run_check "PM2 ecosystem config" "test -f ${SETUP_DIR}/ecosystem.config.js"
 
 echo ""
@@ -119,7 +114,6 @@ VPS_IP=$(curl -s -4 ifconfig.me)
 run_check "Public IP retrieved" "test -n '${VPS_IP}'"
 run_check "Port 80 listening" "netstat -tuln | grep -q ':80 '"
 run_check "Port 443 listening" "netstat -tuln | grep -q ':443 '"
-run_check "Port 53 listening" "netstat -tuln | grep -q ':53 '"
 
 echo ""
 echo -e "${BLUE}━━━ Summary ━━━${NC}"

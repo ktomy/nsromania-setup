@@ -725,6 +725,7 @@ main() {
             fi
             log_info "Updating local repository..."
             (cd "$REPO_DIR" && git stash -q 2>/dev/null || true && git pull -q origin main || log_warning "Failed to pull latest changes, using existing files")
+            log_info "Current repo HEAD: $(cd "$REPO_DIR" && git log -1 --oneline 2>/dev/null || echo 'unknown')"
         fi
     else
         # Clone the repository
@@ -736,6 +737,7 @@ main() {
             cd "$REPO_DIR"
             git stash -q 2>/dev/null || true  # Stash any local changes
             git pull -q origin main || log_warning "Failed to pull latest changes, using existing files"
+            log_info "Current repo HEAD: $(git log -1 --oneline 2>/dev/null || echo 'unknown')"
         else
             log_info "Cloning repository from GitHub..."
             if ! git clone -q https://github.com/ktomy/nsromania-setup.git "$REPO_DIR"; then
@@ -743,6 +745,7 @@ main() {
                 exit 1
             fi
             log_success "Repository cloned successfully"
+            log_info "Current repo HEAD: $(cd "$REPO_DIR" && git log -1 --oneline 2>/dev/null || echo 'unknown')"
         fi
         
         # Make all scripts executable
@@ -754,6 +757,19 @@ main() {
             exit 1
         fi
     fi
+
+    # Propagate bash tracing (-x) to child scripts if caller enabled it
+    TRACE_ENABLED=false
+    [[ $- == *x* ]] && TRACE_ENABLED=true
+
+    run_step_script() {
+        local script_path=$1
+        if [[ "$TRACE_ENABLED" == "true" ]]; then
+            bash -x "$script_path"
+        else
+            bash "$script_path"
+        fi
+    }
     
     # Export paths for use by scripts
     export REPO_DIR
@@ -781,7 +797,7 @@ main() {
         log_info "Skipping Step $current_step (System Updates) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "System Updates and Package Installation"
-        bash "$SCRIPTS_DIR/01-system-updates.sh"
+        run_step_script "$SCRIPTS_DIR/01-system-updates.sh"
     fi
     
     # Step 2: User Setup
@@ -790,7 +806,7 @@ main() {
         log_info "Skipping Step $current_step (User Setup) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "User and Permissions Setup"
-        bash "$SCRIPTS_DIR/02-user-setup.sh"
+        run_step_script "$SCRIPTS_DIR/02-user-setup.sh"
     fi
     
     # Step 3: Node.js Setup
@@ -799,7 +815,7 @@ main() {
         log_info "Skipping Step $current_step (Node.js Setup) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Node.js and NVM Installation"
-        bash "$SCRIPTS_DIR/03-nodejs-setup.sh"
+        run_step_script "$SCRIPTS_DIR/03-nodejs-setup.sh"
     fi
     
     # Step 4: Database Setup
@@ -808,7 +824,7 @@ main() {
         log_info "Skipping Step $current_step (Database Setup) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "MySQL and MongoDB Installation"
-        bash "$SCRIPTS_DIR/04-database-setup.sh"
+        run_step_script "$SCRIPTS_DIR/04-database-setup.sh"
     fi
     
     # Step 5: Nginx Setup
@@ -817,7 +833,7 @@ main() {
         log_info "Skipping Step $current_step (Nginx Setup) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Nginx Web Server Configuration"
-        bash "$SCRIPTS_DIR/05-nginx-setup.sh"
+        run_step_script "$SCRIPTS_DIR/05-nginx-setup.sh"
     fi
     
     # Step 6: DNS Setup (Porkbun API)
@@ -826,7 +842,7 @@ main() {
         log_info "Skipping Step $current_step (Porkbun DNS) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Porkbun DNS Configuration"
-        bash "$SCRIPTS_DIR/06-porkbun-setup.sh"
+        run_step_script "$SCRIPTS_DIR/06-porkbun-setup.sh"
     fi
     
     # Step 7: PM2 Setup
@@ -835,7 +851,7 @@ main() {
         log_info "Skipping Step $current_step (PM2 Setup) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "PM2 Process Manager Installation"
-        bash "$SCRIPTS_DIR/07-pm2-setup.sh"
+        run_step_script "$SCRIPTS_DIR/07-pm2-setup.sh"
     fi
     
     # Step 8: Nightscout Installation
@@ -844,7 +860,7 @@ main() {
         log_info "Skipping Step $current_step (Nightscout Installation) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Nightscout Master Installation"
-        bash "$SCRIPTS_DIR/08-nightscout-install.sh"
+        run_step_script "$SCRIPTS_DIR/08-nightscout-install.sh"
     fi
     
     # Step 9: Control Panel Deployment
@@ -853,7 +869,7 @@ main() {
         log_info "Skipping Step $current_step (Control Panel Deployment) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Control Panel Deployment"
-        bash "$SCRIPTS_DIR/09-app-deploy.sh"
+        run_step_script "$SCRIPTS_DIR/09-app-deploy.sh"
     fi
     
     # Step 10: Firewall Setup
@@ -862,7 +878,7 @@ main() {
         log_info "Skipping Step $current_step (Firewall and Security) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Firewall and Security Configuration"
-        bash "$SCRIPTS_DIR/10-firewall-setup.sh"
+        run_step_script "$SCRIPTS_DIR/10-firewall-setup.sh"
     fi
     
     # Step 11: Monitoring Setup
@@ -871,7 +887,7 @@ main() {
         log_info "Skipping Step $current_step (Monitoring Setup) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Logging and Monitoring Setup"
-        bash "$SCRIPTS_DIR/11-monitoring-setup.sh"
+        run_step_script "$SCRIPTS_DIR/11-monitoring-setup.sh"
     fi
     
     # Step 12: Post-Install Checks
@@ -880,7 +896,7 @@ main() {
         log_info "Skipping Step $current_step (Post-Installation Verification) - starting from step $start_step"
     else
         show_progress $current_step $total_steps "Post-Installation Verification"
-        bash "$SCRIPTS_DIR/12-post-install-checks.sh"
+        run_step_script "$SCRIPTS_DIR/12-post-install-checks.sh"
     fi
     
     # Display success message

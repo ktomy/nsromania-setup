@@ -23,11 +23,9 @@ run_check() {
     local check_command=$2
 
     echo -n "Checking $check_name... "
-    set +e
     local output
     output=$(eval "$check_command" 2>&1)
     local status=$?
-    set -e
 
     if [[ $status -eq 0 ]]; then
         echo -e "${GREEN}✓ PASSED${NC}"

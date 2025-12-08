@@ -239,8 +239,8 @@ else
     ROOT_A_EXISTS=false
 fi
 
-# Check for www CNAME
-if echo "$EXISTING_RECORDS" | jq -e '.records[] | select(.type=="CNAME" and .name=="www")' >/dev/null; then
+# Check for www CNAME (short or fully-qualified name)
+if echo "$EXISTING_RECORDS" | jq -e --arg dom "$DOMAIN" '.records[] | select(.type=="CNAME" and (.name=="www" or .name=="www."+$dom))' >/dev/null; then
     WWW_EXISTS=true
     log_info "www CNAME already exists"
 else

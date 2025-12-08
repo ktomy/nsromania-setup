@@ -16,6 +16,8 @@
 # Usage: 
 #   Direct: sudo bash vps-setup.sh
 #   Remote: bash <(curl -fsSL https://raw.githubusercontent.com/ktomy/nsromania-setup/main/hosting/vps-setup.sh)
+#   Run single step: sudo bash vps-setup.sh --step 6
+#   Run single step from remote: bash <(curl -fsSL ...) --step 6
 ################################################################################
 
 set -e  # Exit on error
@@ -38,6 +40,7 @@ SETUP_DIR="${INSTALL_DIR}/setup"
 NS_HOME="${INSTALL_DIR}/nightscout"
 LOG_FILE="/var/log/nsromania-setup.log"
 CONFIG_FILE="${INSTALL_DIR}/.install-config.json"
+SINGLE_STEP=""
 
 # Initialize all variables that will be used in the wizard
 DOMAIN=""
@@ -642,6 +645,33 @@ load_config() {
 
 # Main installation function
 main() {
+    # Parse command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --step)
+                SINGLE_STEP="$2"
+                shift 2
+                ;;
+            --help)
+                echo "Usage: $0 [OPTIONS]"
+                echo ""
+                echo "Options:"
+                echo "  --step N        Run only step N (1-12) instead of full installation"
+                echo "  --help          Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  $0                  # Run full installation with prompts"
+                echo "  $0 --step 6         # Run only step 6 (Porkbun DNS Configuration)"
+                echo "  $0 --step 12        # Run only step 12 (Post-Installation Verification)"
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                exit 1
+                ;;
+        esac
+    done
+
     # Initialize log file
     mkdir -p "$(dirname "$LOG_FILE")"
     touch "$LOG_FILE"
@@ -656,7 +686,27 @@ main() {
     
     # Run wizard if config doesn't exist
     local start_step=1
-    if [[ ! -f "$CONFIG_FILE" ]]; then
+    
+    # If --step was provided, use that instead of full wizard
+    if [[ -n "$SINGLE_STEP" ]]; then
+        if ! [[ "$SINGLE_STEP" =~ ^[0-9]+$ ]]; then
+            log_error "Invalid step number: $SINGLE_STEP (must be numeric)"
+            exit 1
+        fi
+        if (( SINGLE_STEP < 1 || SINGLE_STEP > 12 )); then
+            log_error "Invalid step number: $SINGLE_STEP (must be between 1 and 12)"
+            exit 1
+        fi
+        
+        # For single step mode, require config file
+        if [[ ! -f "$CONFIG_FILE" ]]; then
+            log_error "Cannot run single step without configuration file. Run full setup first."
+            exit 1
+        fi
+        
+        log_info "Running single step mode: step $SINGLE_STEP"
+        start_step=$SINGLE_STEP
+    elif [[ ! -f "$CONFIG_FILE" ]]; then
         run_wizard
     else
         log_info "Found existing configuration file"
@@ -682,8 +732,12 @@ main() {
             echo " 12. Post-Installation Verification"
             read -p "Start from which step (1-12) [1]: " start_step_input
             start_step=${start_step_input:-1}
-            if ! [[ "$start_step" =~ ^[0-9]+$ ]] || (( start_step < 1 || start_step > 12 )); then
-                log_warning "Invalid step selected, defaulting to step 1"
+            # Validate step is numeric and within range 1-12
+            if ! [[ "$start_step" =~ ^[0-9]+$ ]]; then
+                log_warning "Invalid step selected (must be numeric), defaulting to step 1"
+                start_step=1
+            elif (( start_step < 1 || start_step > 12 )); then
+                log_warning "Invalid step selected ($start_step is outside 1-12 range), defaulting to step 1"
                 start_step=1
             fi
             # Check if MySQL is already installed and configured
@@ -791,112 +845,202 @@ main() {
     local total_steps=12
     local current_step=0
     
+    # Determine execution mode
+    local is_single_step=false
+    if [[ -n "$SINGLE_STEP" ]]; then
+        is_single_step=true
+    fi
+    
     # Step 1: System Updates
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (System Updates) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "System Updates and Package Installation"
+            run_step_script "$SCRIPTS_DIR/01-system-updates.sh"
+        fi
     else
-        show_progress $current_step $total_steps "System Updates and Package Installation"
-        run_step_script "$SCRIPTS_DIR/01-system-updates.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (System Updates) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "System Updates and Package Installation"
+            run_step_script "$SCRIPTS_DIR/01-system-updates.sh"
+        fi
     fi
     
     # Step 2: User Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (User Setup) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "User and Permissions Setup"
+            run_step_script "$SCRIPTS_DIR/02-user-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "User and Permissions Setup"
-        run_step_script "$SCRIPTS_DIR/02-user-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (User Setup) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "User and Permissions Setup"
+            run_step_script "$SCRIPTS_DIR/02-user-setup.sh"
+        fi
     fi
     
     # Step 3: Node.js Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Node.js Setup) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Node.js and NVM Installation"
+            run_step_script "$SCRIPTS_DIR/03-nodejs-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Node.js and NVM Installation"
-        run_step_script "$SCRIPTS_DIR/03-nodejs-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Node.js Setup) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Node.js and NVM Installation"
+            run_step_script "$SCRIPTS_DIR/03-nodejs-setup.sh"
+        fi
     fi
     
     # Step 4: Database Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Database Setup) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "MySQL and MongoDB Installation"
+            run_step_script "$SCRIPTS_DIR/04-database-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "MySQL and MongoDB Installation"
-        run_step_script "$SCRIPTS_DIR/04-database-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Database Setup) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "MySQL and MongoDB Installation"
+            run_step_script "$SCRIPTS_DIR/04-database-setup.sh"
+        fi
     fi
     
     # Step 5: Nginx Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Nginx Setup) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Nginx Web Server Configuration"
+            run_step_script "$SCRIPTS_DIR/05-nginx-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Nginx Web Server Configuration"
-        run_step_script "$SCRIPTS_DIR/05-nginx-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Nginx Setup) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Nginx Web Server Configuration"
+            run_step_script "$SCRIPTS_DIR/05-nginx-setup.sh"
+        fi
     fi
     
     # Step 6: DNS Setup (Porkbun API)
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Porkbun DNS) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Porkbun DNS Configuration"
+            run_step_script "$SCRIPTS_DIR/06-porkbun-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Porkbun DNS Configuration"
-        run_step_script "$SCRIPTS_DIR/06-porkbun-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Porkbun DNS) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Porkbun DNS Configuration"
+            run_step_script "$SCRIPTS_DIR/06-porkbun-setup.sh"
+        fi
     fi
     
     # Step 7: PM2 Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (PM2 Setup) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "PM2 Process Manager Installation"
+            run_step_script "$SCRIPTS_DIR/07-pm2-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "PM2 Process Manager Installation"
-        run_step_script "$SCRIPTS_DIR/07-pm2-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (PM2 Setup) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "PM2 Process Manager Installation"
+            run_step_script "$SCRIPTS_DIR/07-pm2-setup.sh"
+        fi
     fi
     
     # Step 8: Nightscout Installation
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Nightscout Installation) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Nightscout Master Installation"
+            run_step_script "$SCRIPTS_DIR/08-nightscout-install.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Nightscout Master Installation"
-        run_step_script "$SCRIPTS_DIR/08-nightscout-install.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Nightscout Installation) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Nightscout Master Installation"
+            run_step_script "$SCRIPTS_DIR/08-nightscout-install.sh"
+        fi
     fi
     
     # Step 9: Control Panel Deployment
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Control Panel Deployment) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Control Panel Deployment"
+            run_step_script "$SCRIPTS_DIR/09-app-deploy.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Control Panel Deployment"
-        run_step_script "$SCRIPTS_DIR/09-app-deploy.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Control Panel Deployment) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Control Panel Deployment"
+            run_step_script "$SCRIPTS_DIR/09-app-deploy.sh"
+        fi
     fi
     
     # Step 10: Firewall Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Firewall and Security) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Firewall and Security Configuration"
+            run_step_script "$SCRIPTS_DIR/10-firewall-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Firewall and Security Configuration"
-        run_step_script "$SCRIPTS_DIR/10-firewall-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Firewall and Security) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Firewall and Security Configuration"
+            run_step_script "$SCRIPTS_DIR/10-firewall-setup.sh"
+        fi
     fi
     
     # Step 11: Monitoring Setup
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Monitoring Setup) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Logging and Monitoring Setup"
+            run_step_script "$SCRIPTS_DIR/11-monitoring-setup.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Logging and Monitoring Setup"
-        run_step_script "$SCRIPTS_DIR/11-monitoring-setup.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Monitoring Setup) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Logging and Monitoring Setup"
+            run_step_script "$SCRIPTS_DIR/11-monitoring-setup.sh"
+        fi
     fi
     
     # Step 12: Post-Install Checks
     current_step=$((current_step + 1))
-    if (( current_step < start_step )); then
-        log_info "Skipping Step $current_step (Post-Installation Verification) - starting from step $start_step"
+    if [[ "$is_single_step" == "true" ]]; then
+        if (( current_step == start_step )); then
+            show_progress $current_step $total_steps "Post-Installation Verification"
+            run_step_script "$SCRIPTS_DIR/12-post-install-checks.sh"
+        fi
     else
-        show_progress $current_step $total_steps "Post-Installation Verification"
-        run_step_script "$SCRIPTS_DIR/12-post-install-checks.sh"
+        if (( current_step < start_step )); then
+            log_info "Skipping Step $current_step (Post-Installation Verification) - starting from step $start_step"
+        else
+            show_progress $current_step $total_steps "Post-Installation Verification"
+            run_step_script "$SCRIPTS_DIR/12-post-install-checks.sh"
+        fi
     fi
     
     # Display success message

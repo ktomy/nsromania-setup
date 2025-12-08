@@ -197,9 +197,13 @@ EXISTING_RECORDS=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/retr
     }")
 
 # Remove parked records (ALIAS/CNAME to pixie.porkbun.com)
-PARKED_IDS=$(echo "$EXISTING_RECORDS" | jq -r --arg dom "$DOMAIN" '
+PARKED_IDS=$(echo "$EXISTING_RECORDS" | jq -r '
   .records[]
-  | select((.type=="CNAME" or .type=="ALIAS") and ((.content|ascii_downcase)=="pixie.porkbun.com") and (.name=="" or .name=="*" or .name=="*."+$dom))
+  | select(
+      ((.type == "CNAME") or (.type == "ALIAS"))
+      and ((.content | ascii_downcase) | test("pixie\\.porkbun\\.com"))
+      and (.name == "" or .name == "*")
+    )
   | .id
 ')
 
@@ -207,6 +211,7 @@ if [[ -n "$PARKED_IDS" ]]; then
     log_warning "Detected parked DNS records pointing to pixie.porkbun.com; removing them..."
     while IFS= read -r rid; do
         [[ -z "$rid" || "$rid" == "null" ]] && continue
+        log_info "Deleting parked record id $rid..."
         RESP_DEL=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/delete/$DOMAIN/$rid" \
             -H "Content-Type: application/json" \
             -d "{\"secretapikey\": \"$PORKBUN_SECRET_KEY\", \"apikey\": \"$PORKBUN_API_KEY\"}")
@@ -216,6 +221,12 @@ if [[ -n "$PARKED_IDS" ]]; then
             log_warning "Failed to remove parked record id $rid: $RESP_DEL"
         fi
     done <<< "$PARKED_IDS"
+    
+    # Re-fetch records after deletions
+    log_info "Re-fetching DNS records after cleanup..."
+    EXISTING_RECORDS=$(curl -s -X POST "https://api.porkbun.com/api/json/v3/dns/retrieve/$DOMAIN" \
+        -H "Content-Type: application/json" \
+        -d "{\"secretapikey\": \"$PORKBUN_SECRET_KEY\", \"apikey\": \"$PORKBUN_API_KEY\"}")
 else
     log_info "No parked pixie.porkbun.com records detected"
 fi

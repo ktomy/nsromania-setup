@@ -23,7 +23,7 @@
         "@mailchimp/mailchimp_transactional": "^1.0.59",
         "@mui/icons-material": "^7.3.5",
         "@mui/material": "^7.3.5",
-        "@mui/material-nextjs": "^7.3.5",
+        "@mui/material-nextjs": "^7.3.6",
         "@mui/x-data-grid": "^8.19.0",
         "@prisma/adapter-mariadb": "^7.1.0",
         "@prisma/client": "^7.1.0",

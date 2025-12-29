@@ -4,30 +4,30 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
 }
 
 model NSDomain {
-  id                Int                   @id @default(autoincrement()) @db.UnsignedInt
-  active            Int                   @default(1) @db.TinyInt
-  title             String                @db.VarChar(128)
-  domain            String                @unique @db.VarChar(64)
-  port              Int                   @db.UnsignedInt
-  dbExists          Int                   @default(0) @map("db_exists") @db.TinyInt
-  apiSecret         String                @map("api_secret") @db.VarChar(32)
-  enable            String                @db.VarChar(1024)
-  showPlugins       String                @map("show_plugins") @db.VarChar(1024)
-  mmconnectUsername String?               @map("mmconnect_username") @db.VarChar(32)
-  mmconnectPassword String?               @map("mmconnect_password") @db.VarChar(32)
-  mmconnectServer   String?               @default("EU") @map("mmconnect_server") @db.Char(2)
-  bridgeUsername    String?               @map("bridge_username") @db.VarChar(32)
-  bridgePassword    String?               @map("bridge_password") @db.VarChar(32)
-  bridgeServer      String?               @default("EU") @map("bridge_server") @db.Char(2)
-  created           DateTime              @default(now()) @db.Timestamp(0)
-  lastUpdated       DateTime?             @default(now()) @map("last_updated") @db.Timestamp(0)
-  dbPassword        String?               @map("db_password") @db.VarChar(64)
-  nsversion         String?               @db.VarChar(50)
-  authUserId        String?               @map("auth_user_id")
+  id                Int                   @map("_id") @db.Int @id
+  active            Int                   @default(1) @db.Int
+  title             String                @db.String
+  domain            String                @unique @db.String
+  port              Int                   @db.Int
+  dbExists          Int                   @default(0) @map("db_exists") @db.Int
+  apiSecret         String                @map("api_secret") @db.String
+  enable            String                @db.String
+  showPlugins       String                @map("show_plugins") @db.String
+  mmconnectUsername String?               @map("mmconnect_username") @db.String
+  mmconnectPassword String?               @map("mmconnect_password") @db.String
+  mmconnectServer   String?               @default("EU") @map("mmconnect_server") @db.String
+  bridgeUsername    String?               @map("bridge_username") @db.String
+  bridgePassword    String?               @map("bridge_password") @db.String
+  bridgeServer      String?               @default("EU") @map("bridge_server") @db.String
+  created           DateTime              @default(now())
+  lastUpdated       DateTime?             @default(now()) @map("last_updated")
+  dbPassword        String?               @map("db_password") @db.String
+  nsversion         String?               @db.String
+  authUserId        String?               @map("auth_user_id") @db.ObjectId
   authUser          User?                 @relation(fields: [authUserId], references: [id])
   environments      NSDomainEnvironment[]
 
@@ -36,73 +36,89 @@ model NSDomain {
 }
 
 model NSDomainEnvironment {
-  id         Int      @id @default(autoincrement())
-  nsDomainId Int      @map("ns_domain_id") @db.UnsignedInt
-  variable   String   @db.VarChar(128)
-  value      String?  @db.VarChar(4096)
+  id         Int      @id @map("_id") @db.Int
+  nsDomainId Int      @map("ns_domain_id") @db.Int
+  variable   String   @db.String
+  value      String?  @db.String
   Domain     NSDomain @relation(fields: [nsDomainId], references: [id])
 
   @@index([nsDomainId], map: "ns_domain_environment_ns_domain_id_fkey")
   @@map("ns_domain_environment")
 }
 
-model User {
-  id               String             @id @default(cuid())
-  name             String?
-  username         String?            @unique
-  email            String?            @unique
-  emailVerified    DateTime?          @map("email_verified")
-  image            String?
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at")
-  loginAllowed     Int?               @map("login_allowed") @db.TinyInt
-  role             String?            @db.VarChar(16)
-  accounts         Account[]
-  Authenticator    Authenticator[]
-  sessions         Session[]
-  nsDomains        NSDomain[]
-  register_request register_request[]
+// model User {
+//   id               String             @id @default(cuid()) @map("_id")
+//   name             String?
+//   username         String?            @unique
+//   email            String?            @unique
+//   emailVerified    DateTime?          @map("email_verified")
+//   image            String?
+//   createdAt        DateTime           @default(now()) @map("created_at")
+//   updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at")
+//   loginAllowed     Int?               @map("login_allowed") @db.Int
+//   role             String?            @db.String
+//   accounts         Account[]
+//   Authenticator    Authenticator[]
+//   sessions         Session[]
+//   nsDomains        NSDomain[]
+//   register_request register_request[]
 
-  @@map("auth_user")
+//   @@map("auth_user")
+// }
+
+model User {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?         @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  // Optional for WebAuthn support
+  Authenticator Authenticator[]
+
+  // NSDomain specific things
+  nsDomains     NSDomain[]
+  register_request_id String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
-  id                       String   @id @default(cuid())
-  userId                   String   @map("user_id")
-  type                     String   @map("type")
-  provider                 String   @map("provider")
-  providerAccountId        String   @map("provider_account_id")
-  refresh_token            String?  @map("refresh_token") @db.Text
-  access_token             String?  @map("access_token") @db.Text
-  expires_at               Int?     @map("expires_at")
-  token_type               String?  @map("token_type")
-  scope                    String?  @map("scope")
-  id_token                 String?  @map("id_token") @db.Text
-  session_state            String?  @map("session_state")
-  refresh_token_expires_in Int?     @map("refresh_token_expires_in")
-  createdAt                DateTime @default(now()) @map("created_at")
-  updatedAt                DateTime @updatedAt @map("updated_at")
-  user                     User     @relation(fields: [userId], references: [id])
-
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
   @@unique([provider, providerAccountId])
-  @@index([userId])
-  @@map("auth_account")
 }
-
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique @map("session_token")
-  userId       String   @map("user_id")
-  expires      DateTime @map("expires")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  user         User     @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@map("auth_session")
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
+  id        String    @id @default(cuid()) @map("_id")
   identifier String   @map("identifier")
   token      String   @map("token")
   expires    DateTime @map("expires")
@@ -112,44 +128,45 @@ model VerificationToken {
 }
 
 model Authenticator {
-  credentialID         String  @unique @map("credential_id")
-  userId               String  @map("user_id")
-  providerAccountId    String  @map("provider_account_id")
-  credentialPublicKey  String  @map("credential_public_key")
-  counter              Int     @map("counter")
-  credentialDeviceType String  @map("credential_device_type")
-  credentialBackedUp   Boolean @map("credential_backed_up")
-  transports           String? @map("transports")
-  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, credentialID])
-  @@map("auth_authenticator")
+  credentialID         String  @id @map("_id")
+  userId               String  @db.ObjectId
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@unique([userId, credentialID])
 }
 
 model register_email_validation {
-  id              Int      @id @default(autoincrement())
-  email_address   String   @db.VarChar(128)
-  validation_code String   @db.VarChar(16)
-  sent_at         DateTime @default(now()) @db.Timestamp(0)
+  id              Int      @id @map("_id")
+  email_address   String   @db.String
+  validation_code String   @db.String 
+  sent_at         DateTime @default(now())
 }
 
 model register_request {
-  id              Int       @id @default(autoincrement())
-  owner_name      String    @db.VarChar(128)
-  owner_email     String    @db.VarChar(128)
-  subdomain       String    @db.VarChar(32)
-  api_secret      String    @db.VarChar(64)
-  title           String?   @db.VarChar(128)
-  data_source     String    @db.VarChar(32)
-  dexcom_server   String?   @db.VarChar(2)
-  dexcom_username String?   @db.VarChar(128)
-  dexcom_password String?   @db.VarChar(128)
-  status          String    @default("pending") @db.VarChar(16)
-  requested_at    DateTime  @default(now()) @db.Timestamp(0)
-  chnged_at       DateTime? @default(now()) @db.Timestamp(0)
-  chnged_by       String?
-  auth_user       User?     @relation(fields: [chnged_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "registe_rqus_auth_user_id_fk")
+  id              Int       @id @map("_id") @db.Int
+  owner_name      String    @db.String
+  owner_email     String    @db.String
+  subdomain       String    @db.String
+  api_secret      String    @db.String
+  title           String?   @db.String
+  data_source     String    @db.String
+  dexcom_server   String?   @db.String
+  dexcom_username String?   @db.String
+  dexcom_password String?   @db.String
+  status          String    @default("pending") @db.String
+  requested_at    DateTime  @default(now())
+  chnged_at       DateTime? @default(now())
+  changed_by       String?
+  // auth_user       User?     @relation(fields: [changed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "registe_rqus_auth_user_id_fk")
+  auth_user_id String? @map("registe_rqus_auth_user_id_fk")
 
-  @@index([chnged_by], map: "registe_rqus_auth_user_id_fk")
+  @@index([changed_by], map: "registe_rqus_auth_user_id_fk")
 }
 

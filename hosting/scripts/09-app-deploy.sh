@@ -62,7 +62,6 @@ PORKBUN_SECRET_KEY=$(jq -r '.porkbun_secret_key' "$CONFIG_FILE")
 cat > "$SETUP_DIR/.env" << EOF
 # Database Configuration
 DATABASE_URL="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@localhost:3306/nightscout"
-SHADOW_DATABASE_URL="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@localhost:3306/prisma_shadow"
 
 # NextAuth Configuration
 AUTH_SECRET="${AUTH_SECRET}"

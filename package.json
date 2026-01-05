@@ -52,7 +52,7 @@
         "@storybook/addon-docs": "^8.6.14",
         "@storybook/addon-essentials": "^8.6.14",
         "@storybook/addon-interactions": "^8.6.14",
-        "@storybook/addon-onboarding": "^10.1.4",
+        "@storybook/addon-onboarding": "^10.1.11",
         "@storybook/addon-themes": "^8.6.14",
         "@storybook/blocks": "^8.6.14",
         "@storybook/nextjs": "^8.6.14",

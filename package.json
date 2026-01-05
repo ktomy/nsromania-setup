@@ -35,7 +35,7 @@
         "next": "^15.5.9",
         "next-auth": "5.0.0-beta.30",
         "next-extra": "^0.6.5",
-        "next-intl": "^4.6.1",
+        "next-intl": "^4.7.0",
         "pm2": "^6.0.13",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",

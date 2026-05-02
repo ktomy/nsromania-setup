@@ -8,7 +8,7 @@
     "requests": "Cereri de înregistrare"
   },
   "DomainPage": {
-    "actionsButtonLabel": "Options",
+    "actionsButtonLabel": "Opțiuni",
     "advancedSettings": "Setări avansate (variabile de mediu)",
     "basicData": "Date de bază",
     "destroy": "Distrugeți",
@@ -17,8 +17,8 @@
     "loading": "Se încarcă...",
     "start": "Porniți",
     "stop": "Opriți",
-    "welcome": "Greet",
-    "delete": "Delete"
+    "welcome": "Salut",
+    "delete": "Ștergeți"
   },
   "DomainsPage": {
     "actionFailed": "Acțiunea a eșuat",
@@ -45,7 +45,7 @@
     "apiSecret": "Secret API",
     "cancel": "Anulează",
     "dataSource": "Sursă de date",
-    "defaultVersion": "Default",
+    "defaultVersion": "Implicit",
     "dexcomPassword": "Parolă Dexcom",
     "dexcomServer": "Server Dexcom",
     "dexcomUsername": "Nume utilizator Dexcom",
@@ -53,7 +53,7 @@
     "enable": "Activează",
     "environments": "Mediu",
     "loading": "Se încarcă...",
-    "nsversion": "Nightscout Version",
+    "nsversion": "Versiunea Nightscout",
     "owner": "Proprietar",
     "remove": "Elimină",
     "save": "Salvează",
@@ -61,12 +61,12 @@
     "title": "Titlu",
     "value": "Valoare",
     "variable": "Variabilă",
-    "notSignedIn": "Please sign in first",
-    "notAuthorized": "Not authorized"
+    "notSignedIn": "Vă rugăm să vă autentificați mai întâi",
+    "notAuthorized": "Neautorizat"
   },
   "HomePage": {
     "title": "Salut, lume!",
-    "welcomeMessage": "Welcome to Nightscout Romania, {name} ({role}), id: {id}!"
+    "welcomeMessage": "Bine ați venit la Nightscout România, {name} ({role}), id: {id}!"
   },
   "LocaleSwitcher": {
     "en": "Engleza",
@@ -100,13 +100,13 @@
     "contactMessage": "Dacă aveți întrebări, vă rugăm să ne contactați la",
     "dataSource": "Sursă de date",
     "details": {
-      "apiSecret": "This is like a password which will be used to make changes to the website, e.g. to enter carbs, to upload glucose values through xDrip or to update the profile (basal rates, glucose targets, etc). Keep this password safe. This field must be at least 12 characters long, it can contain capital letters, small letters, digits, dash, underline or dot",
-      "dataSource": "Data Source",
+      "apiSecret": "Aceasta este o parolă care va fi folosită pentru a face modificări la site-ul web, spre exemplu pentru a introduce carbohidrați, pentru a încărca valorile glicemiei prin xDrip sau pentru a actualiza profilul (rate bazale, ținte de glucoză șamd). Păstrați această parolă într-un loc sigur. Acest câmp trebuie să aibă cel puțin 12 caractere lungime, poate conține litere mari, litere mici, cifre, dash, underline sau punct",
+      "dataSource": "Sursa de date",
       "dexcom": "Dexcom",
-      "dexcomPassword": "Dexcom Password",
-      "dexcomServer": "Dexcom Server",
-      "dexcomUsername": "Dexcom Username",
-      "emailValidationCode": "Fill in the validation code you received by email. Open your inbox, check it for the email you received from this website, copy the validation code and paste it in this field. We need this code in order to make sure that the email add-resss you entered earlier is indeed yours",
+      "dexcomPassword": "Parolă Dexcom",
+      "dexcomServer": "Server Dexcom",
+      "dexcomUsername": "Utilizator Dexcom",
+      "emailValidationCode": "Completați codul de validare pe care l-ați primit prin email. Deschide-ți căsuța poștală, verificați-o pentru mailul primit de la acest site, copiați codul de validare și lipiți-l în acest câmp. Avem nevoie de acest cod pentru a ne asigura că adresa de e-mail pe care ați introdus-o mai devreme este într-adevăr a dumneavoastra",
       "ownerEmail": "Your e-mail address. It has to be a real e-mail address you have access to. We will send a confirmation code to this address to verify that it is yours, so it is impoertant to be careful when filling it in",
       "ownerName": "The name of the Nightscout website owner, preferrably the one by which the administrators could find you on Facebook or other social media platforms in case we need to contact you",
       "subDomain": "Subdomain is the first part of your Nightscout website. e.g. if you enter john, your Nightscout website will be john.nsromania.info , this name has to be unique, e.g. maria is already taken. You can only small letters, digits and dashes when filling it in. an example would be my-bg , then the website will be my-bd.nsromania.info",

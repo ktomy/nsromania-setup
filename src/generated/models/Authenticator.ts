@@ -213,7 +213,7 @@ export type AuthenticatorGroupByOutputType = {
   _max: AuthenticatorMaxAggregateOutputType | null
 }
 
-type GetAuthenticatorGroupByPayload<T extends AuthenticatorGroupByArgs> = Prisma.PrismaPromise<
+export type GetAuthenticatorGroupByPayload<T extends AuthenticatorGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AuthenticatorGroupByOutputType, T['by']> &
       {
@@ -1206,6 +1206,11 @@ export type AuthenticatorFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` Authenticators.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of Authenticators.
+   */
   distinct?: Prisma.AuthenticatorScalarFieldEnum | Prisma.AuthenticatorScalarFieldEnum[]
 }
 

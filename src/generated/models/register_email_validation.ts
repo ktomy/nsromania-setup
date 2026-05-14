@@ -185,7 +185,7 @@ export type Register_email_validationGroupByOutputType = {
   _max: Register_email_validationMaxAggregateOutputType | null
 }
 
-type GetRegister_email_validationGroupByPayload<T extends register_email_validationGroupByArgs> = Prisma.PrismaPromise<
+export type GetRegister_email_validationGroupByPayload<T extends register_email_validationGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<Register_email_validationGroupByOutputType, T['by']> &
       {
@@ -908,6 +908,11 @@ export type register_email_validationFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` register_email_validations.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of register_email_validations.
+   */
   distinct?: Prisma.Register_email_validationScalarFieldEnum | Prisma.Register_email_validationScalarFieldEnum[]
 }
 

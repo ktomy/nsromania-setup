@@ -189,7 +189,7 @@ export type NSDomainEnvironmentGroupByOutputType = {
   _max: NSDomainEnvironmentMaxAggregateOutputType | null
 }
 
-type GetNSDomainEnvironmentGroupByPayload<T extends NSDomainEnvironmentGroupByArgs> = Prisma.PrismaPromise<
+export type GetNSDomainEnvironmentGroupByPayload<T extends NSDomainEnvironmentGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<NSDomainEnvironmentGroupByOutputType, T['by']> &
       {
@@ -1065,6 +1065,11 @@ export type NSDomainEnvironmentFindManyArgs<ExtArgs extends runtime.Types.Extens
    * Skip the first `n` NSDomainEnvironments.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of NSDomainEnvironments.
+   */
   distinct?: Prisma.NSDomainEnvironmentScalarFieldEnum | Prisma.NSDomainEnvironmentScalarFieldEnum[]
 }
 

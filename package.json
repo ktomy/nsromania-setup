@@ -82,6 +82,10 @@
         "typescript": "^5.9.3"
     },
     "pnpm": {
-        "overrides": {}
+        "overrides": {
+            "@hono/node-server": "1.19.14",
+            "postcss": "8.5.14",
+            "yaml": "2.9.0"
+        }
     }
 }

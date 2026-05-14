@@ -1,3 +1,4 @@
+import { resolveNightscoutNodeInterpreter } from '@/lib/services/nsnode';
 import { PartialNSDomainWithEnvironments } from '@/types/domains';
 
 interface ProcessInfo {
@@ -48,6 +49,20 @@ export async function isDomainRunning(domain: string): Promise<boolean> {
 export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): Promise<string> {
     // connect to pm2 and start the domain
     const pm2 = await import('pm2');
+    let nsHome = process.env.NS_HOME;
+    if (!nsHome) {
+        throw new Error('NS_HOME environment variable is not set');
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+        if (domain.nsversion !== null) {
+            nsHome += `/${domain.nsversion}/`;
+        } else {
+            nsHome += '/master/';
+        }
+    }
+    const interpreter = await resolveNightscoutNodeInterpreter(nsHome);
+
     return new Promise((resolve, reject) => {
         pm2.connect((err) => {
             if (err) {
@@ -55,14 +70,6 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
                 pm2.disconnect();
                 reject(err);
                 return;
-            }
-            let nsHome = process.env.NS_HOME;
-            if (process.env.NODE_ENV === 'production') {
-                if (domain.nsversion !== null) {
-                    nsHome += `/${domain.nsversion}/`;
-                } else {
-                    nsHome += '/master/';
-                }
             }
 
             let nsEnvironment: { [key: string]: string } = {};
@@ -108,7 +115,7 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
                     script: 'server.js',
                     cwd: nsHome,
                     env: nsEnvironment,
-                    interpreter: process.env.NS_NODE_PATH,
+                    interpreter,
                 },
                 (err, proc) => {
                     if (err) {

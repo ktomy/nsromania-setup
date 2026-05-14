@@ -81,6 +81,7 @@ MONGO_URL="mongodb://root:${MONGO_ROOT_PASSWORD}@localhost:27017/?authSource=adm
 # Nightscout Runtime Configuration
 NS_HOME="${NS_HOME}"
 NS_NODE_PATH="${NS_NODE_PATH}"
+NS_NODE_VERSIONS_DIR="/home/nsromania/.nvm/versions/node"
 
 # Email Service (Brevo)
 BREVO_API_KEY="${BREVO_API_KEY}"

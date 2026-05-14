@@ -1,9 +1,6 @@
 import { auth } from '@/auth';
-import { deleteSubdomain, listSubdomains } from '@/lib/services/dnsmanagement';
-import { getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
-import { deleteVirtualHost, getVirtualHosts } from '@/lib/services/nginxmanagement';
-import { checkMongoDatabaseAndUser, deleteDatabaseAndUser } from '@/lib/services/nsdatbasea';
-import { isDomainRunning, tryStopDomain } from '@/lib/services/nsruntime';
+import { getNSDomainById, isMyDOmain } from '@/lib/services/domains';
+import { destroyDomainInfrastructure } from '@/lib/services/domainLifecycle';
 import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
@@ -50,30 +47,7 @@ export async function POST(req: NextRequest, props: Props) {
     try {
         console.log('Destroying domain:', domain.domain);
 
-        if (await isDomainRunning(domain.domain)) {
-            await tryStopDomain(domain);
-        } else {
-            console.log('Domain is not running, nothing to stop');
-        }
-
-        if ((await getVirtualHosts()).includes(domain.domain)) {
-            await deleteVirtualHost(domain.domain);
-        } else {
-            console.log('Virtual host does not exist, nothing to delete');
-        }
-
-        if ((await listSubdomains()).includes(domain.domain)) {
-            await deleteSubdomain(domain.domain);
-        } else {
-            console.log('Subdomain does not exist, nothing to delete');
-        }
-
-        if (await checkMongoDatabaseAndUser(domain.domain, domain.domain)) {
-            await deleteDatabaseAndUser(domain.domain);
-            updateNSDomain(domain.id, { dbExists: 0 });
-        } else {
-            console.log('Database does not exist, nothing to delete');
-        }
+        await destroyDomainInfrastructure(domain);
 
         return new Response(JSON.stringify('ok'), {
             status: 200,

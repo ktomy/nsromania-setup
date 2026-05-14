@@ -5,7 +5,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import type { Navigation, NavigationItem } from '@toolpad/core/AppProvider';
 import { SessionProvider, signIn, signOut } from 'next-auth/react';
 import { auth } from '../auth';
-import { Domain, DomainAdd, HowToReg } from '@mui/icons-material';
+import { Build, Domain, DomainAdd, HowToReg } from '@mui/icons-material';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
@@ -52,6 +52,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
             title: t('requests'),
             pattern: 'requests{/:id}*',
             icon: <HowToReg />,
+        };
+
+        navigationItemsDict[5] = {
+            segment: 'maintenance',
+            title: t('maintenance'),
+            icon: <Build />,
         };
     }
     navigationItemsDict[3] = {

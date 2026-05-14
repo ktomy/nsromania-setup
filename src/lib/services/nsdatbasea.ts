@@ -6,12 +6,21 @@ interface MongoUser {
     roles: { role: string; db: string }[];
 }
 
-export async function checkMongoDatabaseAndUser(dbName: string, userName: string): Promise<boolean> {
+function createMongoClient() {
     if (!process.env.MONGO_URL) {
         throw new Error('Missing environment variable "MONGO_URL"');
     }
 
-    const client = new MongoClient(process.env.MONGO_URL);
+    const timeoutMs = Number(process.env.MONGO_TIMEOUT_MS ?? 5000);
+
+    return new MongoClient(process.env.MONGO_URL, {
+        connectTimeoutMS: timeoutMs,
+        serverSelectionTimeoutMS: timeoutMs,
+    });
+}
+
+export async function checkMongoDatabaseAndUser(dbName: string, userName: string): Promise<boolean> {
+    const client = createMongoClient();
 
     try {
         await client.connect();
@@ -35,11 +44,7 @@ export async function checkMongoDatabaseAndUser(dbName: string, userName: string
 }
 
 export async function createDatabaseAndUser(name: string, password: string) {
-    if (!process.env.MONGO_URL) {
-        throw new Error('Missing environment variable "MONGO_URL"');
-    }
-
-    const client = new MongoClient(process.env.MONGO_URL);
+    const client = createMongoClient();
 
     try {
         await client.connect();
@@ -74,11 +79,7 @@ export async function createDatabaseAndUser(name: string, password: string) {
 }
 
 export async function deleteDatabaseAndUser(name: string) {
-    if (!process.env.MONGO_URL) {
-        throw new Error('Missing environment variable "MONGO_URL"');
-    }
-
-    const client = new MongoClient(process.env.MONGO_URL);
+    const client = createMongoClient();
 
     try {
         await client.connect();
@@ -99,11 +100,7 @@ export async function deleteDatabaseAndUser(name: string) {
 }
 
 export async function getCollections(dbName: string) {
-    if (!process.env.MONGO_URL) {
-        throw new Error('Missing environment variable "MONGO_URL"');
-    }
-
-    const client = new MongoClient(process.env.MONGO_URL);
+    const client = createMongoClient();
 
     try {
         await client.connect();
@@ -118,15 +115,11 @@ export async function getCollections(dbName: string) {
 }
 
 export async function getLastDbEntry(dbName: string) {
-    if (!process.env.MONGO_URL) {
-        throw new Error('Missing environment variable "MONGO_URL"');
-    }
-
-    if (!checkMongoDatabaseAndUser(dbName, dbName)) {
+    if (!(await checkMongoDatabaseAndUser(dbName, dbName))) {
         return null;
     }
 
-    const client = new MongoClient(process.env.MONGO_URL);
+    const client = createMongoClient();
 
     try {
         await client.connect();
@@ -149,16 +142,48 @@ export async function getLastDbEntry(dbName: string) {
     }
 }
 
-export async function getDbSize(dbName: string) {
-    if (!process.env.MONGO_URL) {
-        throw new Error('Missing environment variable "MONGO_URL"');
+export async function getLastDbEntries(dbNames: string[]) {
+    const lastEntries = new Map<string, Date | null>();
+    const uniqueDbNames = Array.from(new Set(dbNames));
+
+    if (uniqueDbNames.length === 0) {
+        return lastEntries;
     }
 
-    if (!checkMongoDatabaseAndUser(dbName, dbName)) {
+    const client = createMongoClient();
+
+    try {
+        await client.connect();
+
+        for (const dbName of uniqueDbNames) {
+            const collections = await client.db(dbName).listCollections({ name: 'entries' }).toArray();
+            if (collections.length === 0) {
+                lastEntries.set(dbName, null);
+                continue;
+            }
+
+            const lastEntry = await client
+                .db(dbName)
+                .collection('entries')
+                .findOne({}, { sort: { date: -1 }, projection: { date: 1 } });
+            lastEntries.set(dbName, lastEntry?.date ? new Date(lastEntry.date) : null);
+        }
+
+        return lastEntries;
+    } catch (error) {
+        console.error('Error getting last database entries:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+}
+
+export async function getDbSize(dbName: string) {
+    if (!(await checkMongoDatabaseAndUser(dbName, dbName))) {
         return null;
     }
 
-    const client = new MongoClient(process.env.MONGO_URL);
+    const client = createMongoClient();
 
     try {
         await client.connect();

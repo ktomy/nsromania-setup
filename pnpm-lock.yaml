@@ -180,8 +180,8 @@ importers:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react-hooks:
-        specifier: ^5.2.0
-        version: 5.2.0(eslint@9.39.4(jiti@2.7.0))
+        specifier: ^7.1.1
+        version: 7.1.1(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-storybook:
         specifier: ^10.4.0
         version: 10.4.0(eslint@9.39.4(jiti@2.7.0))(storybook@8.6.18(prettier@3.8.3))(typescript@5.9.3)
@@ -3588,8 +3588,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.10.29:
-    resolution: {integrity: sha512-Asa2krT+XTPZINCS+2QcyS8WTkObE77RwkydwF7h6DmnKqbvlalz93m/dnphUyCa6SWSP51VgtEUf2FN+gelFQ==}
+  baseline-browser-mapping@2.10.30:
+    resolution: {integrity: sha512-xjOFN16Ha1+Rz4nFYKqHU/LSB+gx/Vi3yQLX7r7sAW+Wa+8hhF2h4pvqTrTMc8+WcDBEunnUurr46Jvv0jk3Vg==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -3724,6 +3724,9 @@ packages:
 
   caniuse-lite@1.0.30001792:
     resolution: {integrity: sha512-hVLMUZFgR4JJ6ACt1uEESvQN1/dBVqPAKY0hgrV70eN3391K6juAfTjKZLKvOMsx8PxA7gsY1/tLMMTcfFLLpw==}
+
+  caniuse-lite@1.0.30001793:
+    resolution: {integrity: sha512-iwSsYWaCOoh26cV8NwNRViHlrfUvYsHDfRVcbtmw0Kg6PJIZZXwMkj1442FYLBGkeUf1juAsU3DTfxW579mrPA==}
 
   case-sensitive-paths-webpack-plugin@2.4.0:
     resolution: {integrity: sha512-roIFONhcxog0JSSWbvVAh3OocukmSgpqOH6YpMkCvav/ySIV3JKg4Dc8vYtQjYi/UxpNE36r/9v+VqTQqgkYmw==}
@@ -4200,8 +4203,8 @@ packages:
   effect@3.20.0:
     resolution: {integrity: sha512-qMLfDJscrNG8p/aw+IkT9W7fgj50Z4wG5bLBy0Txsxz8iUHjDIkOgO3SV0WZfnQbNG2VJYb0b+rDLMrhM4+Krw==}
 
-  electron-to-chromium@1.5.355:
-    resolution: {integrity: sha512-LUPZhKzZPYSPme1jEYohpkA+ybYCJztr1quAdBd7E7h3+VOBVcKkwwtBJu41nrjawrRzfb8mtMfzWozoaK0ZIQ==}
+  electron-to-chromium@1.5.357:
+    resolution: {integrity: sha512-NHlTIQDK8fmVwHwuIzmXYEJ1Ewq3D9wDNc0cWXxDGysP6Pb21giwGNkxiTifyKy/4SoPuN5l6GLP1W9Sv7zB2g==}
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -4395,12 +4398,6 @@ packages:
     engines: {node: '>=4.0'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9
-
-  eslint-plugin-react-hooks@5.2.0:
-    resolution: {integrity: sha512-+f15FfK64YQwZdJNELETdn5ibXEUQmW1DZL6KXhNnc2heoy/sg9VJJeT7n8TlMWouzWqSWavFkIhHyIbIAEapg==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
 
   eslint-plugin-react-hooks@7.1.1:
     resolution: {integrity: sha512-f2I7Gw6JbvCexzIInuSbZpfdQ44D7iqdWX01FKLvrPgqxoE7oMj8clOfto8U6vYiz4yd5oKu39rRSVOe1zRu0g==}
@@ -11243,7 +11240,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.10.29: {}
+  baseline-browser-mapping@2.10.30: {}
 
   basic-ftp@5.3.1: {}
 
@@ -11330,9 +11327,9 @@ snapshots:
 
   browserslist@4.28.2:
     dependencies:
-      baseline-browser-mapping: 2.10.29
-      caniuse-lite: 1.0.30001792
-      electron-to-chromium: 1.5.355
+      baseline-browser-mapping: 2.10.30
+      caniuse-lite: 1.0.30001793
+      electron-to-chromium: 1.5.357
       node-releases: 2.0.44
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
@@ -11397,6 +11394,8 @@ snapshots:
   camelcase@6.3.0: {}
 
   caniuse-lite@1.0.30001792: {}
+
+  caniuse-lite@1.0.30001793: {}
 
   case-sensitive-paths-webpack-plugin@2.4.0: {}
 
@@ -11860,7 +11859,7 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
 
-  electron-to-chromium@1.5.355: {}
+  electron-to-chromium@1.5.357: {}
 
   elliptic@6.6.1:
     dependencies:
@@ -12212,10 +12211,6 @@ snapshots:
       object.fromentries: 2.0.8
       safe-regex-test: 1.1.0
       string.prototype.includes: 2.0.1
-
-  eslint-plugin-react-hooks@5.2.0(eslint@9.39.4(jiti@2.7.0)):
-    dependencies:
-      eslint: 9.39.4(jiti@2.7.0)
 
   eslint-plugin-react-hooks@7.1.1(eslint@9.39.4(jiti@2.7.0)):
     dependencies:

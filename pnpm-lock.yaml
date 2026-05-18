@@ -77,8 +77,8 @@ importers:
         specifier: 5.0.0-beta.30
         version: 5.0.0-beta.30(next@15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       next-extra:
-        specifier: ^0.6.6
-        version: 0.6.6(next@15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
+        specifier: ^0.7.0
+        version: 0.7.0(next@15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       next-intl:
         specifier: ^4.12.0
         version: 4.12.0(next@15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
@@ -5861,10 +5861,10 @@ packages:
       nodemailer:
         optional: true
 
-  next-extra@0.6.6:
-    resolution: {integrity: sha512-L5A7lUNFgaW2bGUCChNSk2fFwh5MsOdcUCXMcf1SCCaHUmMb2zFYQ6gw0fCjfOZnBaqXGKq1QJyFbnzN9JQIvQ==}
+  next-extra@0.7.0:
+    resolution: {integrity: sha512-zfEXhREyeD3O6EHYJC3sgaDGaeEEFly5EqkCzfL9SQdZqqn1sYN6LUyFOrQw4fk5/L9gab9R5d4cM0+OqEt9qQ==}
     peerDependencies:
-      next: 14 || 15
+      next: 14 || 15 || 16
       react: 18 || 19
 
   next-intl-swc-plugin-extractor@4.12.0:
@@ -14190,7 +14190,7 @@ snapshots:
       next: 15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react: 19.2.6
 
-  next-extra@0.6.6(next@15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6):
+  next-extra@0.7.0(next@15.5.18(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6):
     dependencies:
       '@edge-runtime/cookies': 6.0.0
       '@se-oss/deep-merge': 1.1.0

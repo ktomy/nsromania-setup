@@ -43,7 +43,7 @@
         "react-google-recaptcha-v3": "^1.11.0",
         "react-hook-form": "^7.75.0",
         "semver": "^7.8.0",
-        "vite": "7.3.2",
+        "vite": "7.3.5",
         "zod": "^4.4.3"
     },
     "devDependencies": {

@@ -84,18 +84,16 @@ log_success "MySQL log rotation configured"
 
 # Configure MongoDB log rotation
 cat > /etc/logrotate.d/mongodb-nsromania << 'EOF'
-/var/log/mongodb/*.log {
+/var/log/mongodb/mongod.log {
     daily
-    rotate 7
+    maxsize 100M
+    rotate 14
+    missingok
+    notifempty
     compress
     delaycompress
-    notifempty
-    missingok
-    create 0600 mongodb mongodb
-    sharedscripts
-    postrotate
-        /bin/kill -SIGUSR1 `cat /var/lib/mongodb/mongod.lock 2>/dev/null` 2>/dev/null || true
-    endscript
+    copytruncate
+    create 0640 mongodb mongodb
 }
 EOF
 

@@ -9,3 +9,7 @@ This project can be a template for someone hosting a community-driven [Nightscou
 ## Contributions
 Contrubutions are welcomed
 For details see [CONTRIBUTING](https://github.com/ktomy/nsromania-setup/blob/main/CONTRIBUTING.md)
+
+## Production deployment
+
+Production releases are deployed manually through GitHub Actions. Deployment architecture, safety invariants, server topology, helper-update procedures, recovery guidance, and the last verified production state are documented in [ops/deploy/OPERATIONS.md](ops/deploy/OPERATIONS.md). Read it before any production or CI/CD work.

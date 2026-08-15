@@ -2,6 +2,8 @@
 
 Production deployment is a manually triggered GitHub Actions workflow. It builds and tests an exact `main` commit, creates a checksummed standalone Next.js artifact, uploads it through a restricted SSH key, and activates it with automatic rollback.
 
+Before production work, read the durable topology, permissions, recovery notes, and last verified server snapshot in [OPERATIONS.md](./OPERATIONS.md). That handoff is the authoritative context for future operators and coding agents; this file describes the deployment design and normal procedures.
+
 ## Safety invariants
 
 - Deployment never runs a Prisma migration, `db push`, seed, database CLI, or database health query.

@@ -30,3 +30,5 @@ Recent history uses concise subjects, often Conventional Commit style for depend
 ## Security & Configuration Tips
 
 Do not commit secrets from `.env`, `.env.local`, `.env.production`, or `.private/`. Use `.env.example` for documented configuration only. Treat `hosting/scripts` as production-impacting automation; review hostnames, credentials, firewall changes, and DNS behavior before editing them.
+
+Before any CI/CD, SSH, PM2, production-server, deployment-helper, runtime-version, backup, or recovery work, read `ops/deploy/OPERATIONS.md` and `ops/deploy/README.md` completely. Their production database prohibition, backup requirement, pinned Node/PM2 paths, unusual server permissions, account boundaries, and deployment locks are mandatory. Revalidate dated server facts read-only before relying on them, and never include secret values in documentation or tool output.

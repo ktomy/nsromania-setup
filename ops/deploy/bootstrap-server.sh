@@ -138,6 +138,24 @@ backup_existing_file() {
     fi
 }
 
+record_directory_metadata "$CONTROL_DIR"
+backup_existing_file "$DEPLOYMENT_LOCK"
+
+if [[ -e "$CONTROL_DIR" || -L "$CONTROL_DIR" ]]; then
+    [[ -d "$CONTROL_DIR" && ! -L "$CONTROL_DIR" && "$(stat -c '%U:%G:%a' "$CONTROL_DIR")" == 'root:root:711' ]] ||
+        fail 'deployment control directory has unexpected ownership or mode'
+else
+    install -d -o root -g root -m 0711 "$CONTROL_DIR"
+fi
+if [[ ! -e "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" ]]; then
+    (set -o noclobber; : > "$DEPLOYMENT_LOCK") || fail 'unable to create the deployment lock without replacing another file'
+fi
+[[ -f "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" && \
+    "$(stat -c '%U:%G:%a:%h' "$DEPLOYMENT_LOCK")" == 'root:root:600:1' ]] ||
+    fail 'deployment lock has unexpected ownership, mode, or link count'
+exec 8<"$DEPLOYMENT_LOCK"
+flock -n 8 || fail 'a production deployment or helper update is active; bootstrap did not replace helpers'
+
 targets=(
     /usr/local/sbin/nsromania-activate-release
     /usr/local/libexec/nsromania-deploy-command
@@ -160,7 +178,6 @@ targets=(
     /etc/subgid
     /etc/subgid-
     "$UPLOAD_LOCK"
-    "$DEPLOYMENT_LOCK"
     "$HELPER_UPDATE_LOCK"
     "$AUTHORIZED_KEYS"
 )
@@ -173,7 +190,6 @@ for directory in \
     "$BACKUP_DIR" \
     "$INCOMING_DIR" \
     "$STAGING_DIR" \
-    "$CONTROL_DIR" \
     "$HELPER_UPDATE_UPLOAD_DIR" \
     "$HELPER_UPDATE_WORK_DIR" \
     "$DEPLOY_HOME" \
@@ -183,16 +199,6 @@ for directory in \
     /etc/sudoers.d; do
     record_directory_metadata "$directory"
 done
-
-install -d -o root -g root -m 0711 "$CONTROL_DIR"
-if [[ ! -e "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" ]]; then
-    (set -o noclobber; : > "$DEPLOYMENT_LOCK") || fail 'unable to create the deployment lock without replacing another file'
-fi
-[[ -f "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" && \
-    "$(stat -c '%U:%G:%a:%h' "$DEPLOYMENT_LOCK")" == 'root:root:600:1' ]] ||
-    fail 'deployment lock has unexpected ownership, mode, or link count'
-exec 8<"$DEPLOYMENT_LOCK"
-flock -n 8 || fail 'a production deployment or helper update is active; bootstrap did not replace helpers'
 
 if ! getent passwd "$DEPLOY_USER" >/dev/null; then
     useradd \

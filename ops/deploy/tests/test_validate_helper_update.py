@@ -181,7 +181,8 @@ class ValidateHelperUpdateTests(unittest.TestCase):
     def test_receiver_normalizes_manifest_modes_for_stat_output(self) -> None:
         receiver = (DEPLOY_DIR / 'update-deploy-helpers-on-server.sh').read_text(encoding='utf8')
         mode_probe = Path(self.temp_directory.name) / 'mode-probe'
-        mode_probe.touch(mode=0o755)
+        mode_probe.touch()
+        mode_probe.chmod(0o755)
         actual_mode = subprocess.check_output(['stat', '-c', '%a', mode_probe], text=True).strip()
 
         self.assertEqual(actual_mode, VALIDATOR.EXPECTED_FILES['activate-release.sh']['mode'].lstrip('0'))

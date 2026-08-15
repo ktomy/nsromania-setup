@@ -70,6 +70,15 @@ fail() {
     return 1
 }
 
+private_directory_has_safe_metadata() {
+    local directory="$1"
+    local owner_group="$2"
+    local metadata
+
+    metadata="$(stat -c '%U:%G:%a' "$directory")"
+    [[ "$metadata" == "$owner_group:700" || "$metadata" == "$owner_group:2700" ]]
+}
+
 pm2() {
     env -i \
         HOME='/root' \
@@ -237,8 +246,8 @@ done
 for required_directory in "$BASE_DIR" "$LIVE_DIR" "$BACKUP_DIR" "$UPLOAD_ROOT" "$CONTROL_DIR" "$WORK_ROOT"; do
     [[ -d "$required_directory" && ! -L "$required_directory" ]] || fail "unsafe or missing directory: $required_directory"
 done
-[[ "$(stat -c '%U:%G:%a' "$UPLOAD_ROOT")" == 'ktomy:ktomy:700' ]] || fail 'helper upload root has unexpected ownership or mode'
-[[ "$(stat -c '%U:%G:%a' "$WORK_ROOT")" == 'root:root:700' ]] || fail 'helper work root has unexpected ownership or mode'
+private_directory_has_safe_metadata "$UPLOAD_ROOT" 'ktomy:ktomy' || fail 'helper upload root has unexpected ownership or mode'
+private_directory_has_safe_metadata "$WORK_ROOT" 'root:root' || fail 'helper work root has unexpected ownership or mode'
 [[ -f "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" && \
     "$(stat -c '%U:%G:%a:%h' "$DEPLOYMENT_LOCK")" == 'root:root:600:1' ]] ||
     fail 'deployment lock has unexpected ownership, mode, or link count'
@@ -264,7 +273,7 @@ readonly REAL_ARCHIVE="$(realpath -e -- "$ARCHIVE")"
 [[ "$REAL_ARCHIVE" == "$ARCHIVE" && -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] || fail 'package is missing or reached through a link'
 readonly ARCHIVE_DIRECTORY="$(dirname -- "$ARCHIVE")"
 [[ "$(realpath -e -- "$ARCHIVE_DIRECTORY")" == "$ARCHIVE_DIRECTORY" ]] || fail 'package staging directory is reached through a link'
-[[ "$(stat -c '%U:%G:%a' "$ARCHIVE_DIRECTORY")" == 'ktomy:ktomy:700' ]] ||
+private_directory_has_safe_metadata "$ARCHIVE_DIRECTORY" 'ktomy:ktomy' ||
     fail 'package staging directory has unexpected ownership or mode'
 [[ "$(stat -c '%U:%G:%a:%h' "$ARCHIVE")" == 'ktomy:ktomy:600:1' ]] ||
     fail 'package has unexpected ownership, mode, or link count'

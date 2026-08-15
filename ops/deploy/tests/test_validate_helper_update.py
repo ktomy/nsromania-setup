@@ -188,6 +188,12 @@ class ValidateHelperUpdateTests(unittest.TestCase):
         self.assertEqual(actual_mode, VALIDATOR.EXPECTED_FILES['activate-release.sh']['mode'].lstrip('0'))
         self.assertGreaterEqual(receiver.count('${MODES[$index]#0}'), 2)
 
+    def test_receiver_accepts_only_private_plain_or_setgid_directories(self) -> None:
+        receiver = (DEPLOY_DIR / 'update-deploy-helpers-on-server.sh').read_text(encoding='utf8')
+        self.assertIn('"$owner_group:700"', receiver)
+        self.assertIn('"$owner_group:2700"', receiver)
+        self.assertEqual(receiver.count('private_directory_has_safe_metadata '), 3)
+
     def test_receiver_fault_restores_existing_and_preserves_new_targets(self) -> None:
         receiver = (DEPLOY_DIR / 'update-deploy-helpers-on-server.sh').read_text(encoding='utf8')
         fail_function = receiver[receiver.index('fail() {') : receiver.index('\npm2() {')]

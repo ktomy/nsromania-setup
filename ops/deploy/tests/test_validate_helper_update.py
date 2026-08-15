@@ -164,6 +164,7 @@ class ValidateHelperUpdateTests(unittest.TestCase):
             'helper-updates',
         ):
             self.assertIn(required, bootstrap)
+        self.assertIn("'root:root:2711'", bootstrap)
 
     def test_activation_and_helper_update_share_the_deployment_lock(self) -> None:
         activation = (DEPLOY_DIR / 'activate-release.sh').read_text(encoding='utf8')

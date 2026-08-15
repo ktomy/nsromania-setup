@@ -142,7 +142,10 @@ record_directory_metadata "$CONTROL_DIR"
 backup_existing_file "$DEPLOYMENT_LOCK"
 
 if [[ -e "$CONTROL_DIR" || -L "$CONTROL_DIR" ]]; then
-    [[ -d "$CONTROL_DIR" && ! -L "$CONTROL_DIR" && "$(stat -c '%U:%G:%a' "$CONTROL_DIR")" == 'root:root:711' ]] ||
+    CONTROL_DIRECTORY_METADATA="$(stat -c '%U:%G:%a' "$CONTROL_DIR")"
+    readonly CONTROL_DIRECTORY_METADATA
+    [[ -d "$CONTROL_DIR" && ! -L "$CONTROL_DIR" && \
+        ( "$CONTROL_DIRECTORY_METADATA" == 'root:root:711' || "$CONTROL_DIRECTORY_METADATA" == 'root:root:2711' ) ]] ||
         fail 'deployment control directory has unexpected ownership or mode'
 else
     install -d -o root -g root -m 0711 "$CONTROL_DIR"

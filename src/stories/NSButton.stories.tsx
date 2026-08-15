@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 import WavingHandRoundedIcon from '@mui/icons-material/WavingHandRounded';
-import NSButton from '@/lib/components/general/NSButton';
+import NSButton from '../lib/components/general/NSButton';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {

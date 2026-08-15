@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import NSInput from '@/lib/components/general/NSInput/NSInput';
+import NSInput from '../lib/components/general/NSInput/NSInput';
 import { MenuItem } from '@mui/material';
 // import ModalEdit from '@/lib/components/ModalEdit/ModalEdit';
 

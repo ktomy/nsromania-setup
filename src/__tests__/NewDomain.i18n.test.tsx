@@ -13,11 +13,6 @@ global.fetch = jest.fn(() =>
     })
 ) as jest.Mock;
 
-// Mock window.location.href
-Object.defineProperty(window, 'location', {
-    value: { href: jest.fn() },
-});
-
 // Mock next-intl
 jest.mock('next-intl', () => ({
     useTranslations: () => createMockTranslator(),

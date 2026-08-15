@@ -1,5 +1,5 @@
 import { auth } from '@/auth';
-import { deleteNSDomainAndRelated, getNSDomainById, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
+import { deleteNSDomainAndRelated, getNSDomainById, isMyDOmain } from '@/lib/services/domains';
 import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
@@ -46,8 +46,6 @@ export async function POST(req: NextRequest, props: Props) {
     try {
         console.log('Deleting domain from the database:', domain.domain);
         await deleteNSDomainAndRelated(domain.id);
-
-
 
         return new Response(JSON.stringify('ok'), {
             status: 200,

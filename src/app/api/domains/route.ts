@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const user = session.user as User;
     if (user.role !== 'admin') {
         // get number of domains for this user
-        let domains = await getNSDomainsByUserId(user.id);
+        const domains = await getNSDomainsByUserId(user.id);
         if (domains.length >= 5) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), {
                 status: 401,

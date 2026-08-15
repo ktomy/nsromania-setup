@@ -4,5 +4,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-python3 -m unittest "$SCRIPT_DIR/tests/test_validate_artifact.py"
+python3 -m unittest \
+    "$SCRIPT_DIR/tests/test_validate_artifact.py" \
+    "$SCRIPT_DIR/tests/test_validate_helper_update.py"
 "$SCRIPT_DIR/tests/test-shell-helpers.sh"

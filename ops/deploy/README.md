@@ -72,3 +72,19 @@ The activation sequence is:
 7. On failure, preserve the failed release, restore the previous directory, restart it, and return a failed workflow result.
 
 No deployment or rollback invokes `deploy_on_server.sh`, `hosting/vps-setup.sh`, or any database setup script.
+
+## Updating the server-side deployment helpers
+
+After the one-time bootstrap has installed the root receiver, update all server-side deployment helpers by running this single command from a clean repository checkout:
+
+```bash
+./ops/deploy/update-server-helpers.sh
+```
+
+The command runs the deployment-helper tests, packages only the eight explicitly allowlisted helper files, uploads the checksummed package as the ordinary `ktomy` account, and opens an interactive SSH session for `sudo` to request the administrator password. No sudo password is stored or passed by the script, and the GitHub deployment key cannot invoke this receiver.
+
+The root receiver validates the complete package with its already-installed trusted validator, checks the candidate shell/Python/Node syntax and the narrow sudo rule, and creates a timestamped backup under `/var/log/nightscout/backup` before replacing any helper. Candidate code is not executed during validation. Installation is atomic per file and automatically restores every previous helper if a validation or installation check fails. The uploaded package and all backups are retained.
+
+Updating helpers does not replace the application, restart it, mutate its PM2 definition, or run an application/database command. The receiver requires the one `setup-ns` root PM2 process to remain at the same PID and requires the application to be healthy before and after the update.
+
+Run `bootstrap-server.sh` again only for initial receiver installation, recovery, or deployment-key/account changes. Its normal re-run also backs up every existing production file it replaces.

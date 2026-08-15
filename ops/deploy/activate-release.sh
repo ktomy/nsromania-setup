@@ -143,13 +143,15 @@ done
 
 [[ -f "$LIVE_DIR/.env" && ! -L "$LIVE_DIR/.env" ]] || fail 'live production environment file is missing or unsafe'
 [[ -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] || fail 'uploaded artifact is missing or unsafe'
+[[ -f "$LOCK_FILE" && ! -L "$LOCK_FILE" && "$(stat -c '%U:%G:%a:%h' "$LOCK_FILE")" == 'root:root:600:1' ]] ||
+    fail 'deployment lock has unexpected ownership, mode, or link count'
 
 for deployment_directory in "$LIVE_DIR" "$BACKUP_DIR" "$STAGING_DIR"; do
     [[ "$(stat -c '%d' "$deployment_directory")" == "$(stat -c '%d' "$BASE_DIR")" ]] ||
         fail "deployment directory is not on the application filesystem: $deployment_directory"
 done
 
-exec 9>"$LOCK_FILE"
+exec 9<"$LOCK_FILE"
 flock -n 9 || fail 'another production deployment is active'
 
 CURRENT_KIND="$(classify_release "$LIVE_DIR")" || fail 'current release is neither supported legacy nor managed format'
@@ -260,7 +262,7 @@ rollback() {
     local restored_kind=''
     (( original_status != 0 )) || original_status=1
 
-    trap - ERR INT TERM
+    trap - ERR HUP INT TERM
     set +e
     echo 'Activation failed; restoring the previous release.' >&2
 
@@ -303,7 +305,7 @@ rollback() {
     exit "$original_status"
 }
 
-trap rollback ERR INT TERM
+trap rollback ERR HUP INT TERM
 
 pm2 stop "$PROCESS_NAME" >/dev/null
 mv -T -- "$LIVE_DIR" "$PREVIOUS_RELEASE"
@@ -311,7 +313,7 @@ mv -T -- "$CANDIDATE_DIR" "$LIVE_DIR"
 start_panel 'managed'
 wait_for_release_health "$COMMIT_SHA"
 
-trap - ERR INT TERM
+trap - ERR HUP INT TERM
 
 echo "Deployment completed: $COMMIT_SHA"
 echo "Previous release preserved: $PREVIOUS_RELEASE"

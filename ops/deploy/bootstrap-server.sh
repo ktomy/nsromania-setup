@@ -12,6 +12,8 @@ readonly BACKUP_DIR="$BASE_DIR/backup"
 readonly INCOMING_DIR="$BASE_DIR/incoming"
 readonly STAGING_DIR="$BASE_DIR/.staging"
 readonly CONTROL_DIR="$BASE_DIR/.deployment-control"
+readonly HELPER_UPDATE_UPLOAD_DIR="$BASE_DIR/helper-updates"
+readonly HELPER_UPDATE_WORK_DIR="$CONTROL_DIR/helper-update-work"
 readonly NODE='/usr/local/nvm/versions/node/v22.12.0/bin/node'
 readonly NPM='/usr/local/nvm/versions/node/v22.12.0/bin/npm'
 readonly PM2_CLI='/usr/local/lib/node_modules/pm2/bin/pm2'
@@ -20,6 +22,8 @@ readonly DEPLOY_USER='nsdeploy'
 readonly DEPLOY_HOME="$BASE_DIR/.github-deploy-home"
 readonly AUTHORIZED_KEYS="$DEPLOY_HOME/.ssh/authorized_keys"
 readonly UPLOAD_LOCK="$CONTROL_DIR/upload.lock"
+readonly DEPLOYMENT_LOCK="$CONTROL_DIR/deployment.lock"
+readonly HELPER_UPDATE_LOCK="$CONTROL_DIR/helper-update.lock"
 readonly KEY_COMMENT='github-actions-nsromania-deploy'
 
 fail() {
@@ -52,6 +56,7 @@ for command_name in awk cp df find flock getent install mktemp mv python3 sha256
 done
 
 ssh-keygen -lf "$PUBLIC_KEY_FILE" -E sha256 >/dev/null || fail 'deployment public key is invalid'
+getent passwd ktomy >/dev/null || fail 'administrative upload account ktomy is missing'
 
 panel_record_count="$(
     env -i \
@@ -139,6 +144,8 @@ targets=(
     /usr/local/libexec/nsromania-validate-artifact
     /usr/local/libexec/nsromania-health-check.mjs
     /usr/local/libexec/nsromania-port-check.mjs
+    /usr/local/sbin/nsromania-update-deploy-helpers
+    /usr/local/libexec/nsromania-validate-helper-update
     /etc/sudoers.d/nsromania-github-deploy
     /etc/passwd
     /etc/passwd-
@@ -153,6 +160,8 @@ targets=(
     /etc/subgid
     /etc/subgid-
     "$UPLOAD_LOCK"
+    "$DEPLOYMENT_LOCK"
+    "$HELPER_UPDATE_LOCK"
     "$AUTHORIZED_KEYS"
 )
 
@@ -165,6 +174,8 @@ for directory in \
     "$INCOMING_DIR" \
     "$STAGING_DIR" \
     "$CONTROL_DIR" \
+    "$HELPER_UPDATE_UPLOAD_DIR" \
+    "$HELPER_UPDATE_WORK_DIR" \
     "$DEPLOY_HOME" \
     "$DEPLOY_HOME/.ssh" \
     /usr/local/libexec \
@@ -172,6 +183,16 @@ for directory in \
     /etc/sudoers.d; do
     record_directory_metadata "$directory"
 done
+
+install -d -o root -g root -m 0711 "$CONTROL_DIR"
+if [[ ! -e "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" ]]; then
+    (set -o noclobber; : > "$DEPLOYMENT_LOCK") || fail 'unable to create the deployment lock without replacing another file'
+fi
+[[ -f "$DEPLOYMENT_LOCK" && ! -L "$DEPLOYMENT_LOCK" && \
+    "$(stat -c '%U:%G:%a:%h' "$DEPLOYMENT_LOCK")" == 'root:root:600:1' ]] ||
+    fail 'deployment lock has unexpected ownership, mode, or link count'
+exec 8<"$DEPLOYMENT_LOCK"
+flock -n 8 || fail 'a production deployment or helper update is active; bootstrap did not replace helpers'
 
 if ! getent passwd "$DEPLOY_USER" >/dev/null; then
     useradd \
@@ -194,8 +215,10 @@ readonly DEPLOY_GROUP="$(id -gn "$DEPLOY_USER")"
 install -d -o root -g root -m 0700 "$BACKUP_DIR"
 install -d -o "$DEPLOY_USER" -g "$DEPLOY_GROUP" -m 0700 "$INCOMING_DIR"
 install -d -o root -g root -m 0700 "$STAGING_DIR"
-install -d -o root -g root -m 0711 "$CONTROL_DIR"
+install -d -o ktomy -g ktomy -m 0700 "$HELPER_UPDATE_UPLOAD_DIR"
+install -d -o root -g root -m 0700 "$HELPER_UPDATE_WORK_DIR"
 install -o "$DEPLOY_USER" -g "$DEPLOY_GROUP" -m 0600 /dev/null "$UPLOAD_LOCK"
+install -o root -g root -m 0600 /dev/null "$HELPER_UPDATE_LOCK"
 install -d -o root -g root -m 0755 /usr/local/libexec /usr/local/sbin
 
 install -o root -g root -m 0755 "$SCRIPT_DIR/activate-release.sh" /usr/local/sbin/nsromania-activate-release
@@ -203,6 +226,12 @@ install -o root -g root -m 0755 "$SCRIPT_DIR/authorized-command.sh" /usr/local/l
 install -o root -g root -m 0755 "$SCRIPT_DIR/validate-artifact.py" /usr/local/libexec/nsromania-validate-artifact
 install -o root -g root -m 0755 "$SCRIPT_DIR/health-check.mjs" /usr/local/libexec/nsromania-health-check.mjs
 install -o root -g root -m 0755 "$SCRIPT_DIR/port-check.mjs" /usr/local/libexec/nsromania-port-check.mjs
+install -o root -g root -m 0755 \
+    "$SCRIPT_DIR/update-deploy-helpers-on-server.sh" \
+    /usr/local/sbin/nsromania-update-deploy-helpers
+install -o root -g root -m 0755 \
+    "$SCRIPT_DIR/validate-helper-update.py" \
+    /usr/local/libexec/nsromania-validate-helper-update
 
 readonly SUDOERS_TEMP="$(mktemp /etc/sudoers.d/.nsromania-github-deploy.XXXXXXXX)"
 cleanup_sudoers_temp() {

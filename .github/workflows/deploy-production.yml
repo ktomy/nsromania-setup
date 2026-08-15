@@ -1,0 +1,232 @@
+name: Deploy production
+run-name: Deploy ${{ github.sha }} to production by @${{ github.actor }}
+
+on:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: production-deployment
+    cancel-in-progress: false
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    guard:
+        name: Validate deployment ref
+        runs-on: ubuntu-22.04
+        timeout-minutes: 5
+        steps:
+            - name: Require the main branch
+              env:
+                  DEPLOY_REF: ${{ github.ref }}
+              run: |
+                  set -euo pipefail
+                  if [[ "$DEPLOY_REF" != 'refs/heads/main' ]]; then
+                      echo "::error::Production deployments are permitted only from main; got $DEPLOY_REF"
+                      exit 1
+                  fi
+
+    build:
+        name: Build release
+        needs: guard
+        runs-on: ubuntu-22.04
+        timeout-minutes: 45
+        outputs:
+            artifact_sha256: ${{ steps.package.outputs.sha256 }}
+            artifact_size: ${{ steps.package.outputs.size }}
+
+        steps:
+            - name: Check out the requested commit
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  ref: ${{ github.sha }}
+                  fetch-depth: 1
+                  persist-credentials: false
+
+            - name: Set up Node.js
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: '22.12.0'
+                  check-latest: false
+
+            - name: Install pnpm
+              run: |
+                  set -euo pipefail
+                  npm install --global pnpm@10.32.0
+                  test "$(node --version)" = 'v22.12.0'
+                  test "$(pnpm --version)" = '10.32.0'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Generate Prisma client without a production database
+              env:
+                  DATABASE_URL: mysql://dummy:dummy@127.0.0.1:9/dummy
+              run: pnpm exec prisma generate
+
+            - name: Run tests
+              run: pnpm run test
+
+            - name: Test deployment safeguards
+              run: ops/deploy/test.sh
+
+            - name: Build standalone application
+              env:
+                  NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ vars.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}
+              run: |
+                  set -euo pipefail
+                  test -n "$NEXT_PUBLIC_RECAPTCHA_SITE_KEY"
+                  pnpm run build
+                  test -s .next/standalone/server.js
+
+            - name: Package and smoke-test the exact release
+              id: package
+              env:
+                  ARTIFACT_PATH: ${{ runner.temp }}/setup-nsromania-${{ github.sha }}.tar.gz
+              run: |
+                  set -euo pipefail
+
+                  ops/deploy/build-artifact.sh "$ARTIFACT_PATH" "$GITHUB_SHA"
+                  ops/deploy/smoke-artifact.sh "$ARTIFACT_PATH" "$GITHUB_SHA"
+
+                  artifact_sha256="$(sha256sum "$ARTIFACT_PATH" | awk '{print $1}')"
+                  artifact_size="$(stat -c '%s' "$ARTIFACT_PATH")"
+
+                  [[ "$artifact_sha256" =~ ^[0-9a-f]{64}$ ]]
+                  [[ "$artifact_size" =~ ^[1-9][0-9]*$ ]]
+
+                  {
+                      echo "sha256=$artifact_sha256"
+                      echo "size=$artifact_size"
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Upload opaque release artifact
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+              with:
+                  path: ${{ runner.temp }}/setup-nsromania-${{ github.sha }}.tar.gz
+                  archive: false
+                  if-no-files-found: error
+                  retention-days: 7
+
+    deploy:
+        name: Deploy release
+        needs: [guard, build]
+        runs-on: ubuntu-22.04
+        timeout-minutes: 20
+        environment:
+            name: production
+            url: ${{ vars.PRODUCTION_URL }}
+
+        steps:
+            - name: Download opaque release artifact
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+              with:
+                  name: setup-nsromania-${{ github.sha }}.tar.gz
+                  path: ${{ runner.temp }}/production-release
+                  skip-decompress: true
+
+            - name: Upload and activate through restricted SSH
+              env:
+                  ARTIFACT_PATH: ${{ runner.temp }}/production-release/setup-nsromania-${{ github.sha }}.tar.gz
+                  ARTIFACT_SHA256: ${{ needs.build.outputs.artifact_sha256 }}
+                  ARTIFACT_SIZE: ${{ needs.build.outputs.artifact_size }}
+                  SSH_HOST: ${{ vars.PRODUCTION_SSH_HOST }}
+                  SSH_PORT: ${{ vars.PRODUCTION_SSH_PORT }}
+                  SSH_USER: ${{ vars.PRODUCTION_SSH_USER }}
+                  SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+                  SSH_KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
+              run: |
+                  set -euo pipefail
+
+                  [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+                  [[ "$ARTIFACT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+                  [[ "$ARTIFACT_SIZE" =~ ^[1-9][0-9]*$ ]]
+                  [[ "$SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
+                  [[ "$SSH_USER" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]]
+                  [[ "$SSH_PORT" =~ ^[0-9]{1,5}$ ]]
+                  (( 10#$SSH_PORT >= 1 && 10#$SSH_PORT <= 65535 ))
+                  test -s "$ARTIFACT_PATH"
+                  test "$(stat -c '%s' "$ARTIFACT_PATH")" = "$ARTIFACT_SIZE"
+                  test "$(sha256sum "$ARTIFACT_PATH" | awk '{print $1}')" = "$ARTIFACT_SHA256"
+                  test -n "$SSH_PRIVATE_KEY"
+                  test -n "$SSH_KNOWN_HOSTS"
+
+                  ssh_dir="$RUNNER_TEMP/deployment-ssh"
+                  key_file="$ssh_dir/id_ed25519"
+                  known_hosts_file="$ssh_dir/known_hosts"
+
+                  install -d -m 700 "$ssh_dir"
+                  umask 077
+                  printf '%s\n' "$SSH_PRIVATE_KEY" > "$key_file"
+                  printf '%s\n' "$SSH_KNOWN_HOSTS" > "$known_hosts_file"
+                  unset SSH_PRIVATE_KEY SSH_KNOWN_HOSTS
+
+                  cleanup() {
+                      rm -f -- "$key_file" "$known_hosts_file"
+                  }
+                  trap cleanup EXIT
+
+                  ssh_args=(
+                      -F /dev/null
+                      -i "$key_file"
+                      -p "$SSH_PORT"
+                      -o BatchMode=yes
+                      -o IdentitiesOnly=yes
+                      -o StrictHostKeyChecking=yes
+                      -o "UserKnownHostsFile=$known_hosts_file"
+                      -o GlobalKnownHostsFile=/dev/null
+                      -o PasswordAuthentication=no
+                      -o KbdInteractiveAuthentication=no
+                      -o ConnectTimeout=15
+                      -o ServerAliveInterval=15
+                      -o ServerAliveCountMax=3
+                  )
+                  remote="$SSH_USER@$SSH_HOST"
+
+                  ssh "${ssh_args[@]}" "$remote" \
+                      "upload $GITHUB_SHA $ARTIFACT_SHA256 $ARTIFACT_SIZE" \
+                      < "$ARTIFACT_PATH"
+
+                  ssh "${ssh_args[@]}" "$remote" \
+                      "deploy $GITHUB_SHA $ARTIFACT_SHA256"
+
+            - name: Verify public deployment
+              env:
+                  PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+              run: |
+                  set -euo pipefail
+                  [[ "$PRODUCTION_URL" == https://* ]]
+
+                  response="$(curl \
+                      --fail \
+                      --silent \
+                      --show-error \
+                      --retry 6 \
+                      --retry-delay 5 \
+                      --max-time 20 \
+                      --header 'Cache-Control: no-cache' \
+                      -- "$PRODUCTION_URL/api/health?deployment=$GITHUB_SHA")"
+
+                  jq --exit-status \
+                      --arg commit "$GITHUB_SHA" \
+                      '.status == "ok" and .commit == $commit' \
+                      <<< "$response" >/dev/null
+
+            - name: Write deployment summary
+              env:
+                  ARTIFACT_SHA256: ${{ needs.build.outputs.artifact_sha256 }}
+                  ARTIFACT_SIZE: ${{ needs.build.outputs.artifact_size }}
+              run: |
+                  {
+                      echo '## Production deployment'
+                      echo
+                      echo "- Commit: \`$GITHUB_SHA\`"
+                      echo "- SHA-256: \`$ARTIFACT_SHA256\`"
+                      echo "- Artifact bytes: \`$ARTIFACT_SIZE\`"
+                      echo "- GitHub run: \`$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT\`"
+                  } >> "$GITHUB_STEP_SUMMARY"

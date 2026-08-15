@@ -1,41 +1,53 @@
 name: CI
 
 permissions:
-  contents: read
+    contents: read
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    build:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+            - name: Set up Node.js
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: '22.12.0'
+                  check-latest: false
 
-      - name: Install pnpm
-        run: npm install -g pnpm@10.32.0
+            - name: Install pnpm
+              run: npm install -g pnpm@10.32.0
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
 
-      - name: Generate prisma client
-        run: pnpm prisma generate
-        env:
-          DATABASE_URL: mysql://user:password@localhost:1234/dummy_db
+            - name: Generate prisma client
+              run: pnpm prisma generate
+              env:
+                  DATABASE_URL: mysql://user:password@localhost:1234/dummy_db
 
-      - name: Run the tests
-        run: pnpm run test
+            - name: Run the tests
+              run: pnpm run test
 
-      - name: Build the application
-        run: pnpm run build
+            - name: Test deployment safeguards
+              run: ops/deploy/test.sh
+
+            - name: Build the application
+              run: pnpm run build
+
+            - name: Package and smoke-test standalone output
+              env:
+                  ARTIFACT_PATH: ${{ runner.temp }}/setup-nsromania-${{ github.sha }}.tar.gz
+              run: |
+                  set -euo pipefail
+                  ops/deploy/build-artifact.sh "$ARTIFACT_PATH" "$GITHUB_SHA"
+                  ops/deploy/smoke-artifact.sh "$ARTIFACT_PATH" "$GITHUB_SHA"

@@ -14,8 +14,21 @@ jest.mock('mongodb', () => ({
 }));
 
 const { trimDatabase } = require('../nsdatbasea') as typeof import('../nsdatbasea');
+const originalMongoUrl = process.env.MONGO_URL;
 
 describe('Nightscout database trimming', () => {
+    beforeAll(() => {
+        process.env.MONGO_URL = 'mongodb://127.0.0.1:27017/test';
+    });
+
+    afterAll(() => {
+        if (originalMongoUrl === undefined) {
+            delete process.env.MONGO_URL;
+        } else {
+            process.env.MONGO_URL = originalMongoUrl;
+        }
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
         mockConnect.mockResolvedValue(undefined);

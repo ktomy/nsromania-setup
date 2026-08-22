@@ -57,7 +57,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         navigationItemsDict[5] = {
             segment: 'maintenance',
             title: t('maintenance'),
+            pattern: 'maintenance{/:segment}*',
             icon: <Build />,
+            children: [
+                { segment: '', title: t('maintenanceTools') },
+                { segment: 'database', title: t('maintenanceDatabase') },
+            ],
         };
     }
     navigationItemsDict[3] = {

@@ -1,5 +1,22 @@
 import { MongoClient } from 'mongodb';
 
+export type DatabaseSize = {
+    dbName: string;
+    dataSize: number;
+    storageSize: number;
+};
+
+export type DatabaseTrimResult = {
+    dbName: string;
+    cutoff: string;
+    deletedDocuments: number;
+    collections: Array<{
+        name: string;
+        dateField: string | null;
+        deletedDocuments: number;
+    }>;
+};
+
 interface MongoUser {
     user: string;
     db: string;
@@ -191,6 +208,95 @@ export async function getDbSize(dbName: string) {
         return stats.dataSize;
     } catch (error) {
         console.error('Error getting database size:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+}
+
+export async function getDbSizes(dbNames: string[]): Promise<Map<string, DatabaseSize | null>> {
+    const sizes = new Map<string, DatabaseSize | null>();
+    const uniqueDbNames = Array.from(new Set(dbNames));
+
+    if (uniqueDbNames.length === 0) {
+        return sizes;
+    }
+
+    const client = createMongoClient();
+
+    try {
+        await client.connect();
+        const databaseNames = new Set(
+            (await client.db('admin').admin().listDatabases()).databases.map((database) => database.name)
+        );
+        for (const dbName of uniqueDbNames) {
+            if (!databaseNames.has(dbName)) {
+                sizes.set(dbName, null);
+                continue;
+            }
+            const database = client.db(dbName);
+            const stats = await database.stats();
+            sizes.set(dbName, {
+                dbName,
+                dataSize: stats.dataSize ?? 0,
+                storageSize: stats.storageSize ?? 0,
+            });
+        }
+        return sizes;
+    } catch (error) {
+        console.error('Error getting database sizes:', error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+}
+
+export const DEFAULT_TRIMMABLE_COLLECTIONS: Record<string, string> = {
+    entries: 'date',
+    treatments: 'created_at',
+    devicestatus: 'created_at',
+    activity: 'created_at',
+};
+
+export async function trimDatabase(
+    dbName: string,
+    cutoff: Date,
+    trimmableCollections: Record<string, string> = DEFAULT_TRIMMABLE_COLLECTIONS
+): Promise<DatabaseTrimResult> {
+    const client = createMongoClient();
+
+    try {
+        await client.connect();
+        const database = client.db(dbName);
+        const collectionInfos = await database.listCollections().toArray();
+        const collections: DatabaseTrimResult['collections'] = [];
+
+        for (const collectionInfo of collectionInfos) {
+            const dateField = trimmableCollections[collectionInfo.name] ?? null;
+            if (!dateField) {
+                collections.push({ name: collectionInfo.name, dateField: null, deletedDocuments: 0 });
+                continue;
+            }
+
+            const collection = database.collection(collectionInfo.name);
+            const deleted = await collection.deleteMany({
+                $or: [
+                    { [dateField]: { $type: 'number', $lt: cutoff.getTime() } },
+                    { [dateField]: { $type: 'string', $lt: cutoff.toISOString() } },
+                    { [dateField]: { $type: 'date', $lt: cutoff } },
+                ],
+            });
+            collections.push({ name: collectionInfo.name, dateField, deletedDocuments: deleted.deletedCount });
+        }
+
+        return {
+            dbName,
+            cutoff: cutoff.toISOString(),
+            deletedDocuments: collections.reduce((total, collection) => total + collection.deletedDocuments, 0),
+            collections,
+        };
+    } catch (error) {
+        console.error(`Error trimming database ${dbName}:`, error);
         throw error;
     } finally {
         await client.close();

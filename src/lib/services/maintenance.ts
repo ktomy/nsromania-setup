@@ -1,7 +1,14 @@
 import { NSDomain } from '@/generated/client';
 import { prisma } from '../prisma';
 import { destroyDomainInfrastructure } from './domainLifecycle';
-import { getLastDbEntries, getLastDbEntry } from './nsdatbasea';
+import {
+    getDbSizes,
+    getLastDbEntries,
+    getLastDbEntry,
+    trimDatabase,
+    DatabaseSize,
+    DatabaseTrimResult,
+} from './nsdatbasea';
 import { isDomainRunning, tryStopDomain } from './nsruntime';
 
 export type InactiveUserActions = {
@@ -40,6 +47,20 @@ export type InactiveUserPreview = {
 export type ActionInactiveUsersResult = {
     counts: MaintenanceCounts;
     results: MaintenanceSiteResult[];
+};
+
+export type DatabaseMaintenanceSite = {
+    id: number;
+    domain: string;
+    title: string;
+    active: boolean;
+    dataSize: number | null;
+    storageSize: number | null;
+};
+
+export type DatabaseMaintenanceResult = {
+    sites: DatabaseMaintenanceSite[];
+    generatedAt: string;
 };
 
 type InactivityEvaluation = {
@@ -242,4 +263,68 @@ export async function actionInactiveUsers({
     }
 
     return { counts, results };
+}
+
+function databaseSiteResult(domain: NSDomain, size: DatabaseSize | null): DatabaseMaintenanceSite {
+    return {
+        id: domain.id,
+        domain: domain.domain,
+        title: domain.title,
+        active: domain.active === 1,
+        dataSize: size?.dataSize ?? null,
+        storageSize: size?.storageSize ?? null,
+    };
+}
+
+export async function getDatabaseMaintenanceSites(): Promise<DatabaseMaintenanceResult> {
+    const domains = await prisma.nSDomain.findMany({ orderBy: { domain: 'asc' } });
+    const sizes = await getDbSizes(domains.map((domain) => domain.domain));
+
+    return {
+        sites: domains.map((domain) => databaseSiteResult(domain, sizes.get(domain.domain) ?? null)),
+        generatedAt: new Date().toISOString(),
+    };
+}
+
+export async function trimDatabaseForSites({
+    siteIds,
+    days,
+    now = new Date(),
+}: {
+    siteIds: number[];
+    days: 30 | 90 | 180;
+    now?: Date;
+}): Promise<{ days: number; cutoff: string; results: Array<DatabaseTrimResult & { id: number; title: string }> }> {
+    if (![30, 90, 180].includes(days)) {
+        throw new Error('Retention must be 30, 90, or 180 days');
+    }
+    if (!Array.isArray(siteIds) || siteIds.length === 0) {
+        throw new Error('At least one site is required');
+    }
+
+    const cutoff = cutoffDate(days, now);
+    const results: Array<DatabaseTrimResult & { id: number; title: string }> = [];
+
+    for (const siteId of Array.from(new Set(siteIds))) {
+        const domain = await prisma.nSDomain.findUnique({
+            where: { id: siteId },
+            include: { environments: true },
+        });
+        if (!domain) {
+            throw new Error(`Site ${siteId} was not found`);
+        }
+
+        const environment = new Map(domain.environments.map((item) => [item.variable, item.value]));
+        const collectionName = (primary: string, fallback?: string) =>
+            environment.get(primary) || (fallback ? environment.get(fallback) : null) || undefined;
+        const result = await trimDatabase(domain.domain, cutoff, {
+            [collectionName('ENTRIES_COLLECTION', 'MONGO_COLLECTION') ?? 'entries']: 'date',
+            [collectionName('MONGO_TREATMENTS_COLLECTION') ?? 'treatments']: 'created_at',
+            [collectionName('MONGO_DEVICESTATUS_COLLECTION') ?? 'devicestatus']: 'created_at',
+            [collectionName('MONGO_ACTIVITY_COLLECTION') ?? 'activity']: 'created_at',
+        });
+        results.push({ ...result, id: domain.id, title: domain.title });
+    }
+
+    return { days, cutoff: cutoff.toISOString(), results };
 }

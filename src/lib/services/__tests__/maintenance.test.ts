@@ -5,6 +5,8 @@ const mockFindUnique = jest.fn();
 const mockUpdate = jest.fn();
 const mockGetLastDbEntry = jest.fn();
 const mockGetLastDbEntries = jest.fn();
+const mockGetDbSizes = jest.fn();
+const mockTrimDatabase = jest.fn();
 const mockIsDomainRunning = jest.fn();
 const mockTryStopDomain = jest.fn();
 const mockDestroyDomainInfrastructure = jest.fn();
@@ -22,6 +24,8 @@ jest.mock('../../prisma', () => ({
 jest.mock('../nsdatbasea', () => ({
     getLastDbEntry: mockGetLastDbEntry,
     getLastDbEntries: mockGetLastDbEntries,
+    getDbSizes: mockGetDbSizes,
+    trimDatabase: mockTrimDatabase,
 }));
 
 jest.mock('../nsruntime', () => ({
@@ -37,7 +41,8 @@ jest.mock(
     { virtual: true }
 );
 
-const { actionInactiveUsers, getInactiveUserPreview } = require('../maintenance') as typeof import('../maintenance');
+const { actionInactiveUsers, getDatabaseMaintenanceSites, getInactiveUserPreview, trimDatabaseForSites } =
+    require('../maintenance') as typeof import('../maintenance');
 
 function domain(overrides: Partial<NSDomain>): NSDomain {
     return {
@@ -73,7 +78,12 @@ describe('maintenance inactive users service', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockTryStopDomain.mockResolvedValue('ok');
-        mockDestroyDomainInfrastructure.mockResolvedValue({ stopped: false, nginxDeleted: false, dnsDeleted: false, databaseDeleted: false });
+        mockDestroyDomainInfrastructure.mockResolvedValue({
+            stopped: false,
+            nginxDeleted: false,
+            dnsDeleted: false,
+            databaseDeleted: false,
+        });
         mockUpdate.mockImplementation(({ where, data }) => Promise.resolve({ ...domain({ id: where.id }), ...data }));
         mockIsDomainRunning.mockResolvedValue(true);
         mockGetLastDbEntries.mockImplementation(async (dbNames: string[]) => {
@@ -82,6 +92,13 @@ describe('maintenance inactive users service', () => {
                 entries.set(dbName, await mockGetLastDbEntry(dbName));
             }
             return entries;
+        });
+        mockGetDbSizes.mockResolvedValue(new Map());
+        mockTrimDatabase.mockResolvedValue({
+            dbName: 'site',
+            cutoff: '2026-02-13T12:00:00.000Z',
+            deletedDocuments: 3,
+            collections: [],
         });
     });
 
@@ -105,7 +122,9 @@ describe('maintenance inactive users service', () => {
         const preview = await getInactiveUserPreview({ days: 90, now });
 
         expect(preview.counts.inactiveCandidates).toBe(1);
-        expect(preview.sites[0]).toEqual(expect.objectContaining({ id: 2, inactive: true, status: 'inactive-old-glucose' }));
+        expect(preview.sites[0]).toEqual(
+            expect.objectContaining({ id: 2, inactive: true, status: 'inactive-old-glucose' })
+        );
     });
 
     it('includes an old active site with no database entries as an inactive candidate', async () => {
@@ -115,7 +134,9 @@ describe('maintenance inactive users service', () => {
         const preview = await getInactiveUserPreview({ days: 90, now });
 
         expect(preview.counts.inactiveCandidates).toBe(1);
-        expect(preview.sites[0]).toEqual(expect.objectContaining({ id: 3, inactive: true, status: 'inactive-no-glucose' }));
+        expect(preview.sites[0]).toEqual(
+            expect.objectContaining({ id: 3, inactive: true, status: 'inactive-no-glucose' })
+        );
     });
 
     it('queries only old active sites, skipping young and inactive records in the database query', async () => {
@@ -196,6 +217,45 @@ describe('maintenance inactive users service', () => {
                 expect.objectContaining({ id: 5, result: 'failed', error: 'pm2 failed' }),
                 expect.objectContaining({ id: 6, result: 'actioned' }),
             ])
+        );
+    });
+
+    it('returns database sizes for every site', async () => {
+        mockFindMany.mockResolvedValue([domain({ id: 1, domain: 'one' }), domain({ id: 2, domain: 'two', active: 0 })]);
+        mockGetDbSizes.mockResolvedValue(
+            new Map([
+                ['one', { dbName: 'one', dataSize: 100, storageSize: 200 }],
+                ['two', null],
+            ])
+        );
+
+        const result = await getDatabaseMaintenanceSites();
+
+        expect(result.sites).toEqual([
+            expect.objectContaining({ id: 1, dataSize: 100, storageSize: 200, active: true }),
+            expect.objectContaining({ id: 2, dataSize: null, storageSize: null, active: false }),
+        ]);
+    });
+
+    it('accepts only the supported retention periods and trims selected sites', async () => {
+        mockFindUnique.mockResolvedValue({
+            ...domain({ id: 8, domain: 'selected' }),
+            environments: [
+                { id: 1, nsDomainId: 8, variable: 'MONGO_TREATMENTS_COLLECTION', value: 'custom-treatments' },
+            ],
+        });
+
+        const result = await trimDatabaseForSites({ siteIds: [8], days: 30, now });
+
+        expect(mockTrimDatabase).toHaveBeenCalledWith('selected', new Date('2026-04-14T12:00:00.000Z'), {
+            entries: 'date',
+            'custom-treatments': 'created_at',
+            devicestatus: 'created_at',
+            activity: 'created_at',
+        });
+        expect(result.results[0]).toEqual(expect.objectContaining({ id: 8, deletedDocuments: 3 }));
+        await expect(trimDatabaseForSites({ siteIds: [8], days: 60 as never, now })).rejects.toThrow(
+            'Retention must be 30, 90, or 180 days'
         );
     });
 });

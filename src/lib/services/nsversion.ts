@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import semver from 'semver';
 
 export interface NightscoutVersion {
     name: string;
@@ -19,7 +20,7 @@ export async function getAvailableVersions(): Promise<NightscoutVersion[]> {
             console.warn('NS_HOME environment variable is not set. Versions functionality will not be available.');
             return [];
         }
-        
+
         // Check if NS_HOME directory exists
         try {
             await fs.access(nsHome);
@@ -30,7 +31,7 @@ export async function getAvailableVersions(): Promise<NightscoutVersion[]> {
 
         // Read all directories in NS_HOME folder
         const entries = await fs.readdir(nsHome, { withFileTypes: true });
-        const directories = entries.filter(entry => entry.isDirectory()).map(entry => entry.name);
+        const directories = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 
         const versions: NightscoutVersion[] = [];
 
@@ -46,7 +47,11 @@ export async function getAvailableVersions(): Promise<NightscoutVersion[]> {
                 const packageJson = JSON.parse(packageJsonContent);
 
                 // Validate that it's a nightscout package
-                if (packageJson.name === 'nightscout' && packageJson.version) {
+                if (
+                    packageJson.name === 'nightscout' &&
+                    typeof packageJson.version === 'string' &&
+                    semver.valid(packageJson.version)
+                ) {
                     versions.push({
                         name: packageJson.name,
                         version: packageJson.version,
@@ -64,23 +69,10 @@ export async function getAvailableVersions(): Promise<NightscoutVersion[]> {
             return [];
         }
 
-        // Sort versions by version number (latest first)
-        versions.sort((a, b) => {
-            // Use semantic version comparison based on actual version numbers
-            const aVersion = a.version.split('.').map(v => parseInt(v.replace(/\D+.*$/, ''), 10) || 0);
-            const bVersion = b.version.split('.').map(v => parseInt(v.replace(/\D+.*$/, ''), 10) || 0);
-            
-            for (let i = 0; i < Math.max(aVersion.length, bVersion.length); i++) {
-                const aNum = aVersion[i] || 0;
-                const bNum = bVersion[i] || 0;
-                if (aNum !== bNum) {
-                    return bNum - aNum; // Descending order (latest first)
-                }
-            }
-            
-            // If versions are the same, sort by directory name alphabetically
-            return a.directoryName.localeCompare(b.directoryName);
-        });
+        // Sort versions by semantic version (latest first), then by directory name for deterministic ties.
+        versions.sort(
+            (a, b) => semver.rcompare(a.version, b.version) || a.directoryName.localeCompare(b.directoryName)
+        );
 
         return versions;
     } catch (error) {
@@ -89,10 +81,20 @@ export async function getAvailableVersions(): Promise<NightscoutVersion[]> {
     }
 }
 
+export async function getLatestAvailableVersion(): Promise<NightscoutVersion> {
+    const latestVersion = (await getAvailableVersions())[0];
+
+    if (!latestVersion) {
+        throw new Error('No installed Nightscout versions are available');
+    }
+
+    return latestVersion;
+}
+
 /**
  * Gets a specific version by directory name
  */
 export async function getVersionByDirectoryName(directoryName: string): Promise<NightscoutVersion | null> {
     const versions = await getAvailableVersions();
-    return versions.find(v => v.directoryName === directoryName) || null;
+    return versions.find((v) => v.directoryName === directoryName) || null;
 }

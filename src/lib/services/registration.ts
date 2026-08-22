@@ -2,6 +2,7 @@ import { prisma } from '../prisma';
 import { NSDomain, register_request, User } from '@/generated/client';
 import { sendRegistrationNotificationEmail, sendValidationEmail } from './sendemail';
 import { RegisterDomainRequest } from '@/types/domains';
+import { getLatestAvailableVersion } from './nsversion';
 
 export async function initiateEmailValidation(email: string) {
     // generate a validation code, save it to the database, send an email to the user
@@ -104,12 +105,11 @@ export async function createRegistrationRequest(request: RegisterDomainRequest):
             name: admin.name || admin.email!,
         };
     });
-    
+
     // send an email to each admin if not in development mode
     if (process.env.NODE_ENV !== 'development') {
         await sendRegistrationNotificationEmail(request, adminEmails);
-    }
-    else {
+    } else {
         console.log('Skipping email notification in development mode');
     }
 
@@ -146,6 +146,8 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
     if (!request) {
         return false;
     }
+
+    const latestVersion = await getLatestAvailableVersion();
 
     let user = await prisma.user.findUnique({
         where: {
@@ -192,6 +194,7 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
             active: 1,
             title: request.title!,
             port: 0,
+            nsversion: latestVersion.directoryName,
         },
     });
 

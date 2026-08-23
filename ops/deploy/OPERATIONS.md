@@ -20,7 +20,8 @@ This document contains no secret values. Never add private keys, passwords, `.en
 | Purpose | Value |
 | --- | --- |
 | Host | `nsromania.info` |
-| Audited OS | Ubuntu 22.04.5 LTS |
+| Public IPv4 | `45.134.39.79` |
+| Audited OS | Ubuntu 24.04.4 LTS |
 | Canonical application base | `/var/log/nightscout` |
 | Legacy path | `/usr/local/nsromania/nightscout` is a symlink to `/var/log/nightscout` |
 | Live panel | `/var/log/nightscout/setup` |
@@ -224,7 +225,64 @@ Always check both filesystems before a production write:
 df -h / /var/log/nightscout
 ```
 
+## Migration cutover and rollback window
+
+Production traffic moved to `45.134.39.79` on 2026-08-23. The Porkbun API reports both
+`ns1.nsromania.info` and `ns2.nsromania.info` glue records at the new address, and the old and new
+authoritative servers both serve zone serial `2026082302` with the apex and nameserver A records at the new address.
+
+The retired application host at `194.55.154.47` temporarily relays TCP ports 80 and 443 to the new VPS. Its Nginx
+boot enablement is disabled, while `nsromania-cutover-relay-http.service` and
+`nsromania-cutover-relay-https.service` are enabled and active. Keep that host and both relays available for at least
+72 hours after every `.info` parent nameserver publishes the new glue. Do not infer completion only from recursive
+resolver answers. Query every authoritative `.info` parent directly and allow at least one complete 3600-second glue
+TTL after they all agree.
+
+The old databases are a rollback source, not an active replica; they diverged as soon as traffic entered the new VPS.
+A rollback after cutover therefore requires an explicit data reconciliation before routing writes back to the old
+applications.
+
+The new VPS uses native Nginx, BIND, MySQL, MongoDB, Node, and PM2 services. Docker was used only for the validated
+MongoDB 6 to 7 to 8 storage upgrade and was purged after cutover. Retained recovery data on the new VPS includes:
+
+```text
+/srv/nsromania-migration/source-archives/mongodb-filesystem-20260822T205046Z.tar.zst
+/srv/nsromania-migration/rollback/pre-final-logical-restore-mongodb8-20260822T234743Z
+/srv/nsromania-migration/rollback/pre-final-mysql-20260822T234743Z.sql.zst
+```
+
+These paths are root-only and contain production data. Do not copy, inspect, or prune them during an ordinary
+application deployment.
+
 ## Last verified production snapshot
+
+This section records the new production VPS after migration on 2026-08-23. It is dated evidence, not a substitute for
+read-only revalidation.
+
+| Item | Verified value |
+| --- | --- |
+| Live application commit | `9be6cc676902d0b439fb4e3de7f98934142f5c59` |
+| Root PM2 | 355 applications plus one module; all applications online on unique loopback ports |
+| HTTP port validation | 355 checked; 355 HTTP 200; zero timeouts; zero non-200 responses |
+| Panel saved command | `/usr/local/nvm/versions/node/v22.12.0/bin/npm start` |
+| Panel cwd | `/var/log/nightscout/setup` |
+| Panel health | Local and public health matched the exact live commit |
+| Deployment account | Locked `nsdeploy`; forced command and restricted key installed |
+| Deployment helpers | All eight files matched the audited repository checksums and modes |
+| MongoDB | Native 8.3.8, FCV 8.0, loopback-only authentication; 360 databases and 3,559 collections |
+| MySQL | Native 8.0.46, loopback-only; all migrated `nightscout` and `acme` tables checked OK |
+| DNS | BIND zone serial `2026082302`; Porkbun ns1/ns2 glue set to `45.134.39.79` |
+| `/` and `/var/log/nightscout` capacity | 338 GiB total, about 238 GiB available, 30% used |
+| Emergency swap | 8 GiB, enabled, `vm.swappiness=1`, unused at verification |
+| UFW | Active; public SSH, DNS, HTTP, and HTTPS rules installed |
+
+The one-time deployment bootstrap backup created during migration is:
+
+```text
+/var/log/nightscout/backup/bootstrap-20260823T012112Z
+```
+
+## Previous production snapshot
 
 This section is historical evidence, not a substitute for read-only revalidation. It was recorded on 2026-08-15 after the helper updater was installed and exercised successfully.
 

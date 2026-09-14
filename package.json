@@ -75,7 +75,7 @@
         "storybook": "^10.4.0",
         "ts-node": "^10.9.2",
         "tsx": "^4.22.1",
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.3"
     },
     "pnpm": {
         "overrides": {

@@ -77,12 +77,20 @@ async function sendEmailViaBrevo(opts: SendEmailOptions): Promise<boolean> {
     }
 }
 
-export async function sendWelcomeEmail(to: string, subdomain: string, api_secret: string): Promise<boolean> {
+export async function sendWelcomeEmail(
+    to: string,
+    subdomain: string,
+    api_secret: string,
+    locale: string = 'ro'
+): Promise<boolean> {
+    const isEnglish = locale === 'en';
     return sendEmailViaBrevo({
         to: [{ email: to }],
-        subject: 'Bine ati venit la NSRomania!',
-        template: 'welcome',
+        subject: isEnglish ? 'Welcome to NSRomania!' : 'Bine ati venit la NSRomania!',
+        template: isEnglish ? 'welcome_en' : 'welcome',
         variables: { subdomain, api_secret },
+        from: { email: 'info@nsromania.info', name: isEnglish ? 'NSRomania Team' : 'Echipa NSRomania' },
+        replyTo: { email: 'artiom+nsromania@gmail.com', name: isEnglish ? 'NSRomania Team' : 'Echipa NSRomania' },
     });
 }
 

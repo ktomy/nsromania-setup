@@ -45,6 +45,7 @@ export type NSDomainMinAggregateOutputType = {
   active: number | null
   title: string | null
   domain: string | null
+  registrationLocale: string | null
   port: number | null
   dbExists: number | null
   apiSecret: string | null
@@ -68,6 +69,7 @@ export type NSDomainMaxAggregateOutputType = {
   active: number | null
   title: string | null
   domain: string | null
+  registrationLocale: string | null
   port: number | null
   dbExists: number | null
   apiSecret: string | null
@@ -91,6 +93,7 @@ export type NSDomainCountAggregateOutputType = {
   active: number
   title: number
   domain: number
+  registrationLocale: number
   port: number
   dbExists: number
   apiSecret: number
@@ -130,6 +133,7 @@ export type NSDomainMinAggregateInputType = {
   active?: true
   title?: true
   domain?: true
+  registrationLocale?: true
   port?: true
   dbExists?: true
   apiSecret?: true
@@ -153,6 +157,7 @@ export type NSDomainMaxAggregateInputType = {
   active?: true
   title?: true
   domain?: true
+  registrationLocale?: true
   port?: true
   dbExists?: true
   apiSecret?: true
@@ -176,6 +181,7 @@ export type NSDomainCountAggregateInputType = {
   active?: true
   title?: true
   domain?: true
+  registrationLocale?: true
   port?: true
   dbExists?: true
   apiSecret?: true
@@ -286,6 +292,7 @@ export type NSDomainGroupByOutputType = {
   active: number
   title: string
   domain: string
+  registrationLocale: string
   port: number
   dbExists: number
   apiSecret: string
@@ -332,6 +339,7 @@ export type NSDomainWhereInput = {
   active?: Prisma.IntFilter<"NSDomain"> | number
   title?: Prisma.StringFilter<"NSDomain"> | string
   domain?: Prisma.StringFilter<"NSDomain"> | string
+  registrationLocale?: Prisma.StringFilter<"NSDomain"> | string
   port?: Prisma.IntFilter<"NSDomain"> | number
   dbExists?: Prisma.IntFilter<"NSDomain"> | number
   apiSecret?: Prisma.StringFilter<"NSDomain"> | string
@@ -357,6 +365,7 @@ export type NSDomainOrderByWithRelationInput = {
   active?: Prisma.SortOrder
   title?: Prisma.SortOrder
   domain?: Prisma.SortOrder
+  registrationLocale?: Prisma.SortOrder
   port?: Prisma.SortOrder
   dbExists?: Prisma.SortOrder
   apiSecret?: Prisma.SortOrder
@@ -386,6 +395,7 @@ export type NSDomainWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.NSDomainWhereInput | Prisma.NSDomainWhereInput[]
   active?: Prisma.IntFilter<"NSDomain"> | number
   title?: Prisma.StringFilter<"NSDomain"> | string
+  registrationLocale?: Prisma.StringFilter<"NSDomain"> | string
   port?: Prisma.IntFilter<"NSDomain"> | number
   dbExists?: Prisma.IntFilter<"NSDomain"> | number
   apiSecret?: Prisma.StringFilter<"NSDomain"> | string
@@ -411,6 +421,7 @@ export type NSDomainOrderByWithAggregationInput = {
   active?: Prisma.SortOrder
   title?: Prisma.SortOrder
   domain?: Prisma.SortOrder
+  registrationLocale?: Prisma.SortOrder
   port?: Prisma.SortOrder
   dbExists?: Prisma.SortOrder
   apiSecret?: Prisma.SortOrder
@@ -442,6 +453,7 @@ export type NSDomainScalarWhereWithAggregatesInput = {
   active?: Prisma.IntWithAggregatesFilter<"NSDomain"> | number
   title?: Prisma.StringWithAggregatesFilter<"NSDomain"> | string
   domain?: Prisma.StringWithAggregatesFilter<"NSDomain"> | string
+  registrationLocale?: Prisma.StringWithAggregatesFilter<"NSDomain"> | string
   port?: Prisma.IntWithAggregatesFilter<"NSDomain"> | number
   dbExists?: Prisma.IntWithAggregatesFilter<"NSDomain"> | number
   apiSecret?: Prisma.StringWithAggregatesFilter<"NSDomain"> | string
@@ -464,6 +476,7 @@ export type NSDomainCreateInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -488,6 +501,7 @@ export type NSDomainUncheckedCreateInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -511,6 +525,7 @@ export type NSDomainUpdateInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -535,6 +550,7 @@ export type NSDomainUncheckedUpdateInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -559,6 +575,7 @@ export type NSDomainCreateManyInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -581,6 +598,7 @@ export type NSDomainUpdateManyMutationInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -603,6 +621,7 @@ export type NSDomainUncheckedUpdateManyInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -632,6 +651,7 @@ export type NSDomainCountOrderByAggregateInput = {
   active?: Prisma.SortOrder
   title?: Prisma.SortOrder
   domain?: Prisma.SortOrder
+  registrationLocale?: Prisma.SortOrder
   port?: Prisma.SortOrder
   dbExists?: Prisma.SortOrder
   apiSecret?: Prisma.SortOrder
@@ -662,6 +682,7 @@ export type NSDomainMaxOrderByAggregateInput = {
   active?: Prisma.SortOrder
   title?: Prisma.SortOrder
   domain?: Prisma.SortOrder
+  registrationLocale?: Prisma.SortOrder
   port?: Prisma.SortOrder
   dbExists?: Prisma.SortOrder
   apiSecret?: Prisma.SortOrder
@@ -685,6 +706,7 @@ export type NSDomainMinOrderByAggregateInput = {
   active?: Prisma.SortOrder
   title?: Prisma.SortOrder
   domain?: Prisma.SortOrder
+  registrationLocale?: Prisma.SortOrder
   port?: Prisma.SortOrder
   dbExists?: Prisma.SortOrder
   apiSecret?: Prisma.SortOrder
@@ -809,6 +831,7 @@ export type NSDomainCreateWithoutEnvironmentsInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -832,6 +855,7 @@ export type NSDomainUncheckedCreateWithoutEnvironmentsInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -870,6 +894,7 @@ export type NSDomainUpdateWithoutEnvironmentsInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -893,6 +918,7 @@ export type NSDomainUncheckedUpdateWithoutEnvironmentsInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -915,6 +941,7 @@ export type NSDomainCreateWithoutAuthUserInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -938,6 +965,7 @@ export type NSDomainUncheckedCreateWithoutAuthUserInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -990,6 +1018,7 @@ export type NSDomainScalarWhereInput = {
   active?: Prisma.IntFilter<"NSDomain"> | number
   title?: Prisma.StringFilter<"NSDomain"> | string
   domain?: Prisma.StringFilter<"NSDomain"> | string
+  registrationLocale?: Prisma.StringFilter<"NSDomain"> | string
   port?: Prisma.IntFilter<"NSDomain"> | number
   dbExists?: Prisma.IntFilter<"NSDomain"> | number
   apiSecret?: Prisma.StringFilter<"NSDomain"> | string
@@ -1013,6 +1042,7 @@ export type NSDomainCreateManyAuthUserInput = {
   active?: number
   title: string
   domain: string
+  registrationLocale?: string
   port: number
   dbExists?: number
   apiSecret: string
@@ -1034,6 +1064,7 @@ export type NSDomainUpdateWithoutAuthUserInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1057,6 +1088,7 @@ export type NSDomainUncheckedUpdateWithoutAuthUserInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1080,6 +1112,7 @@ export type NSDomainUncheckedUpdateManyWithoutAuthUserInput = {
   active?: Prisma.IntFieldUpdateOperationsInput | number
   title?: Prisma.StringFieldUpdateOperationsInput | string
   domain?: Prisma.StringFieldUpdateOperationsInput | string
+  registrationLocale?: Prisma.StringFieldUpdateOperationsInput | string
   port?: Prisma.IntFieldUpdateOperationsInput | number
   dbExists?: Prisma.IntFieldUpdateOperationsInput | number
   apiSecret?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1133,6 +1166,7 @@ export type NSDomainSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   active?: boolean
   title?: boolean
   domain?: boolean
+  registrationLocale?: boolean
   port?: boolean
   dbExists?: boolean
   apiSecret?: boolean
@@ -1161,6 +1195,7 @@ export type NSDomainSelectScalar = {
   active?: boolean
   title?: boolean
   domain?: boolean
+  registrationLocale?: boolean
   port?: boolean
   dbExists?: boolean
   apiSecret?: boolean
@@ -1179,7 +1214,7 @@ export type NSDomainSelectScalar = {
   authUserId?: boolean
 }
 
-export type NSDomainOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "active" | "title" | "domain" | "port" | "dbExists" | "apiSecret" | "enable" | "showPlugins" | "mmconnectUsername" | "mmconnectPassword" | "mmconnectServer" | "bridgeUsername" | "bridgePassword" | "bridgeServer" | "created" | "lastUpdated" | "dbPassword" | "nsversion" | "authUserId", ExtArgs["result"]["nSDomain"]>
+export type NSDomainOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "active" | "title" | "domain" | "registrationLocale" | "port" | "dbExists" | "apiSecret" | "enable" | "showPlugins" | "mmconnectUsername" | "mmconnectPassword" | "mmconnectServer" | "bridgeUsername" | "bridgePassword" | "bridgeServer" | "created" | "lastUpdated" | "dbPassword" | "nsversion" | "authUserId", ExtArgs["result"]["nSDomain"]>
 export type NSDomainInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   authUser?: boolean | Prisma.NSDomain$authUserArgs<ExtArgs>
   environments?: boolean | Prisma.NSDomain$environmentsArgs<ExtArgs>
@@ -1197,6 +1232,7 @@ export type $NSDomainPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     active: number
     title: string
     domain: string
+    registrationLocale: string
     port: number
     dbExists: number
     apiSecret: string
@@ -1588,6 +1624,7 @@ export interface NSDomainFieldRefs {
   readonly active: Prisma.FieldRef<"NSDomain", 'Int'>
   readonly title: Prisma.FieldRef<"NSDomain", 'String'>
   readonly domain: Prisma.FieldRef<"NSDomain", 'String'>
+  readonly registrationLocale: Prisma.FieldRef<"NSDomain", 'String'>
   readonly port: Prisma.FieldRef<"NSDomain", 'Int'>
   readonly dbExists: Prisma.FieldRef<"NSDomain", 'Int'>
   readonly apiSecret: Prisma.FieldRef<"NSDomain", 'String'>

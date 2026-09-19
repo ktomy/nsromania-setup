@@ -3,6 +3,7 @@ import { NSDomain, register_request, User } from '@/generated/client';
 import { sendRegistrationNotificationEmail, sendValidationEmail } from './sendemail';
 import { RegisterDomainRequest } from '@/types/domains';
 import { getLatestAvailableVersion } from './nsversion';
+import { Locale } from '@/i18n/config';
 
 export async function initiateEmailValidation(email: string) {
     // generate a validation code, save it to the database, send an email to the user
@@ -74,11 +75,15 @@ export async function validateSubdomain(subdomain: string) {
     return true;
 }
 
-export async function createRegistrationRequest(request: RegisterDomainRequest): Promise<boolean> {
+export async function createRegistrationRequest(
+    request: RegisterDomainRequest,
+    locale: Locale = 'ro'
+): Promise<boolean> {
     const registrationRequest = await prisma.register_request.create({
         data: {
             owner_name: request.ownerName,
             owner_email: request.ownerEmail,
+            locale,
             subdomain: request.domain,
             api_secret: request.apiSecret,
             title: request.title,
@@ -184,6 +189,7 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
     await prisma.nSDomain.create({
         data: {
             domain: request.subdomain,
+            registrationLocale: request.locale,
             authUserId: user?.id,
             enable: enable,
             showPlugins: showPlugins,

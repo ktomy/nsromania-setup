@@ -53,6 +53,7 @@ function domain(overrides: Partial<NSDomain>): NSDomain {
         port: 11001,
         dbExists: 1,
         apiSecret: 'secret',
+        registrationLocale: 'ro',
         enable: 'bridge',
         showPlugins: '',
         mmconnectUsername: null,

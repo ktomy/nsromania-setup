@@ -12,6 +12,7 @@ model NSDomain {
   active            Int                   @default(1) @db.TinyInt
   title             String                @db.VarChar(128)
   domain            String                @unique @db.VarChar(64)
+  registrationLocale String               @default("ro") @map("registration_locale") @db.VarChar(2)
   port              Int                   @db.UnsignedInt
   dbExists          Int                   @default(0) @map("db_exists") @db.TinyInt
   apiSecret         String                @map("api_secret") @db.VarChar(32)
@@ -137,6 +138,7 @@ model register_request {
   id              Int       @id @default(autoincrement())
   owner_name      String    @db.VarChar(128)
   owner_email     String    @db.VarChar(128)
+  locale          String    @default("ro") @db.VarChar(2)
   subdomain       String    @db.VarChar(32)
   api_secret      String    @db.VarChar(64)
   title           String?   @db.VarChar(128)
@@ -152,4 +154,3 @@ model register_request {
 
   @@index([chnged_by], map: "registe_rqus_auth_user_id_fk")
 }
-

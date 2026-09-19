@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, props: Props) {
     }
 
     if (domain.authUser?.email) {
-        if (await sendWelcomeEmail(domain.authUser.email, domain.domain, domain.apiSecret)) {
+        if (await sendWelcomeEmail(domain.authUser.email, domain.domain, domain.apiSecret, domain.registrationLocale)) {
             return new Response(JSON.stringify({ message: 'Email sent' }), {
                 headers: { 'Content-Type': 'application/json' },
             });

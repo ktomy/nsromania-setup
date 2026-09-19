@@ -2,6 +2,8 @@ import { User } from '@/generated/client';
 
 const mockRegistrationRequestFindUnique = jest.fn();
 const mockRegistrationRequestUpdate = jest.fn();
+const mockRegistrationRequestCreate = jest.fn();
+const mockUserFindMany = jest.fn();
 const mockUserFindUnique = jest.fn();
 const mockUserCreate = jest.fn();
 const mockDomainCreate = jest.fn();
@@ -12,10 +14,12 @@ jest.mock('../../prisma', () => ({
         register_request: {
             findUnique: mockRegistrationRequestFindUnique,
             update: mockRegistrationRequestUpdate,
+            create: mockRegistrationRequestCreate,
         },
         user: {
             findUnique: mockUserFindUnique,
             create: mockUserCreate,
+            findMany: mockUserFindMany,
         },
         nSDomain: {
             create: mockDomainCreate,
@@ -32,7 +36,33 @@ jest.mock('../sendemail', () => ({
     sendValidationEmail: jest.fn(),
 }));
 
-const { approveRegistrationRequest } = require('../registration') as typeof import('../registration');
+const { approveRegistrationRequest, createRegistrationRequest } =
+    require('../registration') as typeof import('../registration');
+
+describe('createRegistrationRequest', () => {
+    it.each(['en', 'ro'] as const)('persists the form language %s', async (locale) => {
+        mockRegistrationRequestCreate.mockResolvedValue({ id: 10 });
+        mockUserFindMany.mockResolvedValue([]);
+
+        await createRegistrationRequest(
+            {
+                ownerName: 'Owner',
+                ownerEmail: 'owner@example.com',
+                domain: 'example',
+                apiSecret: 'test-secret',
+                title: 'Example',
+                dataSource: 'API',
+                emailVerificationToken: '123456',
+                reCAPTCHAToken: 'test-captcha',
+            },
+            locale
+        );
+
+        expect(mockRegistrationRequestCreate).toHaveBeenLastCalledWith({
+            data: expect.objectContaining({ locale }),
+        });
+    });
+});
 
 function user(overrides: Partial<User> = {}): User {
     return {
@@ -62,6 +92,7 @@ describe('approveRegistrationRequest', () => {
         dexcom_server: null,
         dexcom_username: null,
         dexcom_password: null,
+        locale: 'ro',
     };
     const approvingUser = user({ id: 'admin-id', role: 'admin' });
     const owner = user({ id: 'owner-id', email: request.owner_email, name: request.owner_name });
@@ -91,6 +122,16 @@ describe('approveRegistrationRequest', () => {
         expect(mockRegistrationRequestUpdate).toHaveBeenCalledWith({
             where: { id: request.id },
             data: { status: 'approved', chnged_by: approvingUser.id },
+        });
+    });
+
+    it.each(['en', 'ro'])('retains registration language %s on approval', async (locale) => {
+        mockRegistrationRequestFindUnique.mockResolvedValue({ ...request, locale });
+
+        await approveRegistrationRequest(request.id, approvingUser);
+
+        expect(mockDomainCreate).toHaveBeenCalledWith({
+            data: expect.objectContaining({ registrationLocale: locale }),
         });
     });
 

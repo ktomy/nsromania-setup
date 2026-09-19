@@ -45,6 +45,7 @@ function domain(overrides: Partial<NSDomain> = {}): NSDomain {
         port: 11010,
         dbExists: 1,
         apiSecret: 'secret',
+        registrationLocale: 'ro',
         enable: '',
         showPlugins: '',
         mmconnectUsername: null,

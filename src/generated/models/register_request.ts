@@ -38,6 +38,7 @@ export type Register_requestMinAggregateOutputType = {
   id: number | null
   owner_name: string | null
   owner_email: string | null
+  locale: string | null
   subdomain: string | null
   api_secret: string | null
   title: string | null
@@ -55,6 +56,7 @@ export type Register_requestMaxAggregateOutputType = {
   id: number | null
   owner_name: string | null
   owner_email: string | null
+  locale: string | null
   subdomain: string | null
   api_secret: string | null
   title: string | null
@@ -72,6 +74,7 @@ export type Register_requestCountAggregateOutputType = {
   id: number
   owner_name: number
   owner_email: number
+  locale: number
   subdomain: number
   api_secret: number
   title: number
@@ -99,6 +102,7 @@ export type Register_requestMinAggregateInputType = {
   id?: true
   owner_name?: true
   owner_email?: true
+  locale?: true
   subdomain?: true
   api_secret?: true
   title?: true
@@ -116,6 +120,7 @@ export type Register_requestMaxAggregateInputType = {
   id?: true
   owner_name?: true
   owner_email?: true
+  locale?: true
   subdomain?: true
   api_secret?: true
   title?: true
@@ -133,6 +138,7 @@ export type Register_requestCountAggregateInputType = {
   id?: true
   owner_name?: true
   owner_email?: true
+  locale?: true
   subdomain?: true
   api_secret?: true
   title?: true
@@ -237,6 +243,7 @@ export type Register_requestGroupByOutputType = {
   id: number
   owner_name: string
   owner_email: string
+  locale: string
   subdomain: string
   api_secret: string
   title: string | null
@@ -277,6 +284,7 @@ export type register_requestWhereInput = {
   id?: Prisma.IntFilter<"register_request"> | number
   owner_name?: Prisma.StringFilter<"register_request"> | string
   owner_email?: Prisma.StringFilter<"register_request"> | string
+  locale?: Prisma.StringFilter<"register_request"> | string
   subdomain?: Prisma.StringFilter<"register_request"> | string
   api_secret?: Prisma.StringFilter<"register_request"> | string
   title?: Prisma.StringNullableFilter<"register_request"> | string | null
@@ -295,6 +303,7 @@ export type register_requestOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   owner_name?: Prisma.SortOrder
   owner_email?: Prisma.SortOrder
+  locale?: Prisma.SortOrder
   subdomain?: Prisma.SortOrder
   api_secret?: Prisma.SortOrder
   title?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -317,6 +326,7 @@ export type register_requestWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.register_requestWhereInput | Prisma.register_requestWhereInput[]
   owner_name?: Prisma.StringFilter<"register_request"> | string
   owner_email?: Prisma.StringFilter<"register_request"> | string
+  locale?: Prisma.StringFilter<"register_request"> | string
   subdomain?: Prisma.StringFilter<"register_request"> | string
   api_secret?: Prisma.StringFilter<"register_request"> | string
   title?: Prisma.StringNullableFilter<"register_request"> | string | null
@@ -335,6 +345,7 @@ export type register_requestOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   owner_name?: Prisma.SortOrder
   owner_email?: Prisma.SortOrder
+  locale?: Prisma.SortOrder
   subdomain?: Prisma.SortOrder
   api_secret?: Prisma.SortOrder
   title?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -360,6 +371,7 @@ export type register_requestScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"register_request"> | number
   owner_name?: Prisma.StringWithAggregatesFilter<"register_request"> | string
   owner_email?: Prisma.StringWithAggregatesFilter<"register_request"> | string
+  locale?: Prisma.StringWithAggregatesFilter<"register_request"> | string
   subdomain?: Prisma.StringWithAggregatesFilter<"register_request"> | string
   api_secret?: Prisma.StringWithAggregatesFilter<"register_request"> | string
   title?: Prisma.StringNullableWithAggregatesFilter<"register_request"> | string | null
@@ -376,6 +388,7 @@ export type register_requestScalarWhereWithAggregatesInput = {
 export type register_requestCreateInput = {
   owner_name: string
   owner_email: string
+  locale?: string
   subdomain: string
   api_secret: string
   title?: string | null
@@ -393,6 +406,7 @@ export type register_requestUncheckedCreateInput = {
   id?: number
   owner_name: string
   owner_email: string
+  locale?: string
   subdomain: string
   api_secret: string
   title?: string | null
@@ -409,6 +423,7 @@ export type register_requestUncheckedCreateInput = {
 export type register_requestUpdateInput = {
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -426,6 +441,7 @@ export type register_requestUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -443,6 +459,7 @@ export type register_requestCreateManyInput = {
   id?: number
   owner_name: string
   owner_email: string
+  locale?: string
   subdomain: string
   api_secret: string
   title?: string | null
@@ -459,6 +476,7 @@ export type register_requestCreateManyInput = {
 export type register_requestUpdateManyMutationInput = {
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -475,6 +493,7 @@ export type register_requestUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -508,6 +527,7 @@ export type register_requestCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   owner_name?: Prisma.SortOrder
   owner_email?: Prisma.SortOrder
+  locale?: Prisma.SortOrder
   subdomain?: Prisma.SortOrder
   api_secret?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -529,6 +549,7 @@ export type register_requestMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   owner_name?: Prisma.SortOrder
   owner_email?: Prisma.SortOrder
+  locale?: Prisma.SortOrder
   subdomain?: Prisma.SortOrder
   api_secret?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -546,6 +567,7 @@ export type register_requestMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   owner_name?: Prisma.SortOrder
   owner_email?: Prisma.SortOrder
+  locale?: Prisma.SortOrder
   subdomain?: Prisma.SortOrder
   api_secret?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -608,6 +630,7 @@ export type register_requestUncheckedUpdateManyWithoutAuth_userNestedInput = {
 export type register_requestCreateWithoutAuth_userInput = {
   owner_name: string
   owner_email: string
+  locale?: string
   subdomain: string
   api_secret: string
   title?: string | null
@@ -624,6 +647,7 @@ export type register_requestUncheckedCreateWithoutAuth_userInput = {
   id?: number
   owner_name: string
   owner_email: string
+  locale?: string
   subdomain: string
   api_secret: string
   title?: string | null
@@ -669,6 +693,7 @@ export type register_requestScalarWhereInput = {
   id?: Prisma.IntFilter<"register_request"> | number
   owner_name?: Prisma.StringFilter<"register_request"> | string
   owner_email?: Prisma.StringFilter<"register_request"> | string
+  locale?: Prisma.StringFilter<"register_request"> | string
   subdomain?: Prisma.StringFilter<"register_request"> | string
   api_secret?: Prisma.StringFilter<"register_request"> | string
   title?: Prisma.StringNullableFilter<"register_request"> | string | null
@@ -686,6 +711,7 @@ export type register_requestCreateManyAuth_userInput = {
   id?: number
   owner_name: string
   owner_email: string
+  locale?: string
   subdomain: string
   api_secret: string
   title?: string | null
@@ -701,6 +727,7 @@ export type register_requestCreateManyAuth_userInput = {
 export type register_requestUpdateWithoutAuth_userInput = {
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -717,6 +744,7 @@ export type register_requestUncheckedUpdateWithoutAuth_userInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -733,6 +761,7 @@ export type register_requestUncheckedUpdateManyWithoutAuth_userInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   owner_name?: Prisma.StringFieldUpdateOperationsInput | string
   owner_email?: Prisma.StringFieldUpdateOperationsInput | string
+  locale?: Prisma.StringFieldUpdateOperationsInput | string
   subdomain?: Prisma.StringFieldUpdateOperationsInput | string
   api_secret?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -751,6 +780,7 @@ export type register_requestSelect<ExtArgs extends runtime.Types.Extensions.Inte
   id?: boolean
   owner_name?: boolean
   owner_email?: boolean
+  locale?: boolean
   subdomain?: boolean
   api_secret?: boolean
   title?: boolean
@@ -771,6 +801,7 @@ export type register_requestSelectScalar = {
   id?: boolean
   owner_name?: boolean
   owner_email?: boolean
+  locale?: boolean
   subdomain?: boolean
   api_secret?: boolean
   title?: boolean
@@ -784,7 +815,7 @@ export type register_requestSelectScalar = {
   chnged_by?: boolean
 }
 
-export type register_requestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "owner_name" | "owner_email" | "subdomain" | "api_secret" | "title" | "data_source" | "dexcom_server" | "dexcom_username" | "dexcom_password" | "status" | "requested_at" | "chnged_at" | "chnged_by", ExtArgs["result"]["register_request"]>
+export type register_requestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "owner_name" | "owner_email" | "locale" | "subdomain" | "api_secret" | "title" | "data_source" | "dexcom_server" | "dexcom_username" | "dexcom_password" | "status" | "requested_at" | "chnged_at" | "chnged_by", ExtArgs["result"]["register_request"]>
 export type register_requestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   auth_user?: boolean | Prisma.register_request$auth_userArgs<ExtArgs>
 }
@@ -798,6 +829,7 @@ export type $register_requestPayload<ExtArgs extends runtime.Types.Extensions.In
     id: number
     owner_name: string
     owner_email: string
+    locale: string
     subdomain: string
     api_secret: string
     title: string | null
@@ -1182,6 +1214,7 @@ export interface register_requestFieldRefs {
   readonly id: Prisma.FieldRef<"register_request", 'Int'>
   readonly owner_name: Prisma.FieldRef<"register_request", 'String'>
   readonly owner_email: Prisma.FieldRef<"register_request", 'String'>
+  readonly locale: Prisma.FieldRef<"register_request", 'String'>
   readonly subdomain: Prisma.FieldRef<"register_request", 'String'>
   readonly api_secret: Prisma.FieldRef<"register_request", 'String'>
   readonly title: Prisma.FieldRef<"register_request", 'String'>

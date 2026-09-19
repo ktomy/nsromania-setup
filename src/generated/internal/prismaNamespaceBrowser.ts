@@ -83,6 +83,7 @@ export const NSDomainScalarFieldEnum = {
   active: 'active',
   title: 'title',
   domain: 'domain',
+  registrationLocale: 'registrationLocale',
   port: 'port',
   dbExists: 'dbExists',
   apiSecret: 'apiSecret',
@@ -200,6 +201,7 @@ export const Register_requestScalarFieldEnum = {
   id: 'id',
   owner_name: 'owner_name',
   owner_email: 'owner_email',
+  locale: 'locale',
   subdomain: 'subdomain',
   api_secret: 'api_secret',
   title: 'title',
@@ -235,6 +237,7 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 export const NSDomainOrderByRelevanceFieldEnum = {
   title: 'title',
   domain: 'domain',
+  registrationLocale: 'registrationLocale',
   apiSecret: 'apiSecret',
   enable: 'enable',
   showPlugins: 'showPlugins',
@@ -329,6 +332,7 @@ export type register_email_validationOrderByRelevanceFieldEnum = (typeof registe
 export const register_requestOrderByRelevanceFieldEnum = {
   owner_name: 'owner_name',
   owner_email: 'owner_email',
+  locale: 'locale',
   subdomain: 'subdomain',
   api_secret: 'api_secret',
   title: 'title',

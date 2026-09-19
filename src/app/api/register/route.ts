@@ -67,7 +67,7 @@ export async function POST(req: Request) {
         });
     }
 
-    if (await createRegistrationRequest(registrationRequest)) {
+    if (await createRegistrationRequest(registrationRequest, locale)) {
         return new Response(JSON.stringify({ success: true }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },

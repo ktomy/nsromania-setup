@@ -72,7 +72,7 @@
         "jest-environment-jsdom": "^30.4.1",
         "jest-fetch-mock": "^3.0.3",
         "prettier": "^3.9.6",
-        "prisma": "^7.8.0",
+        "prisma": "^7.10.0",
         "storybook": "^10.4.0",
         "ts-node": "^10.9.2",
         "tsx": "^4.22.1",

@@ -26,7 +26,7 @@
         "@mui/material": "^7.3.11",
         "@mui/material-nextjs": "^7.3.10",
         "@mui/x-data-grid": "^8.28.6",
-        "@prisma/adapter-mariadb": "^7.8.0",
+        "@prisma/adapter-mariadb": "^7.10.0",
         "@prisma/client": "^7.8.0",
         "@sendgrid/mail": "^8.1.6",
         "@toolpad/core": "^0.16.0",

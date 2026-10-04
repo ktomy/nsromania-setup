@@ -6,14 +6,24 @@ This document contains no secret values. Never add private keys, passwords, `.en
 
 ## Non-negotiable rules
 
-1. Never run a Prisma migration, `db push`, seed, database CLI, database query, or database setup/check script against production during deployment work.
+1. Never run Prisma migrations (`prisma migrate`) or `prisma db push` against production. Explicitly authorized production maintenance may use database CLIs or application APIs to read and update the records needed for the task, subject to the maintenance requirements below. Automated deployment workflows remain database-free: do not add database queries, seeds, or database setup/check scripts to CI/CD or deployment helpers.
 2. Never invoke `hosting/vps-setup.sh`, `hosting/scripts/04-database-setup.sh`, the legacy `deploy/deploy_on_server.sh`, or another hosting installer as part of CI/CD.
 3. Before changing, replacing, or deleting any existing production file, create a timestamped, permission-restricted backup on the server. Do not prune backups automatically.
 4. Production `.env` stays on the server. Do not source it, print it, upload it, put it in an artifact, or store its values in GitHub.
 5. The server has multiple Node versions. Never use `nvm use stable` or an ambient `node`, `npm`, `pnpm`, or PM2 path for the panel.
-6. Do not run a broad PM2 operation such as `restart all`, `delete all`, `pm2 kill`, `save`, or `resurrect`. Touch only the single audited process named `setup-ns`.
+6. Do not run a broad PM2 operation such as `restart all`, `delete all`, `pm2 kill`, `save`, or `resurrect`. Panel deployment may touch only the single audited process named `setup-ns`. Explicitly authorized production maintenance may update and restart the specific Nightscout instance identified by the user, after verifying its exact PM2 name and ID; leave all other processes unchanged.
 7. Do not modify firewall rules as part of deployment work.
 8. Use strict SSH host-key verification. Do not make a runtime `ssh-keyscan` result the trust decision and do not disable host verification.
+
+## Authorized production maintenance
+
+Production inspection and changes are permitted within the user's authorized task, including correcting stored instance settings and restarting the affected PM2 instance. These maintenance operations are distinct from the automated panel deployment and helper-update procedures described here and in `README.md`; their database-free and `setup-ns`-only scope does not prohibit authorized instance maintenance. Authorization already given in the conversation remains valid for that task and does not need to be requested again.
+
+Before a production change, verify the live target and available disk space, and create a timestamped, permission-restricted backup on the server of the affected records, files, and process configuration. Keep secret values on the server and out of command arguments, logs, documentation, and tool output. Limit database reads and writes to the relevant instance and settings, verify the expected record count and existing values before updating, and preserve unrelated data. Use the existing deployment lock when changing files or state shared with deployment operations.
+
+Update the authoritative stored setting as well as the affected runtime configuration so that a later instance restart does not undo the repair. If saved PM2 configuration must change, back it up and change only the verified instance's entry; do not use a global `pm2 save`. Preserve the instance's verified interpreter and working directory. After any authorized restart, verify the loaded setting and instance health, and report the result without exposing secrets. Retain backups for recovery.
+
+The prohibition on production Prisma migrations and `prisma db push` applies to maintenance as well as deployment.
 
 ## Stable production topology
 

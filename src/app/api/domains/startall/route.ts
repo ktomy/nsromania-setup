@@ -2,7 +2,12 @@ import { getAllNSDomains, getNSDomainById } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { NSDomain, User } from '@/generated/client';
 import { NextRequest } from 'next/server';
-import { getProcessesList, tryStartDomain } from '@/lib/services/nsruntime';
+import {
+    getProcessesList,
+    saveProcessListIfHealthy,
+    tryRecreateDomain,
+    tryStartDomain,
+} from '@/lib/services/nsruntime';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(req: NextRequest) {
@@ -32,15 +37,21 @@ export async function POST(req: NextRequest) {
 
     await Promise.all(
         domainsWithStatus
-            .filter((domain) => domain.status === 'not running')
+            .filter((domain) => !['online', 'launching'].includes(domain.status))
             .map(async (domain) => {
                 const fullDomain = await getNSDomainById(domain.id);
-                if (fullDomain) {
+                if (!fullDomain) {
+                    return Promise.resolve();
+                }
+                // PM2 keeps stopped/errored processes in its list; recreate those instead of starting a duplicate
+                if (domain.status === 'not running') {
                     return tryStartDomain(fullDomain);
                 }
-                return Promise.resolve();
+                return tryRecreateDomain(fullDomain);
             })
     );
+
+    await saveProcessListIfHealthy();
 
     return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' },

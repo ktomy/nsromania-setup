@@ -62,7 +62,21 @@ Process name: setup-ns
 
 `setup-ns` belongs to the root PM2 daemon, not the `ktomy` PM2 daemon. Noninteractive SSH has a different PATH from an interactive shell, so use the absolute paths above with a minimal explicit environment.
 
-The saved root PM2 definition intentionally remains the audited Node 22.12.0 `npm start` definition. Release artifacts rewrite `npm start` to `node server.js`, keeping reboot resurrection compatible. Do not run `pm2 save` without a separate review: root PM2 supervises hundreds of Nightscout processes, so saving the whole daemon has a much larger scope than this panel.
+Release artifacts rewrite `npm start` to `node server.js`, so both the audited Node 22.12.0 `npm start` definition and the `node server.js` definition created by activation resurrect correctly. Operators and agents must not run `pm2 save` without a separate review: root PM2 supervises hundreds of Nightscout processes, so saving the whole daemon has a much larger scope than this panel.
+
+The panel itself saves the root PM2 list (`saveProcessListIfHealthy` in `src/lib/services/nsruntime.ts`) after it starts, stops, or deletes Nightscout instances, but only when at least 90% of non-module apps are online. Consequently, the saved `setup-ns` entry reflects whatever definition is live at that moment, normally the activation's `node server.js` with the pinned interpreter, `/var/log/nightscout/setup` working directory, and `PORT=11000`.
+
+### Reboot resurrection
+
+`pm2-root.service` (`Type=forking`, `ExecStart=pm2 resurrect`) only finishes starting after every saved app is launched, which takes more than 10 minutes for ~400 Nightscout instances. On 2026-10-17 a 10-minute `TimeoutStartSec` made systemd kill the whole cgroup mid-resurrect; PM2 then wrote a dump with 332 of 334 apps stopped, and the automatic restart resurrected almost nothing. The repository copies of the protections installed on 2026-10-17 live in `ops/pm2/`:
+
+| Server file | Purpose |
+| --- | --- |
+| `/etc/systemd/system/pm2-root.service.d/timeouts.conf` | `TimeoutStartSec=infinity`, `TimeoutStopSec=5min` |
+| `/etc/systemd/system/pm2-root.service.d/dump-guard.conf` | `ExecStartPre` running the dump guard with the pinned Node |
+| `/usr/local/sbin/nsromania-pm2-dump-guard.mjs` | Before resurrect: snapshot a healthy `dump.pm2` into `/var/log/nightscout/backup/pm2-dumps/`; replace a dump with fewer than 50% online apps by the newest healthy `dump.pm2.bak` or snapshot, keeping the rejected file there. Always exits 0. |
+
+The pre-change unit, drop-in, and both dumps are backed up in `/var/log/nightscout/backup/pm2-boot-fix-20261017T224008Z`. After changing these files run `systemctl daemon-reload`; it does not restart PM2.
 
 ### Accounts and privilege boundaries
 

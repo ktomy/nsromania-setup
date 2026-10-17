@@ -4,7 +4,7 @@ import { deleteSubdomain, listSubdomains } from './dnsmanagement';
 import { updateNSDomain } from './domains';
 import { deleteVirtualHost, getVirtualHosts } from './nginxmanagement';
 import { checkMongoDatabaseAndUser, deleteDatabaseAndUser } from './nsdatbasea';
-import { isDomainRunning, tryStopDomain } from './nsruntime';
+import { isDomainRunning, saveProcessListIfHealthy, tryStopDomain } from './nsruntime';
 
 export type DestroyDomainInfrastructureResult = {
     stopped: boolean;
@@ -29,6 +29,7 @@ export async function destroyDomainInfrastructure(
 
     if (await isDomainRunning(domain.domain)) {
         await tryStopDomain(domain);
+        await saveProcessListIfHealthy();
         result.stopped = true;
     } else {
         console.log('Domain is not running, nothing to stop');

@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { getNSDomainById, isMyDOmain } from '@/lib/services/domains';
-import { isDomainRunning, tryStopDomain } from '@/lib/services/nsruntime';
+import { isDomainRunning, saveProcessListIfHealthy, tryStopDomain } from '@/lib/services/nsruntime';
 import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest, props: Props) {
 
         const result = await tryStopDomain(domain);
         if (result === 'ok') {
+            await saveProcessListIfHealthy();
             return new Response(JSON.stringify({ message: 'Domain started' }), {
                 headers: { 'Content-Type': 'application/json' },
             });

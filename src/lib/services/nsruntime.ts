@@ -46,6 +46,70 @@ export async function isDomainRunning(domain: string): Promise<boolean> {
     return (await getProcessesList()).some((proc) => proc.name.endsWith(`_${domain}`));
 }
 
+// Status of the domain's PM2 process, or undefined when PM2 has no process for it
+export async function getDomainProcessStatus(domain: string): Promise<string | undefined> {
+    const proc = (await getProcessesList()).find((p) => p.name.endsWith(`_${domain}`));
+    return proc ? proc.status || 'unknown' : undefined;
+}
+
+// Minimum share of online apps required before the PM2 process list may be saved.
+// A degraded list (e.g. right after an interrupted resurrect) must never replace a good dump.
+export const SAVE_MIN_ONLINE_RATIO = 0.9;
+
+export function isProcessListHealthy(statuses: (string | undefined)[]): boolean {
+    if (statuses.length === 0) {
+        return false;
+    }
+    const online = statuses.filter((status) => status === 'online').length;
+    return online / statuses.length >= SAVE_MIN_ONLINE_RATIO;
+}
+
+// Persist the PM2 process list (dump.pm2) so reboots resurrect the current set of sites.
+// Never throws: a failed save must not fail the start/stop that preceded it.
+export async function saveProcessListIfHealthy(): Promise<boolean> {
+    try {
+        const pm2 = await import('pm2');
+        return await new Promise<boolean>((resolve, reject) => {
+            pm2.connect((err) => {
+                if (err) {
+                    pm2.disconnect();
+                    reject(err);
+                    return;
+                }
+                pm2.list((err, list) => {
+                    if (err) {
+                        pm2.disconnect();
+                        reject(err);
+                        return;
+                    }
+                    const apps = list.filter(
+                        (proc) => !(proc.pm2_env as { pmx_module?: boolean } | undefined)?.pmx_module
+                    );
+                    const statuses = apps.map((proc) => proc.pm2_env?.status);
+                    if (!isProcessListHealthy(statuses)) {
+                        const online = statuses.filter((status) => status === 'online').length;
+                        console.warn(`Not saving PM2 process list: only ${online}/${apps.length} apps online`);
+                        pm2.disconnect();
+                        resolve(false);
+                        return;
+                    }
+                    pm2.dump((err) => {
+                        pm2.disconnect();
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(true);
+                        }
+                    });
+                });
+            });
+        });
+    } catch (error) {
+        console.error('Failed to save PM2 process list:', error);
+        return false;
+    }
+}
+
 export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): Promise<string> {
     // connect to pm2 and start the domain
     const pm2 = await import('pm2');
@@ -151,4 +215,10 @@ export async function tryStopDomain(domain: PartialNSDomainWithEnvironments): Pr
             console.log(`Stopped domain ${domain.domain}`);
         });
     });
+}
+
+// Replace a PM2 process that exists but is not online (stopped/errored) with a fresh one from the DB config
+export async function tryRecreateDomain(domain: PartialNSDomainWithEnvironments): Promise<string> {
+    await tryStopDomain(domain);
+    return tryStartDomain(domain);
 }

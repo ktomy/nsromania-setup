@@ -1,6 +1,11 @@
 import { auth } from '@/auth';
 import { getNSDomainById, isMyDOmain } from '@/lib/services/domains';
-import { isDomainRunning, tryStartDomain } from '@/lib/services/nsruntime';
+import {
+    getDomainProcessStatus,
+    saveProcessListIfHealthy,
+    tryRecreateDomain,
+    tryStartDomain,
+} from '@/lib/services/nsruntime';
 import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 
@@ -44,7 +49,8 @@ export async function POST(req: NextRequest, props: Props) {
         });
     }
 
-    if (await isDomainRunning(domain.domain)) {
+    const processStatus = await getDomainProcessStatus(domain.domain);
+    if (processStatus === 'online' || processStatus === 'launching') {
         return new Response(JSON.stringify({ error: 'Domain is already running' }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
@@ -52,8 +58,10 @@ export async function POST(req: NextRequest, props: Props) {
     }
 
     try {
-        const result = await tryStartDomain(domain);
+        // A stopped/errored PM2 process still occupies the name; recreate it from the current config
+        const result = processStatus ? await tryRecreateDomain(domain) : await tryStartDomain(domain);
         if (result === 'ok') {
+            await saveProcessListIfHealthy();
             return new Response(JSON.stringify({ message: 'Domain started' }), {
                 headers: { 'Content-Type': 'application/json' },
             });

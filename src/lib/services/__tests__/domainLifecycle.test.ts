@@ -32,6 +32,7 @@ jest.mock('../nsdatbasea', () => ({
 jest.mock('../nsruntime', () => ({
     isDomainRunning: mockIsDomainRunning,
     tryStopDomain: mockTryStopDomain,
+    saveProcessListIfHealthy: jest.fn().mockResolvedValue(true),
 }));
 
 const { destroyDomainInfrastructure } = require('../domainLifecycle') as typeof import('../domainLifecycle');

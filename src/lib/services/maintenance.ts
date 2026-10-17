@@ -9,7 +9,7 @@ import {
     DatabaseSize,
     DatabaseTrimResult,
 } from './nsdatbasea';
-import { isDomainRunning, tryStopDomain } from './nsruntime';
+import { isDomainRunning, saveProcessListIfHealthy, tryStopDomain } from './nsruntime';
 
 export type InactiveUserActions = {
     stop?: boolean;
@@ -260,6 +260,10 @@ export async function actionInactiveUsers({
                 error: error instanceof Error ? error.message : String(error),
             });
         }
+    }
+
+    if (counts.stopped > 0) {
+        await saveProcessListIfHealthy();
     }
 
     return { counts, results };

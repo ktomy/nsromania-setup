@@ -1,0 +1,49 @@
+# CPU steal collector for the hosting-provider report. Repository: ops/cpu-steal/.
+# Installed as /etc/systemd/system/nsromania-cpu-steal.service by ops/cpu-steal/install.sh.
+[Unit]
+Description=NSRomania CPU steal collector (/proc/stat every 5 s, one CSV line per minute)
+After=local-fs.target
+# Retry forever: a crash loop must never disable data collection permanently.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I -S /usr/local/sbin/nsromania-cpu-steal
+Restart=always
+RestartSec=10
+# Creates /var/log/nsromania-cpu-steal (root:root 0755) and is the only writable path.
+LogsDirectory=nsromania-cpu-steal
+LogsDirectoryMode=0755
+UMask=0022
+# Resource ceilings far above normal use (~10 MB RSS, well under 0.1% of one CPU).
+MemoryMax=64M
+CPUQuota=5%
+TasksMax=4
+# Sandbox: reads /proc/stat and /proc/loadavg, writes only its log directory.
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+IPAddressDeny=any
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

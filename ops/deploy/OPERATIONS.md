@@ -104,6 +104,22 @@ previous file is in `/var/log/nightscout/backup/nginx-vhostlog-20261115T161422Z`
 The `ops/usage-stats` cron job (`/etc/cron.d/nsromania-usage-stats`, 02:15) aggregates the previous day into the
 standalone MySQL table `nightscout.ns_domain_daily_stats` (not in the Prisma schema). See `ops/usage-stats/README.md`.
 
+### CPU steal monitoring
+
+Since 2026-11-15 a lightweight collector records hypervisor CPU steal (from `/proc/stat` every 5 seconds, one CSV line
+per minute) as evidence for the hosting provider. See `ops/cpu-steal/README.md`; the report is generated with
+`./ops/cpu-steal/report.sh --from YYYY-MM-DD --to YYYY-MM-DD` (read-only, no sudo).
+
+| Server file | Purpose |
+| --- | --- |
+| `/usr/local/sbin/nsromania-cpu-steal` | Collector (stdlib Python, reads only `/proc`); repository copy in `ops/cpu-steal/` |
+| `/etc/systemd/system/nsromania-cpu-steal.service` | Enabled, `Restart=always`, sandboxed, `CPUQuota=5%`, `MemoryMax=64M` |
+| `/var/log/nsromania-cpu-steal/steal-YYYY-MM.csv` | Data, about 5 MB/month, kept indefinitely; writing stops below 2 GiB free |
+| `/etc/sysstat/sysstat` | `HISTORY=60` (was 7), so `sar` files are now `/var/log/sysstat/saYYYYMMDD`; previous file in `/var/log/nightscout/backup/sysstat-history-20261115T215121Z` |
+
+Install or update with `./ops/cpu-steal/install.sh`, which backs up replaced files to
+`/var/log/nightscout/backup/cpu-steal-<UTC>` and restarts only `nsromania-cpu-steal.service`.
+
 ### Accounts and privilege boundaries
 
 - `nsdeploy` is the locked GitHub Actions account. Its key has an OpenSSH forced command and `restrict`; it cannot obtain a shell or forward ports.

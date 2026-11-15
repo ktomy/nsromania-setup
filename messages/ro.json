@@ -126,6 +126,10 @@
         "label": "Limba",
         "ro": "Romana"
     },
+    "Metadata": {
+        "description": "Găzduire Nightscout condusă de comunitate, pentru îngrijitorii persoanelor cu diabet de tip 1, administrată de voluntari.",
+        "title": "NSRomânia — găzduire Nightscout"
+    },
     "NewDomainPage": {
         "active": "Activ",
         "api": "API (xDrip/Libre/640GConnect)",

@@ -8,10 +8,42 @@ import { auth } from '../auth';
 import { Build, Domain, DomainAdd, HowToReg } from '@mui/icons-material';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 
 const BRANDING = {
     title: 'NSRomania',
 };
+
+const SITE_NAME = 'NSRomânia';
+const SITE_URL = 'https://setup.nsromania.info';
+
+// Title, description and Open Graph tags for browser tabs, search results and social link previews.
+// The preview image and favicons come from opengraph-image.tsx, icon.svg and apple-icon.tsx in this folder.
+export async function generateMetadata(): Promise<Metadata> {
+    const locale = await getLocale();
+    const t = await getTranslations('Metadata');
+    const title = t('title');
+    const description = t('description');
+
+    return {
+        metadataBase: new URL(SITE_URL),
+        title,
+        description,
+        applicationName: SITE_NAME,
+        openGraph: {
+            type: 'website',
+            siteName: SITE_NAME,
+            title,
+            description,
+            locale: locale === 'ro' ? 'ro_RO' : 'en_US',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+        },
+    };
+}
 
 const AUTHENTICATION = {
     signIn,

@@ -126,6 +126,10 @@
         "label": "Language",
         "ro": "Română"
     },
+    "Metadata": {
+        "description": "Community-run Nightscout hosting for caregivers of people with type 1 diabetes, managed by volunteers.",
+        "title": "NSRomânia — Nightscout hosting"
+    },
     "NewDomainPage": {
         "active": "Active",
         "api": "API (xDrip/Libre/640GConnect)",

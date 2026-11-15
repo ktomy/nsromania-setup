@@ -137,7 +137,8 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
         'Nightscout version': domain.nsversion || '<default>',
         Created: formatDate(domain.created),
         'Last updated': formatDate(domain.lastUpdated),
-        Enable: domain.enable || '',
+        ENABLE: domain.enable || '',
+        SHOW_PLUGINS: domain.showPlugins || '',
         'Database size': formatBytes(domain.dbSize) || '',
         'Last glucose entry': formatDate(domain.lastDbEntry) || '',
     };

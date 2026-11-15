@@ -1,0 +1,3 @@
+# Collect yesterday's per-instance nginx request counts into MySQL (ns_domain_daily_stats).
+# Runs after logrotate (daily, may fire up to 01:00). Installed as /etc/cron.d/nsromania-usage-stats.
+15 2 * * * root nice -n 19 ionice -c3 /usr/bin/python3 -I /usr/local/sbin/nsromania-usage-stats 2>&1 | logger -t nsromania-usage-stats

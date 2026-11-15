@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Aggregate daily per-instance request counts from the nginx access log into MySQL.
+
+Reads nginx logs written in the `vcombined` format (`$host:$server_port` prefix) and
+upserts one row per (domain, day) into `ns_domain_daily_stats`. Re-running for the same
+day replaces that day's rows, so the job is idempotent and can be used for backfills.
+
+Only counts are stored: no IP addresses, paths or user agents leave the log files.
+
+Usage:
+    collect_usage_stats.py                    # yesterday (UTC server time)
+    collect_usage_stats.py --date 2026-11-15  # a specific day
+    collect_usage_stats.py --dry-run          # print the aggregate instead of writing
+"""
+
+import argparse
+import datetime as dt
+import glob
+import gzip
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import urllib.parse
+
+LOG_GLOB = '/var/log/nginx/access.log*'
+ENV_FILE = '/var/log/nightscout/setup/.env'
+BASE_DOMAIN = 'nsromania.info'
+TABLE = 'ns_domain_daily_stats'
+
+# $host:$server_port $remote_addr - $remote_user [$time_local] "$request" $status $bytes "$referer" "$ua"
+LINE_RE = re.compile(
+    r'^(?P<host>\S+):\d+ (?P<ip>\S+) \S+ \S+ \[(?P<day>\d{2}/\w{3}/\d{4}):[^\]]*\] '
+    r'"(?P<request>[^"]*)" (?P<status>\d{3}) \S+ "[^"]*" "(?P<ua>[^"]*)"'
+)
+# Host header is client-controlled: accept only a single DNS label under the base domain.
+SUBDOMAIN_RE = re.compile(r'^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.' + re.escape(BASE_DOMAIN) + r'$')
+BOT_RE = re.compile(
+    r'bot|crawl|spider|slurp|scan|zgrab|masscan|nmap|headless|wget|libwww|censys|expanse',
+    re.IGNORECASE,
+)
+FIELDS = ('hits', 'ok_hits', 'uploads', 'api_reads', 'web_hits')
+
+
+def is_ok_status(status):
+    return status == 101 or 200 <= status < 400
+
+
+def classify(method, path):
+    """Return the set of request categories for a method/path pair."""
+    path = path.split('?', 1)[0]
+    cats = set()
+    if path.startswith('/api/'):
+        if method in ('POST', 'PUT'):
+            cats.add('uploads')
+        elif method == 'GET':
+            cats.add('api_reads')
+    if path == '/' or path.startswith('/socket.io/'):
+        cats.add('web_hits')
+    return cats
+
+
+def parse_line(line, day_token):
+    """Parse one log line. Returns (subdomain, ip, categories, ok) or None if not counted."""
+    if day_token not in line:
+        return None
+    m = LINE_RE.match(line)
+    if not m or m.group('day') != day_token:
+        return None
+    sm = SUBDOMAIN_RE.match(m.group('host').lower())
+    if not sm:
+        return None
+    parts = m.group('request').split(' ')
+    method, path = (parts[0], parts[1]) if len(parts) >= 2 else ('', '')
+    status = int(m.group('status'))
+    ok = is_ok_status(status) and not BOT_RE.search(m.group('ua'))
+    return sm.group(1), m.group('ip'), classify(method, path), ok
+
+
+def aggregate(lines, day):
+    """Aggregate an iterable of log lines for one date into {subdomain: counters}."""
+    day_token = day.strftime('%d/%b/%Y')
+    stats = {}
+    ips = {}
+    for line in lines:
+        parsed = parse_line(line, day_token)
+        if not parsed:
+            continue
+        sub, ip, cats, ok = parsed
+        row = stats.setdefault(sub, dict.fromkeys(FIELDS, 0))
+        row['hits'] += 1
+        if ok:
+            row['ok_hits'] += 1
+        for cat in cats:
+            row[cat] += 1
+        ips.setdefault(sub, set()).add(ip)
+    for sub, row in stats.items():
+        row['unique_ips'] = len(ips[sub])
+    return stats
+
+
+def candidate_logs(day):
+    """Log files that can contain lines for `day`: anything modified on or after that day."""
+    start = dt.datetime.combine(day, dt.time.min).timestamp()
+    return sorted(p for p in glob.glob(LOG_GLOB) if os.path.getmtime(p) >= start)
+
+
+def read_lines(paths):
+    for path in paths:
+        opener = gzip.open if path.endswith('.gz') else open
+        with opener(path, 'rt', encoding='utf-8', errors='replace') as fh:
+            yield from fh
+
+
+def build_sql(day, stats):
+    """Build the upsert SQL. Subdomains are regex-validated and counters are ints."""
+    cols = ('domain', 'day') + FIELDS + ('unique_ips',)
+    stmts = [
+        'START TRANSACTION;',
+        "DELETE FROM {} WHERE day = '{}';".format(TABLE, day.isoformat()),
+    ]
+    rows = sorted(stats.items())
+    for i in range(0, len(rows), 200):
+        values = ',\n'.join(
+            "('{}','{}',{})".format(sub, day.isoformat(), ','.join(str(int(r[c])) for c in cols[2:]))
+            for sub, r in rows[i:i + 200]
+        )
+        stmts.append('INSERT INTO {} ({}) VALUES\n{};'.format(TABLE, ','.join(cols), values))
+    stmts.append('COMMIT;')
+    return '\n'.join(stmts) + '\n'
+
+
+def mysql_credentials(env_file=ENV_FILE):
+    """Read DATABASE_URL from the panel .env without sourcing or printing it."""
+    with open(env_file) as fh:
+        for line in fh:
+            if line.strip().startswith('DATABASE_URL'):
+                url = line.split('=', 1)[1].strip().strip('"\'')
+                return urllib.parse.urlparse(url)
+    raise RuntimeError('DATABASE_URL not found in ' + env_file)
+
+
+def run_mysql(sql):
+    u = mysql_credentials()
+    fd, cnf = tempfile.mkstemp()
+    try:
+        os.chmod(cnf, 0o600)
+        with os.fdopen(fd, 'w') as fh:
+            fh.write('[client]\nuser={}\npassword={}\nhost={}\nport={}\n'.format(
+                urllib.parse.unquote(u.username or ''), urllib.parse.unquote(u.password or ''),
+                u.hostname or 'localhost', u.port or 3306))
+        db = u.path.lstrip('/').split('?')[0]
+        subprocess.run(['mysql', '--defaults-extra-file=' + cnf, '--batch', db], input=sql, text=True, check=True)
+    finally:
+        os.unlink(cnf)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('--date', type=dt.date.fromisoformat, help='day to collect (default: yesterday)')
+    ap.add_argument('--dry-run', action='store_true', help='print the aggregate instead of writing')
+    args = ap.parse_args(argv)
+    day = args.date or (dt.date.today() - dt.timedelta(days=1))
+
+    paths = candidate_logs(day)
+    stats = aggregate(read_lines(paths), day)
+    total = sum(r['hits'] for r in stats.values())
+    print('{}: {} domains, {} hits from {} file(s)'.format(day, len(stats), total, len(paths)))
+    if args.dry_run:
+        for sub, r in sorted(stats.items(), key=lambda kv: -kv[1]['hits']):
+            print(sub, *(r[c] for c in FIELDS + ('unique_ips',)), sep='\t')
+        return 0
+    if not stats:
+        print('no matching lines; nothing written')
+        return 0
+    run_mysql(build_sql(day, stats))
+    print('written')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

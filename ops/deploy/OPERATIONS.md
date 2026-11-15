@@ -322,23 +322,29 @@ application deployment.
 
 ## Overload incident maintenance (2026-11-15)
 
-From 2026-11-14 about 15:00 UTC, load rose from about 15 to about 300 on 8 vCPUs. The trigger was hypervisor CPU steal
-doubling to about 20% (hosting-provider backups ran every 6 hours; the owner changed them to weekly). That started a
-self-sustaining loop: starved mongod, driver pool clears, uploader retries. Memory was also exhausted: about 56 GiB
-of RAM plus 8 GiB of swap, almost all of it used by the Nightscout instances (median about 138 MB each). Actions, all
-authorized by the owner:
+Full incident note: [`ops/incidents/2026-11-14-overload.md`](../incidents/2026-11-14-overload.md). It covers the
+timeline, root cause, every change with its backup path, before/after numbers and follow-ups.
 
-- Stopped 37 instances: 25 orphan PM2 processes whose `ns_domain` rows no longer existed, plus 12 instances with no
-  MongoDB data or no upload for more than 30 days, created more than a week ago. Set those 12 rows to `active = 0`.
-  Backup (PM2 dump, `jlist` before/after, original rows):
-  `/var/log/nightscout/backup/deactivate-idle-20261115T155921Z`.
-- After an explicit review (the only non-online apps were exactly those 37, and `setup-ns` had the audited definition),
-  ran `pm2 save` under the deployment lock with the pinned runtime. Previous dump:
-  `/var/log/nightscout/backup/pm2-save-20261115T165055Z`. Saved dump: 417 apps, 380 online, 37 stopped.
-- Applied the mongod CPU priority and the nginx `vcombined` log format described above.
+In short, hypervisor CPU steal doubled to about 20% on a host with little headroom. That starved mongod, which
+competed as one of about 400 processes, and started a reconnect/retry loop (load 300–450). A latent Nightscout default
+amplified it: a 30 s pool idle time against a 60 s reload, about 1,400 SCRAM logins per minute. The resolution was:
 
-The host remained CPU-saturated after these steps (about 150 load, 0% idle). Further capacity, for example a separate
-MongoDB server, is planned.
+- mongod CPU priority;
+- `MONGO_MAX_IDLE_TIME_MS=600000` on every instance;
+- a one-time stop/start of all instances;
+- removal of 37 orphaned or unused instances: 12 `ns_domain` rows set to `active = 0`, and the apps deleted from PM2.
+
+Afterwards PM2 held 380 apps, all online, and load was 20–30 with steal still about 17%. More capacity is the main
+follow-up.
+
+### Nightscout MongoDB pool idle time
+
+Every instance must run with `MONGO_MAX_IDLE_TIME_MS=600000`. Nightscout 15's default of 30 s is shorter than its 60 s
+data reload, so without this setting each instance re-authenticates its whole pool every minute. Since `2fbf865` the
+panel sets this default in `tryStartDomain` (`src/lib/services/nsruntime.ts`), and a per-domain environment variable
+overrides it. Running instances keep it in their saved PM2 environment. Check with
+`grep -c MONGO_MAX_IDLE_TIME_MS /root/.pm2/dump.pm2` or by counting `"Successfully authenticated"` lines in
+`mongod.log`, which should be close to 0 per minute.
 
 ## Last verified production snapshot
 

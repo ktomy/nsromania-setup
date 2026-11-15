@@ -78,6 +78,32 @@ The panel itself saves the root PM2 list (`saveProcessListIfHealthy` in `src/lib
 
 The pre-change unit, drop-in, and both dumps are backed up in `/var/log/nightscout/backup/pm2-boot-fix-20261017T224008Z`. After changing these files run `systemctl daemon-reload`; it does not restart PM2.
 
+### MongoDB CPU priority and OOM protection
+
+MongoDB (`mongod.service`) and every Nightscout instance (all inside `pm2-root.service`) share 8 vCPUs. Without a
+CPU weight, the cgroup v2 `cpu` controller was not enabled inside `system.slice`, so mongod competed thread-by-thread
+with ~400 Node processes. Under load (2026-11-14/15, with hypervisor steal around 20%) that starved mongod, timed out
+driver heartbeats and kept the whole host overloaded. Slow MongoDB operations fell from about 1,000 to about 10 per minute
+within two minutes of the fix, applied 2026-11-15 without restarting mongod.
+
+| Server file | Purpose |
+| --- | --- |
+| `/etc/systemd/system/mongod.service.d/priority.conf` | `CPUWeight=1000` (other services keep 100), `OOMScoreAdjust=-900`; repository copy in `ops/mongod/` |
+
+Setting any `CPUWeight` enables the `cpu` controller in `system.slice`, so each service (mongod, `pm2-root`, nginx,
+MySQL, ...) is now scheduled as one group; idle share still flows to busy groups. The pre-change state is recorded in
+`/var/log/nightscout/backup/mongod-priority-20261115T174510Z`. To revert: remove the drop-in, `systemctl daemon-reload`,
+then `systemctl set-property --runtime mongod.service CPUWeight=100` and write `0` to the mongod PID's `oom_score_adj`.
+
+### Nginx access log and instance usage statistics
+
+Since 2026-11-15 `/etc/nginx/nginx.conf` writes `/var/log/nginx/access.log` in the `vcombined` format
+(`$host:$server_port` prefix, otherwise `combined`), which GoAccess reads natively (`--log-format=VCOMBINED`). The
+previous file is in `/var/log/nightscout/backup/nginx-vhostlog-20261115T161422Z`. Logs rotate daily and keep 14 days.
+
+The `ops/usage-stats` cron job (`/etc/cron.d/nsromania-usage-stats`, 02:15) aggregates the previous day into the
+standalone MySQL table `nightscout.ns_domain_daily_stats` (not in the Prisma schema). See `ops/usage-stats/README.md`.
+
 ### Accounts and privilege boundaries
 
 - `nsdeploy` is the locked GitHub Actions account. Its key has an OpenSSH forced command and `restrict`; it cannot obtain a shell or forward ports.
@@ -277,6 +303,26 @@ MongoDB 6 to 7 to 8 storage upgrade and was purged after cutover. Retained recov
 
 These paths are root-only and contain production data. Do not copy, inspect, or prune them during an ordinary
 application deployment.
+
+## Overload incident maintenance (2026-11-15)
+
+From 2026-11-14 about 15:00 UTC, load rose from about 15 to about 300 on 8 vCPUs. The trigger was hypervisor CPU steal
+doubling to about 20% (hosting-provider backups ran every 6 hours; the owner changed them to weekly). That started a
+self-sustaining loop: starved mongod, driver pool clears, uploader retries. Memory was also exhausted: about 56 GiB
+of RAM plus 8 GiB of swap, almost all of it used by the Nightscout instances (median about 138 MB each). Actions, all
+authorized by the owner:
+
+- Stopped 37 instances: 25 orphan PM2 processes whose `ns_domain` rows no longer existed, plus 12 instances with no
+  MongoDB data or no upload for more than 30 days, created more than a week ago. Set those 12 rows to `active = 0`.
+  Backup (PM2 dump, `jlist` before/after, original rows):
+  `/var/log/nightscout/backup/deactivate-idle-20261115T155921Z`.
+- After an explicit review (the only non-online apps were exactly those 37, and `setup-ns` had the audited definition),
+  ran `pm2 save` under the deployment lock with the pinned runtime. Previous dump:
+  `/var/log/nightscout/backup/pm2-save-20261115T165055Z`. Saved dump: 417 apps, 380 online, 37 stopped.
+- Applied the mongod CPU priority and the nginx `vcombined` log format described above.
+
+The host remained CPU-saturated after these steps (about 150 load, 0% idle). Further capacity, for example a separate
+MongoDB server, is planned.
 
 ## Last verified production snapshot
 

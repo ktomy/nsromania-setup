@@ -322,8 +322,9 @@ application deployment.
 
 ## Overload incident maintenance (2026-11-15)
 
-Full incident note: [`ops/incidents/2026-11-14-overload.md`](../incidents/2026-11-14-overload.md). It covers the
-timeline, root cause, every change with its backup path, before/after numbers and follow-ups.
+The full incident note (timeline, root cause, every change with its backup path, before/after numbers and follow-ups)
+is kept locally in `ops/incidents/2026-11-14-overload.md`. That directory is git-ignored, so operational write-ups are
+not committed.
 
 In short, hypervisor CPU steal doubled to about 20% on a host with little headroom. That starved mongod, which
 competed as one of about 400 processes, and started a reconnect/retry loop (load 300–450). A latent Nightscout default

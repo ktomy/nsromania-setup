@@ -122,7 +122,7 @@ Do not “normalize” the setgid modes without investigating the hosting filesy
 
 The manual workflow is `.github/workflows/deploy-production.yml`. It is `workflow_dispatch` only, refuses refs other than `refs/heads/main`, uses a constant production concurrency group, and does not cancel an active deployment.
 
-The `production` GitHub Environment is configured with an exact `main` branch policy and a required reviewer. If the dispatcher is the only reviewer, self-review must remain permitted or a second reviewer must be configured.
+The `production` GitHub Environment is configured with an exact `main` branch policy and no required reviewer (removed on 2026-11-15; single maintainer, who is the only dispatcher). Re-add a required reviewer if anyone else gains write access to the repository.
 
 Environment secrets:
 
@@ -148,7 +148,7 @@ The build job has no production environment or SSH key. A fresh protected deploy
 
 1. Ensure the desired commit is on `main` and CI is green.
 2. Open **GitHub → Actions → Deploy production → Run workflow**.
-3. Select `main` and approve the `production` environment gate.
+3. Select `main`.
 4. Verify the run reports the exact requested commit from the public `/api/health` endpoint.
 
 The workflow builds and tests with Node `22.12.0` and pnpm `10.32.0`. Prisma client generation uses a dummy unreachable URL; it does not use or contact production. The standalone artifact includes runtime files but explicitly excludes every `.env*` file and Prisma migrations.

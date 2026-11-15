@@ -19,7 +19,7 @@ Before production work, read the durable topology, permissions, recovery notes, 
 
 ## GitHub environment
 
-Create an environment named `production`, restrict it to exactly `main`, and configure a required reviewer before the first dispatch. If the person dispatching is the sole reviewer, leave "prevent self-review" disabled or add a different reviewer.
+Create an environment named `production` and restrict it to exactly `main`. It has no required reviewer: the project has a single maintainer, who is also the only person who dispatches deployments, so dispatching the workflow is the approval. Add a required reviewer if more people gain write access.
 
 Environment secrets:
 
@@ -61,7 +61,7 @@ GitHub protects the active workflow run from cancellation. Its concurrency model
 
 ## Manual deployment
 
-Open **Actions → Deploy production → Run workflow**, select `main`, and approve the `production` environment gate. GitHub serializes deployments and refuses any non-`main` ref.
+Open **Actions → Deploy production → Run workflow**, and select `main`. GitHub serializes deployments and refuses any non-`main` ref.
 
 The activation sequence is:
 

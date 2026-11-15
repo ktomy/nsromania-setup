@@ -154,6 +154,10 @@ export async function tryStartDomain(domain: PartialNSDomainWithEnvironments): P
             nsEnvironment.PORT = (11000 + (domain.id || 999)).toString();
             nsEnvironment.THEME = 'colors';
             nsEnvironment.TIME_FORMAT = '24';
+            // Nightscout closes pooled MongoDB connections idle for 30 s, but reloads data every 60 s, so each
+            // reload re-authenticates its whole pool (~1,400 SCRAM logins/min across the server). Keep pooled
+            // connections for 10 minutes instead. A per-domain environment value overrides this default.
+            nsEnvironment.MONGO_MAX_IDLE_TIME_MS = '600000';
 
             let connectionStringInVariables = false;
 

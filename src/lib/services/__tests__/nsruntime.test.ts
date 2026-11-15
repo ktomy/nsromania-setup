@@ -132,6 +132,34 @@ describe('tryStartDomain', () => {
         );
     });
 
+    it('keeps pooled MongoDB connections for 10 minutes by default', async () => {
+        await expect(tryStartDomain({ id: 7, domain: 'demo', environments: [] })).resolves.toBe('ok');
+
+        expect(mockStart).toHaveBeenCalledWith(
+            expect.objectContaining({
+                env: expect.objectContaining({ MONGO_MAX_IDLE_TIME_MS: '600000' }),
+            }),
+            expect.any(Function)
+        );
+    });
+
+    it('lets a domain environment variable override the MongoDB idle time default', async () => {
+        const domain = {
+            id: 7,
+            domain: 'demo',
+            environments: [{ variable: 'MONGO_MAX_IDLE_TIME_MS', value: '120000' }],
+        } as PartialNSDomainWithEnvironments;
+
+        await expect(tryStartDomain(domain)).resolves.toBe('ok');
+
+        expect(mockStart).toHaveBeenCalledWith(
+            expect.objectContaining({
+                env: expect.objectContaining({ MONGO_MAX_IDLE_TIME_MS: '120000' }),
+            }),
+            expect.any(Function)
+        );
+    });
+
     it('fails clearly before connecting to PM2 when NS_HOME is missing', async () => {
         delete process.env.NS_HOME;
 

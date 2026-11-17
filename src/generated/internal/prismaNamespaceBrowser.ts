@@ -99,6 +99,7 @@ export const NSDomainScalarFieldEnum = {
   lastUpdated: 'lastUpdated',
   dbPassword: 'dbPassword',
   nsversion: 'nsversion',
+  server: 'server',
   authUserId: 'authUserId'
 } as const
 
@@ -249,6 +250,7 @@ export const NSDomainOrderByRelevanceFieldEnum = {
   bridgeServer: 'bridgeServer',
   dbPassword: 'dbPassword',
   nsversion: 'nsversion',
+  server: 'server',
   authUserId: 'authUserId'
 } as const
 

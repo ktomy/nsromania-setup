@@ -1,6 +1,7 @@
 import { CreateDomainRequest, GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
 import { prisma } from '../prisma';
 import { getProcessesList } from './nsruntime';
+import { getDefaultServerForNewDomains, isRemoteServer, serverIdOf } from './servers';
 import { NSDomain, User } from '@/generated/client';
 import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from './nsdatbasea';
 
@@ -59,13 +60,14 @@ export async function getFullDOmainData(id: number): Promise<GetDomainByIdRespon
     if (!nsDomain) {
         return null;
     }
-    const processList = await getProcessesList();
+    const serverId = serverIdOf(nsDomain);
+    const processList = await getProcessesList(serverId);
     // check if a process having the domain name is running and if yes, set "status" field to the process's status
     nsDomain.status =
         processList.find((proc) => proc.name.endsWith(`_${nsDomain.domain}`))?.status || 'not running';
-    nsDomain.dbInitialized = await checkMongoDatabaseAndUser(nsDomain.domain, nsDomain.domain);
-    nsDomain.lastDbEntry = await getLastDbEntry(nsDomain.domain);
-    nsDomain.dbSize = await getDbSize(nsDomain.domain);    
+    nsDomain.dbInitialized = await checkMongoDatabaseAndUser(nsDomain.domain, nsDomain.domain, serverId);
+    nsDomain.lastDbEntry = await getLastDbEntry(nsDomain.domain, serverId);
+    nsDomain.dbSize = await getDbSize(nsDomain.domain, serverId);
     return nsDomain;
 }
 
@@ -132,6 +134,8 @@ export async function createNSDomain(data: CreateDomainRequest) {
             bridgeServer: data.bridgeServer,
             dbPassword: data.dbPassword,
             nsversion: data.nsversion,
+            // Never taken from the request: non-admin users can create domains too
+            server: getDefaultServerForNewDomains(),
             active: data.active,
             dbExists: data.dbExists,
             environments: data.environments
@@ -158,6 +162,10 @@ export async function isMyDOmain(domainId: number, user: User) {
     if (user.role === 'admin') {
         return true;
     }
+    // A missing id would drop the owner condition from the query below and match any site
+    if (typeof user.id !== 'string' || user.id === '') {
+        return false;
+    }
 
     const domain = await prisma.nSDomain.findFirst({
         where: {
@@ -167,6 +175,17 @@ export async function isMyDOmain(domainId: number, user: User) {
     });
 
     return !!domain;
+}
+
+// Places a site that has no database yet on another hosting server. The condition is part of the update, so a site
+// that got initialized meanwhile keeps its server; moving an initialized site means copying its data
+// (ops/servers/migrate-instance.sh). Returns whether the site was updated.
+export async function assignServerBeforeInitialization(id: number, serverId: string): Promise<boolean> {
+    const result = await prisma.nSDomain.updateMany({
+        where: { id, dbExists: 0 },
+        data: { server: isRemoteServer(serverId) ? serverId : null },
+    });
+    return result.count === 1;
 }
 
 export async function updateNSDomain(id: number, data: PartialNSDomainWithEnvironments) {

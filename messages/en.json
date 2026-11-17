@@ -19,7 +19,12 @@
         "start": "Start",
         "stop": "Stop",
         "welcome": "Greet",
-        "delete": "Delete"
+        "delete": "Delete",
+        "initializeDialogTitle": "Initialize site",
+        "initializeDialogText": "Choose the server that will host this site. Its database and web configuration are created there and its address points to it. Moving the site later requires a migration.",
+        "initializeServerLabel": "Server",
+        "initializeServerDefault": "default",
+        "cancel": "Cancel"
     },
     "DomainsPage": {
         "actionFailed": "Action failed",
@@ -32,6 +37,7 @@
         "loading": "Loading...",
         "newDomain": "New Domain",
         "notSignedIn": "You are not signed in. Please sign in to access this page.",
+        "server": "Server",
         "startAllActive": "Start all active",
         "status": "Status",
         "subdomain": "Subdomain",

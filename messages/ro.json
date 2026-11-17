@@ -19,7 +19,12 @@
         "start": "Porniți",
         "stop": "Opriți",
         "welcome": "Greet",
-        "delete": "Sterge"
+        "delete": "Sterge",
+        "initializeDialogTitle": "Inițializați site-ul",
+        "initializeDialogText": "Alegeți serverul care va găzdui acest site. Baza de date și configurația web sunt create pe acel server, iar adresa site-ului va indica spre el. Mutarea ulterioară a site-ului necesită o migrare.",
+        "initializeServerLabel": "Server",
+        "initializeServerDefault": "implicit",
+        "cancel": "Anulați"
     },
     "DomainsPage": {
         "actionFailed": "Acțiunea a eșuat",
@@ -32,6 +37,7 @@
         "loading": "Se încarcă...",
         "newDomain": "Domeniu nou",
         "notSignedIn": "Nu sunteți autentificat. Vă rugăm să vă autentificați pentru a accesa această pagină.",
+        "server": "Server",
         "startAllActive": "Pornește toate active",
         "status": "Stare",
         "subdomain": "Subdomeniu",

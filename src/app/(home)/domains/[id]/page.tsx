@@ -5,6 +5,7 @@ import DomainView from './DomainView';
 import { Typography } from '@mui/material';
 import { User } from '@/generated/client';
 import { getFullDOmainData } from '@/lib/services/domains';
+import { getDefaultServerId, getHostingServers } from '@/lib/services/servers';
 
 export default async function DomainPage({ params }: { params: Promise<{ id: string }> }) {
     const awaitedParams = await params;
@@ -34,5 +35,14 @@ export default async function DomainPage({ params }: { params: Promise<{ id: str
     }
     
     // Render the client component with the server-fetched data
-    return <DomainView domainData={domainData} idNumber={idNumber} />;
+    // Server ids and hostnames only (no SSH targets or credentials) for display and the initialization choice
+    return (
+        <DomainView
+            domainData={domainData}
+            idNumber={idNumber}
+            servers={getHostingServers()}
+            defaultServer={getDefaultServerId()}
+            isAdmin={user.role === 'admin'}
+        />
+    );
 }

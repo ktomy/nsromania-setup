@@ -1,8 +1,7 @@
 // /src/app/api/domains/[id]/route.ts
-import { getFullDOmainData, isMyDOmain, updateNSDomain } from '@/lib/services/domains';
-import { auth } from '@/auth';
-import { User } from '@/generated/client';
-import {  PartialNSDomainWithEnvironments } from '@/types/domains';
+import { getFullDOmainData, updateNSDomain } from '@/lib/services/domains';
+import { authorizeDomainAccess } from '@/lib/services/domainAccess';
+import { PartialNSDomainWithEnvironments } from '@/types/domains';
 
 type Props = {
     params: Promise<{
@@ -11,30 +10,16 @@ type Props = {
 };
 
 export async function GET(req: Request, props: Props) {
-    const params = await props.params;
-    const { id } = await params;
-    const session = await auth();
-
-    if (!session) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-        });
+    const { id } = await props.params;
+    const access = await authorizeDomainAccess(id);
+    if (!access.ok) {
+        return access.response;
     }
 
     try {
-        const nsDomain = await getFullDOmainData(parseInt(id));
+        const nsDomain = await getFullDOmainData(access.domainId);
         if (!nsDomain) {
             return new Response(JSON.stringify({ error: 'Not found' }), {
-                status: 404,
-                headers: { 'Content-Type': 'application/json' },
-            });
-        }
-
-        const user = session.user as User;
-        //console.log("User:", user);
-        if (user.role !== 'admin' && nsDomain.authUser?.id !== user.id) {
-            return new Response(JSON.stringify({ error: 'NS domain not found' }), {
                 status: 404,
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -54,28 +39,16 @@ export async function GET(req: Request, props: Props) {
 }
 
 export async function PUT(req: Request, props: Props) {
-    const params = await props.params;
-    const { id } = await params;
-    const session = await auth();
-
-    if (!session) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-        });
+    const { id } = await props.params;
+    const access = await authorizeDomainAccess(id);
+    if (!access.ok) {
+        return access.response;
     }
 
     try {
-        if (!isMyDOmain(parseInt(id), session.user as User)) {
-            return new Response(JSON.stringify({ error: 'Not found' }), {
-                status: 404,
-                headers: { 'Content-Type': 'application/json' },
-            });
-        }
-
         const body = (await req.json()) as PartialNSDomainWithEnvironments;
         console.log('Body:', body);
-        const updatedDomain = await updateNSDomain(parseInt(id), body);
+        const updatedDomain = await updateNSDomain(access.domainId, body);
 
         return new Response(JSON.stringify(updatedDomain), {
             headers: { 'Content-Type': 'application/json' },

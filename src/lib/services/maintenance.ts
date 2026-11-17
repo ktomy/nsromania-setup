@@ -10,6 +10,7 @@ import {
     DatabaseTrimResult,
 } from './nsdatbasea';
 import { isDomainRunning, saveProcessListIfHealthy, tryStopDomain } from './nsruntime';
+import { serverIdOf } from './servers';
 
 export type InactiveUserActions = {
     stop?: boolean;
@@ -94,6 +95,26 @@ function validateActions(actions: InactiveUserActions) {
     }
 }
 
+// Run a per-server batch lookup for domains spread over several hosting servers and merge the results by name
+async function lookupByServer<T>(
+    domains: NSDomain[],
+    lookup: (dbNames: string[], serverId: string) => Promise<Map<string, T>>
+): Promise<Map<string, T>> {
+    const namesByServer = new Map<string, string[]>();
+    for (const domain of domains) {
+        const serverId = serverIdOf(domain);
+        namesByServer.set(serverId, [...(namesByServer.get(serverId) ?? []), domain.domain]);
+    }
+
+    const merged = new Map<string, T>();
+    for (const [serverId, dbNames] of Array.from(namesByServer.entries())) {
+        for (const [dbName, value] of Array.from((await lookup(dbNames, serverId)).entries())) {
+            merged.set(dbName, value);
+        }
+    }
+    return merged;
+}
+
 function cutoffDate(days: number, now: Date) {
     return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
@@ -111,7 +132,7 @@ function siteResult(domain: NSDomain, evaluation: InactivityEvaluation): Mainten
 }
 
 async function evaluateInactivity(domain: NSDomain, cutoff: Date): Promise<InactivityEvaluation> {
-    const lastGlucoseEntry = await getLastDbEntry(domain.domain);
+    const lastGlucoseEntry = await getLastDbEntry(domain.domain, serverIdOf(domain));
     return evaluateLastGlucoseEntry(lastGlucoseEntry, cutoff);
 }
 
@@ -163,7 +184,7 @@ export async function getInactiveUserPreview({
         },
     });
 
-    const lastEntries = await getLastDbEntries(domains.map((domain) => domain.domain));
+    const lastEntries = await lookupByServer(domains, getLastDbEntries);
 
     for (const domain of domains) {
         counts.checked += 1;
@@ -194,6 +215,7 @@ export async function actionInactiveUsers({
     const cutoff = cutoffDate(days, now);
     const counts = emptyCounts();
     const results: MaintenanceSiteResult[] = [];
+    const serversWithStoppedSites = new Set<string>();
 
     for (const siteId of siteIds) {
         counts.checked += 1;
@@ -230,9 +252,10 @@ export async function actionInactiveUsers({
         counts.inactiveCandidates += 1;
 
         try {
-            if (actions.stop && (await isDomainRunning(domain.domain))) {
+            if (actions.stop && (await isDomainRunning(domain))) {
                 await tryStopDomain(domain);
                 counts.stopped += 1;
+                serversWithStoppedSites.add(serverIdOf(domain));
             }
 
             if (actions.deactivate) {
@@ -262,8 +285,9 @@ export async function actionInactiveUsers({
         }
     }
 
-    if (counts.stopped > 0) {
-        await saveProcessListIfHealthy();
+    // destroyDomainInfrastructure saves the list of its own server after stopping a site
+    for (const serverId of Array.from(serversWithStoppedSites)) {
+        await saveProcessListIfHealthy(serverId);
     }
 
     return { counts, results };
@@ -282,7 +306,7 @@ function databaseSiteResult(domain: NSDomain, size: DatabaseSize | null): Databa
 
 export async function getDatabaseMaintenanceSites(): Promise<DatabaseMaintenanceResult> {
     const domains = await prisma.nSDomain.findMany({ orderBy: { domain: 'asc' } });
-    const sizes = await getDbSizes(domains.map((domain) => domain.domain));
+    const sizes = await lookupByServer(domains, getDbSizes);
 
     return {
         sites: domains.map((domain) => databaseSiteResult(domain, sizes.get(domain.domain) ?? null)),
@@ -321,12 +345,17 @@ export async function trimDatabaseForSites({
         const environment = new Map(domain.environments.map((item) => [item.variable, item.value]));
         const collectionName = (primary: string, fallback?: string) =>
             environment.get(primary) || (fallback ? environment.get(fallback) : null) || undefined;
-        const result = await trimDatabase(domain.domain, cutoff, {
-            [collectionName('ENTRIES_COLLECTION', 'MONGO_COLLECTION') ?? 'entries']: 'date',
-            [collectionName('MONGO_TREATMENTS_COLLECTION') ?? 'treatments']: 'created_at',
-            [collectionName('MONGO_DEVICESTATUS_COLLECTION') ?? 'devicestatus']: 'created_at',
-            [collectionName('MONGO_ACTIVITY_COLLECTION') ?? 'activity']: 'created_at',
-        });
+        const result = await trimDatabase(
+            domain.domain,
+            cutoff,
+            {
+                [collectionName('ENTRIES_COLLECTION', 'MONGO_COLLECTION') ?? 'entries']: 'date',
+                [collectionName('MONGO_TREATMENTS_COLLECTION') ?? 'treatments']: 'created_at',
+                [collectionName('MONGO_DEVICESTATUS_COLLECTION') ?? 'devicestatus']: 'created_at',
+                [collectionName('MONGO_ACTIVITY_COLLECTION') ?? 'activity']: 'created_at',
+            },
+            serverIdOf(domain)
+        );
         results.push({ ...result, id: domain.id, title: domain.title });
     }
 

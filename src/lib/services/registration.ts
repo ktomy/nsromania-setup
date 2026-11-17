@@ -3,6 +3,7 @@ import { NSDomain, register_request, User } from '@/generated/client';
 import { sendRegistrationNotificationEmail, sendValidationEmail } from './sendemail';
 import { RegisterDomainRequest } from '@/types/domains';
 import { getLatestAvailableVersion } from './nsversion';
+import { getDefaultServerForNewDomains } from './servers';
 import { Locale } from '@/i18n/config';
 
 export async function initiateEmailValidation(email: string) {
@@ -201,6 +202,7 @@ export async function approveRegistrationRequest(id: number, approvingUser: User
             title: request.title!,
             port: 0,
             nsversion: latestVersion.directoryName,
+            server: getDefaultServerForNewDomains(),
         },
     });
 

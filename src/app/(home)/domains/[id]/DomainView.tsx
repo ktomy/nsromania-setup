@@ -15,6 +15,8 @@ import FolderDeleteRoundedIcon from '@mui/icons-material/FolderDeleteRounded';
 import WavingHandRoundedIcon from '@mui/icons-material/WavingHandRounded';
 import SettingsInputComponentRoundedIcon from '@mui/icons-material/SettingsInputComponentRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import type { HostingServerInfo } from '@/lib/services/servers';
+import InitializeDialog from './InitializeDialog';
 
 type RenderProperty = string | [string, string];
 interface RenderDomainPropertiesProps {
@@ -55,9 +57,14 @@ const RenderDomainProperties = ({ properties, title }: RenderDomainPropertiesPro
 interface DomainViewProps {
     domainData: GetDomainByIdResponse;
     idNumber: number;
+    servers: HostingServerInfo[];
+    defaultServer: string;
+    isAdmin: boolean;
 }
 
-export default function DomainView({ domainData, idNumber }: DomainViewProps) {
+type DomainAction = 'start' | 'stop' | 'initialize' | 'destroy' | 'welcome' | 'delete';
+
+export default function DomainView({ domainData, idNumber, servers, defaultServer, isAdmin }: DomainViewProps) {
     const router = useRouter();
     const t = useTranslations('DomainPage');
     const [domain, setDomain] = useState<GetDomainByIdResponse>(domainData);
@@ -65,6 +72,7 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
     const [snackMessage, setSnackMessage] = useState('');
     const [snackKind, setSnackKind] = useState<'success' | 'error' | 'info' | 'warning'>('success');
     const [actionInProgress, setActionInProgress] = useState(false);
+    const [initializeDialogOpen, setInitializeDialogOpen] = useState(false);
 
     const openSnack = (message: string, kind: 'success' | 'error' | 'info' | 'warning') => {
         setSnackMessage(message);
@@ -76,7 +84,7 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
         setSnackOpen(false);
     };
 
-    const handleDomainActions = async (action: 'start' | 'stop' | 'initialize' | 'destroy' | 'welcome' | 'delete') => {
+    const handleDomainActions = async (action: DomainAction, body?: Record<string, string>) => {
         try {
             if (action === 'destroy' || action === 'delete') {
                 //TODO: Add a modal to confirm the action (Good first issue)
@@ -87,6 +95,7 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
             setActionInProgress(true);
             const res = await fetch(`/api/domains/${idNumber}/${action}`, {
                 method: 'POST',
+                ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
             });
 
             if (res.ok) {
@@ -104,13 +113,30 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
                 setActionInProgress(false);
             } else {
                 console.error(`Failed to ${action} domain`, res);
-                openSnack(`Failed to ${action} domain`, 'error');
+                const reason = await res
+                    .json()
+                    .then((data) => (typeof data?.error === 'string' ? data.error : ''))
+                    .catch(() => '');
+                openSnack(reason ? `Failed to ${action} domain: ${reason}` : `Failed to ${action} domain`, 'error');
                 setActionInProgress(false);
             }
         } catch (error) {
             console.error(`Failed to ${action} domain`, error);
             openSnack(`Failed to ${action} domain`, 'error');
             setActionInProgress(false);
+        }
+    };
+
+    const serverId = domain.server || 'main';
+    const serverHostname = servers.find((server) => server.id === serverId)?.hostname;
+    const notInitialized = domain.dbExists === 0 && !domain.dbInitialized;
+
+    // First initialization: an admin chooses the hosting server; afterwards the site stays where its data is
+    const startInitialize = async () => {
+        if (isAdmin && servers.length > 1 && domain.dbExists === 0) {
+            setInitializeDialogOpen(true);
+        } else {
+            await handleDomainActions('initialize');
         }
     };
 
@@ -126,6 +152,11 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
                 : domain.status === 'online'
                   ? ['Online', 'green']
                   : domain.status || ['error', 'red'],
+        Server: notInitialized
+            ? 'Not initialized yet (chosen when initializing)'
+            : serverHostname
+              ? `${serverId} (${serverHostname})`
+              : serverId,
         Title: domain.title || '',
         'Data source':
             domain.enable.indexOf('bridge') !== -1
@@ -163,7 +194,7 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
         {
             label: t('initialize'),
             id: 'initialize',
-            action: async () => await handleDomainActions('initialize'),
+            action: startInitialize,
             icon: <SettingsInputComponentRoundedIcon />,
             disabled: domain?.status === 'online' || domain?.dbInitialized === true || actionInProgress,
         },
@@ -213,6 +244,18 @@ export default function DomainView({ domainData, idNumber }: DomainViewProps) {
 
     return (
         <Box>
+            {initializeDialogOpen && (
+                <InitializeDialog
+                    open
+                    servers={servers}
+                    defaultServer={defaultServer}
+                    onCancel={() => setInitializeDialogOpen(false)}
+                    onConfirm={async (server) => {
+                        setInitializeDialogOpen(false);
+                        await handleDomainActions('initialize', { server });
+                    }}
+                />
+            )}
             <Snackbar open={snackOpen} autoHideDuration={3000} onClose={handleSnackClose} message={snackMessage}>
                 <Alert onClose={handleSnackClose} severity={snackKind} variant="filled" sx={{ width: '100%' }}>
                     {snackMessage}

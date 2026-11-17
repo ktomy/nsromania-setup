@@ -136,7 +136,8 @@ server. The panel, MySQL and DNS stay here. The panel controls d1 as root over S
 | `d1` A record in `/etc/bind/zones/nsromania.info.header` | `/var/log/nightscout/backup/dns-d1-record-20261117T203007Z` |
 | DDL `ALTER TABLE ns_domain ADD COLUMN server VARCHAR(32) NULL DEFAULT NULL, ALGORITHM=INSTANT` (by hand, no Prisma migration) and the `.env` keys | `/var/log/nightscout/backup/multi-server-20261117T211226Z` |
 | Panel key, pinned host key, tunnel unit and `/etc/nsromania/servers/d1.env` | `/var/log/nightscout/backup/panel-access-20261117T210450Z` (nothing was replaced) |
-| `ktomy` moved to d1; its vhost here is now a forwarder; app stopped but still in root PM2 until finalized | `/var/log/nightscout/backup/migrate-ktomy-20261117T211532Z` |
+| `ktomy` moved to d1; its vhost here is now a forwarder (kept while clients still use it) | `/var/log/nightscout/backup/migrate-ktomy-20261117T211532Z` |
+| `ktomy` finalized: removed from root PM2 and from `dump.pm2`/`dump.pm2.bak` only; its MongoDB database and user dropped here after comparing them with the move's dump | `/var/log/nightscout/backup/finalize-ktomy-20261117T220554Z`; restore command in `migrate-ktomy-20261117T211532Z/RESTORE-MAIN-DB.txt` |
 
 The wildcard certificate (expires 2026-12-31) must be renewed on both servers.
 

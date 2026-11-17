@@ -3,11 +3,13 @@ import { auth } from '@/auth';
 import { NSDomain, User } from '@/generated/client';
 import { NextRequest } from 'next/server';
 import {
-    getProcessesList,
+    domainStatusFrom,
+    getProcessesByServer,
     saveProcessListIfHealthy,
     tryRecreateDomain,
     tryStartDomain,
 } from '@/lib/services/nsruntime';
+import { getServerIds, isRemoteServer, serverIdOf } from '@/lib/services/servers';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(req: NextRequest) {
@@ -29,29 +31,45 @@ export async function POST(req: NextRequest) {
     }
 
     const activeDomains = (await getAllNSDomains()).filter((d: NSDomain) => d.active);
-    const processes = await getProcessesList();
+    const processesByServer = await getProcessesByServer();
     const domainsWithStatus = activeDomains.map((domain) => ({
         ...domain,
-        status: processes?.find((p) => p.name.endsWith('_' + domain.domain))?.status || 'not running',
+        status: domainStatusFrom(processesByServer, domain),
     }));
 
-    await Promise.all(
-        domainsWithStatus
-            .filter((domain) => !['online', 'launching'].includes(domain.status))
-            .map(async (domain) => {
-                const fullDomain = await getNSDomainById(domain.id);
-                if (!fullDomain) {
-                    return Promise.resolve();
-                }
-                // PM2 keeps stopped/errored processes in its list; recreate those instead of starting a duplicate
-                if (domain.status === 'not running') {
-                    return tryStartDomain(fullDomain);
-                }
-                return tryRecreateDomain(fullDomain);
-            })
-    );
+    // 'unknown' means the domain's server could not be reached; leave those alone
+    const toStart = domainsWithStatus.filter((domain) => !['online', 'launching', 'unknown'].includes(domain.status));
+    const startDomain = async (domain: (typeof toStart)[number]) => {
+        const fullDomain = await getNSDomainById(domain.id);
+        if (!fullDomain) {
+            return;
+        }
+        // PM2 keeps stopped/errored processes in its list; recreate those instead of starting a duplicate
+        if (domain.status === 'not running') {
+            await tryStartDomain(fullDomain);
+        } else {
+            await tryRecreateDomain(fullDomain);
+        }
+    };
 
-    await saveProcessListIfHealthy();
+    // Local starts run in parallel as before; remote ones go one at a time per server, as each is an SSH session
+    const remoteServers = getServerIds().filter(isRemoteServer);
+    await Promise.all([
+        ...toStart.filter((domain) => !isRemoteServer(serverIdOf(domain))).map(startDomain),
+        ...remoteServers.map(async (serverId) => {
+            for (const domain of toStart.filter((candidate) => serverIdOf(candidate) === serverId)) {
+                try {
+                    await startDomain(domain);
+                } catch (error) {
+                    console.error(`Failed to start ${domain.domain} on ${serverId}:`, error);
+                }
+            }
+        }),
+    ]);
+
+    for (const serverId of getServerIds()) {
+        await saveProcessListIfHealthy(serverId);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' },

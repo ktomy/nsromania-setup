@@ -28,6 +28,8 @@ model NSDomain {
   lastUpdated       DateTime?             @default(now()) @map("last_updated") @db.Timestamp(0)
   dbPassword        String?               @map("db_password") @db.VarChar(64)
   nsversion         String?               @db.VarChar(50)
+  // Hosting server id from NS_REMOTE_SERVERS; NULL means the main server that also runs this panel
+  server            String?               @db.VarChar(32)
   authUserId        String?               @map("auth_user_id")
   authUser          User?                 @relation(fields: [authUserId], references: [id])
   environments      NSDomainEnvironment[]

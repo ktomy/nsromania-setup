@@ -1,0 +1,27 @@
+# SSH tunnel from the main server to the MongoDB of hosting server %i, used by the setup panel
+# (NS_SERVER_<ID>_MONGO_URL points at 127.0.0.1:${LOCAL_PORT}). Installed by ops/servers/setup-panel-access.sh.
+# The remote key only permits forwarding to 127.0.0.1:27017 and running the host agent.
+[Unit]
+Description=NSRomania panel tunnel to the MongoDB of hosting server %i
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+EnvironmentFile=/etc/nsromania/servers/%i.env
+ExecStart=/usr/bin/ssh -F /dev/null -N -T \
+    -i /root/.ssh/nsromania-servers/id_ed25519 -o IdentitiesOnly=yes \
+    -o UserKnownHostsFile=/root/.ssh/nsromania-servers/known_hosts -o GlobalKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10 \
+    -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+    -L 127.0.0.1:${LOCAL_PORT}:127.0.0.1:27017 ${SSH_TARGET}
+Restart=always
+RestartSec=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+CPUQuota=10%
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target

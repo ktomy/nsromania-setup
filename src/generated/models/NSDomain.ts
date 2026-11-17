@@ -61,6 +61,7 @@ export type NSDomainMinAggregateOutputType = {
   lastUpdated: Date | null
   dbPassword: string | null
   nsversion: string | null
+  server: string | null
   authUserId: string | null
 }
 
@@ -85,6 +86,7 @@ export type NSDomainMaxAggregateOutputType = {
   lastUpdated: Date | null
   dbPassword: string | null
   nsversion: string | null
+  server: string | null
   authUserId: string | null
 }
 
@@ -109,6 +111,7 @@ export type NSDomainCountAggregateOutputType = {
   lastUpdated: number
   dbPassword: number
   nsversion: number
+  server: number
   authUserId: number
   _all: number
 }
@@ -149,6 +152,7 @@ export type NSDomainMinAggregateInputType = {
   lastUpdated?: true
   dbPassword?: true
   nsversion?: true
+  server?: true
   authUserId?: true
 }
 
@@ -173,6 +177,7 @@ export type NSDomainMaxAggregateInputType = {
   lastUpdated?: true
   dbPassword?: true
   nsversion?: true
+  server?: true
   authUserId?: true
 }
 
@@ -197,6 +202,7 @@ export type NSDomainCountAggregateInputType = {
   lastUpdated?: true
   dbPassword?: true
   nsversion?: true
+  server?: true
   authUserId?: true
   _all?: true
 }
@@ -308,6 +314,7 @@ export type NSDomainGroupByOutputType = {
   lastUpdated: Date | null
   dbPassword: string | null
   nsversion: string | null
+  server: string | null
   authUserId: string | null
   _count: NSDomainCountAggregateOutputType | null
   _avg: NSDomainAvgAggregateOutputType | null
@@ -355,6 +362,7 @@ export type NSDomainWhereInput = {
   lastUpdated?: Prisma.DateTimeNullableFilter<"NSDomain"> | Date | string | null
   dbPassword?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   nsversion?: Prisma.StringNullableFilter<"NSDomain"> | string | null
+  server?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   authUserId?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   authUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   environments?: Prisma.NSDomainEnvironmentListRelationFilter
@@ -381,6 +389,7 @@ export type NSDomainOrderByWithRelationInput = {
   lastUpdated?: Prisma.SortOrderInput | Prisma.SortOrder
   dbPassword?: Prisma.SortOrderInput | Prisma.SortOrder
   nsversion?: Prisma.SortOrderInput | Prisma.SortOrder
+  server?: Prisma.SortOrderInput | Prisma.SortOrder
   authUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   authUser?: Prisma.UserOrderByWithRelationInput
   environments?: Prisma.NSDomainEnvironmentOrderByRelationAggregateInput
@@ -411,6 +420,7 @@ export type NSDomainWhereUniqueInput = Prisma.AtLeast<{
   lastUpdated?: Prisma.DateTimeNullableFilter<"NSDomain"> | Date | string | null
   dbPassword?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   nsversion?: Prisma.StringNullableFilter<"NSDomain"> | string | null
+  server?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   authUserId?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   authUser?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   environments?: Prisma.NSDomainEnvironmentListRelationFilter
@@ -437,6 +447,7 @@ export type NSDomainOrderByWithAggregationInput = {
   lastUpdated?: Prisma.SortOrderInput | Prisma.SortOrder
   dbPassword?: Prisma.SortOrderInput | Prisma.SortOrder
   nsversion?: Prisma.SortOrderInput | Prisma.SortOrder
+  server?: Prisma.SortOrderInput | Prisma.SortOrder
   authUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.NSDomainCountOrderByAggregateInput
   _avg?: Prisma.NSDomainAvgOrderByAggregateInput
@@ -469,6 +480,7 @@ export type NSDomainScalarWhereWithAggregatesInput = {
   lastUpdated?: Prisma.DateTimeNullableWithAggregatesFilter<"NSDomain"> | Date | string | null
   dbPassword?: Prisma.StringNullableWithAggregatesFilter<"NSDomain"> | string | null
   nsversion?: Prisma.StringNullableWithAggregatesFilter<"NSDomain"> | string | null
+  server?: Prisma.StringNullableWithAggregatesFilter<"NSDomain"> | string | null
   authUserId?: Prisma.StringNullableWithAggregatesFilter<"NSDomain"> | string | null
 }
 
@@ -492,6 +504,7 @@ export type NSDomainCreateInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   authUser?: Prisma.UserCreateNestedOneWithoutNsDomainsInput
   environments?: Prisma.NSDomainEnvironmentCreateNestedManyWithoutDomainInput
 }
@@ -517,6 +530,7 @@ export type NSDomainUncheckedCreateInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   authUserId?: string | null
   environments?: Prisma.NSDomainEnvironmentUncheckedCreateNestedManyWithoutDomainInput
 }
@@ -541,6 +555,7 @@ export type NSDomainUpdateInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authUser?: Prisma.UserUpdateOneWithoutNsDomainsNestedInput
   environments?: Prisma.NSDomainEnvironmentUpdateManyWithoutDomainNestedInput
 }
@@ -566,6 +581,7 @@ export type NSDomainUncheckedUpdateInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   environments?: Prisma.NSDomainEnvironmentUncheckedUpdateManyWithoutDomainNestedInput
 }
@@ -591,6 +607,7 @@ export type NSDomainCreateManyInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   authUserId?: string | null
 }
 
@@ -614,6 +631,7 @@ export type NSDomainUpdateManyMutationInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type NSDomainUncheckedUpdateManyInput = {
@@ -637,6 +655,7 @@ export type NSDomainUncheckedUpdateManyInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -667,6 +686,7 @@ export type NSDomainCountOrderByAggregateInput = {
   lastUpdated?: Prisma.SortOrder
   dbPassword?: Prisma.SortOrder
   nsversion?: Prisma.SortOrder
+  server?: Prisma.SortOrder
   authUserId?: Prisma.SortOrder
 }
 
@@ -698,6 +718,7 @@ export type NSDomainMaxOrderByAggregateInput = {
   lastUpdated?: Prisma.SortOrder
   dbPassword?: Prisma.SortOrder
   nsversion?: Prisma.SortOrder
+  server?: Prisma.SortOrder
   authUserId?: Prisma.SortOrder
 }
 
@@ -722,6 +743,7 @@ export type NSDomainMinOrderByAggregateInput = {
   lastUpdated?: Prisma.SortOrder
   dbPassword?: Prisma.SortOrder
   nsversion?: Prisma.SortOrder
+  server?: Prisma.SortOrder
   authUserId?: Prisma.SortOrder
 }
 
@@ -847,6 +869,7 @@ export type NSDomainCreateWithoutEnvironmentsInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   authUser?: Prisma.UserCreateNestedOneWithoutNsDomainsInput
 }
 
@@ -871,6 +894,7 @@ export type NSDomainUncheckedCreateWithoutEnvironmentsInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   authUserId?: string | null
 }
 
@@ -910,6 +934,7 @@ export type NSDomainUpdateWithoutEnvironmentsInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authUser?: Prisma.UserUpdateOneWithoutNsDomainsNestedInput
 }
 
@@ -934,6 +959,7 @@ export type NSDomainUncheckedUpdateWithoutEnvironmentsInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -957,6 +983,7 @@ export type NSDomainCreateWithoutAuthUserInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   environments?: Prisma.NSDomainEnvironmentCreateNestedManyWithoutDomainInput
 }
 
@@ -981,6 +1008,7 @@ export type NSDomainUncheckedCreateWithoutAuthUserInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
   environments?: Prisma.NSDomainEnvironmentUncheckedCreateNestedManyWithoutDomainInput
 }
 
@@ -1034,6 +1062,7 @@ export type NSDomainScalarWhereInput = {
   lastUpdated?: Prisma.DateTimeNullableFilter<"NSDomain"> | Date | string | null
   dbPassword?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   nsversion?: Prisma.StringNullableFilter<"NSDomain"> | string | null
+  server?: Prisma.StringNullableFilter<"NSDomain"> | string | null
   authUserId?: Prisma.StringNullableFilter<"NSDomain"> | string | null
 }
 
@@ -1058,6 +1087,7 @@ export type NSDomainCreateManyAuthUserInput = {
   lastUpdated?: Date | string | null
   dbPassword?: string | null
   nsversion?: string | null
+  server?: string | null
 }
 
 export type NSDomainUpdateWithoutAuthUserInput = {
@@ -1080,6 +1110,7 @@ export type NSDomainUpdateWithoutAuthUserInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   environments?: Prisma.NSDomainEnvironmentUpdateManyWithoutDomainNestedInput
 }
 
@@ -1104,6 +1135,7 @@ export type NSDomainUncheckedUpdateWithoutAuthUserInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   environments?: Prisma.NSDomainEnvironmentUncheckedUpdateManyWithoutDomainNestedInput
 }
 
@@ -1128,6 +1160,7 @@ export type NSDomainUncheckedUpdateManyWithoutAuthUserInput = {
   lastUpdated?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dbPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nsversion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  server?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -1182,6 +1215,7 @@ export type NSDomainSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   lastUpdated?: boolean
   dbPassword?: boolean
   nsversion?: boolean
+  server?: boolean
   authUserId?: boolean
   authUser?: boolean | Prisma.NSDomain$authUserArgs<ExtArgs>
   environments?: boolean | Prisma.NSDomain$environmentsArgs<ExtArgs>
@@ -1211,10 +1245,11 @@ export type NSDomainSelectScalar = {
   lastUpdated?: boolean
   dbPassword?: boolean
   nsversion?: boolean
+  server?: boolean
   authUserId?: boolean
 }
 
-export type NSDomainOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "active" | "title" | "domain" | "registrationLocale" | "port" | "dbExists" | "apiSecret" | "enable" | "showPlugins" | "mmconnectUsername" | "mmconnectPassword" | "mmconnectServer" | "bridgeUsername" | "bridgePassword" | "bridgeServer" | "created" | "lastUpdated" | "dbPassword" | "nsversion" | "authUserId", ExtArgs["result"]["nSDomain"]>
+export type NSDomainOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "active" | "title" | "domain" | "registrationLocale" | "port" | "dbExists" | "apiSecret" | "enable" | "showPlugins" | "mmconnectUsername" | "mmconnectPassword" | "mmconnectServer" | "bridgeUsername" | "bridgePassword" | "bridgeServer" | "created" | "lastUpdated" | "dbPassword" | "nsversion" | "server" | "authUserId", ExtArgs["result"]["nSDomain"]>
 export type NSDomainInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   authUser?: boolean | Prisma.NSDomain$authUserArgs<ExtArgs>
   environments?: boolean | Prisma.NSDomain$environmentsArgs<ExtArgs>
@@ -1248,6 +1283,7 @@ export type $NSDomainPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     lastUpdated: Date | null
     dbPassword: string | null
     nsversion: string | null
+    server: string | null
     authUserId: string | null
   }, ExtArgs["result"]["nSDomain"]>
   composites: {}
@@ -1640,6 +1676,7 @@ export interface NSDomainFieldRefs {
   readonly lastUpdated: Prisma.FieldRef<"NSDomain", 'DateTime'>
   readonly dbPassword: Prisma.FieldRef<"NSDomain", 'String'>
   readonly nsversion: Prisma.FieldRef<"NSDomain", 'String'>
+  readonly server: Prisma.FieldRef<"NSDomain", 'String'>
   readonly authUserId: Prisma.FieldRef<"NSDomain", 'String'>
 }
     

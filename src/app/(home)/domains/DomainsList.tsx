@@ -41,6 +41,7 @@ export default function DomainsList({ user }: DomainsListProps) {
                       ? 'Medtronic'
                       : 'API',
             status: domain.status,
+            server: domain.server || 'main',
         };
     }
 
@@ -152,6 +153,12 @@ export default function DomainsList({ user }: DomainsListProps) {
             headerName: t('updated'),
             type: 'string',
             flex: 1,
+        },
+        {
+            field: 'server',
+            headerName: t('server'),
+            type: 'string',
+            width: 80,
         },
         {
             field: 'status',

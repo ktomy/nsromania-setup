@@ -24,11 +24,22 @@ jest.mock(
     { virtual: true }
 );
 
+const mockCallRemoteAgent = jest.fn();
+jest.mock('../remoteagent', () => ({
+    callRemoteAgent: (...args: unknown[]) => mockCallRemoteAgent(...args),
+}));
+
 const { resolveNightscoutNodeInterpreter: mockResolveNightscoutNodeInterpreter } = jest.requireMock('../nsnode') as {
     resolveNightscoutNodeInterpreter: jest.Mock;
 };
-const { tryStartDomain, isProcessListHealthy, saveProcessListIfHealthy } =
-    require('../nsruntime') as typeof import('../nsruntime');
+const {
+    tryStartDomain,
+    tryStopDomain,
+    isProcessListHealthy,
+    saveProcessListIfHealthy,
+    domainStatusFrom,
+    getProcessesByServer,
+} = require('../nsruntime') as typeof import('../nsruntime');
 
 function processes(online: number, stopped: number, modules = 0) {
     return [
@@ -166,5 +177,76 @@ describe('tryStartDomain', () => {
         await expect(tryStartDomain({ domain: 'demo' })).rejects.toThrow('NS_HOME environment variable is not set');
         expect(mockResolveNightscoutNodeInterpreter).not.toHaveBeenCalled();
         expect(mockConnect).not.toHaveBeenCalled();
+    });
+});
+
+describe('remote hosting servers', () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        process.env = {
+            ...originalEnv,
+            NODE_ENV: 'production',
+            NS_HOME: '/srv/nightscout',
+            NS_REMOTE_SERVERS: 'd1',
+            NS_SERVER_D1_HOSTNAME: 'd1.nsromania.info',
+            NS_SERVER_D1_SSH: 'nsagent@31.220.43.162',
+        };
+        mockResolveNightscoutNodeInterpreter.mockResolvedValue('/resolved/node');
+        mockCallRemoteAgent.mockResolvedValue({ name: '11007_demo', status: 'online' });
+    });
+
+    afterAll(() => {
+        process.env = originalEnv;
+    });
+
+    it('starts a remote site through the host agent with the same definition as a local start', async () => {
+        const domain = {
+            id: 7,
+            domain: 'demo',
+            apiSecret: 'secret',
+            enable: '',
+            nsversion: '15_0_7',
+            environments: [],
+        };
+
+        await expect(tryStartDomain({ ...domain, server: 'd1' })).resolves.toBe('ok');
+        await expect(tryStartDomain(domain)).resolves.toBe('ok');
+
+        const [serverId, args, remoteDefinition] = mockCallRemoteAgent.mock.calls[0];
+        expect(serverId).toBe('d1');
+        expect(args).toEqual(['pm2-start']);
+        expect(remoteDefinition).toEqual(mockStart.mock.calls[0][0]);
+        expect(remoteDefinition).toEqual(
+            expect.objectContaining({
+                name: '11007_demo',
+                script: 'server.js',
+                cwd: '/srv/nightscout/15_0_7/',
+                interpreter: '/resolved/node',
+                env: expect.objectContaining({ PORT: '11007', MONGO_MAX_IDLE_TIME_MS: '600000' }),
+            })
+        );
+        expect(mockStart).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops a remote site through the host agent', async () => {
+        await expect(tryStopDomain({ id: 7, domain: 'demo', server: 'd1' })).resolves.toBe('ok');
+        expect(mockCallRemoteAgent).toHaveBeenCalledWith('d1', ['pm2-delete', '11007_demo']);
+    });
+
+    it('reports sites of an unreachable server as unknown instead of failing', async () => {
+        mockList.mockImplementation((callback) =>
+            callback(null, [{ name: '11001_local', pm2_env: { status: 'online' } }])
+        );
+        mockCallRemoteAgent.mockRejectedValue(new Error('ssh: connect to host failed'));
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        const processes = await getProcessesByServer();
+
+        expect(domainStatusFrom(processes, { domain: 'local' })).toBe('online');
+        expect(domainStatusFrom(processes, { domain: 'gone' })).toBe('not running');
+        expect(domainStatusFrom(processes, { domain: 'remote', server: 'd1' })).toBe('unknown');
+        expect(domainStatusFrom(processes, { domain: 'misconfigured', server: 'd9' })).toBe('unknown');
     });
 });

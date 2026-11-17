@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb';
+import { getRemoteServer, isRemoteServer, MAIN_SERVER_ID } from './servers';
 
 export type DatabaseSize = {
     dbName: string;
@@ -23,21 +24,38 @@ interface MongoUser {
     roles: { role: string; db: string }[];
 }
 
-function createMongoClient() {
+// Admin connection to the MongoDB of the hosting server: MONGO_URL for the main server, or the remote server's
+// NS_SERVER_<ID>_MONGO_URL (normally the local end of its SSH tunnel)
+function mongoUrlFor(serverId: string): string {
+    if (isRemoteServer(serverId)) {
+        const url = getRemoteServer(serverId).mongoUrl;
+        if (!url) {
+            throw new Error(`Missing environment variable "NS_SERVER_${serverId.toUpperCase()}_MONGO_URL"`);
+        }
+        return url;
+    }
     if (!process.env.MONGO_URL) {
         throw new Error('Missing environment variable "MONGO_URL"');
     }
+    return process.env.MONGO_URL;
+}
 
+function createMongoClient(serverId: string = MAIN_SERVER_ID) {
+    const url = mongoUrlFor(serverId);
     const timeoutMs = Number(process.env.MONGO_TIMEOUT_MS ?? 5000);
 
-    return new MongoClient(process.env.MONGO_URL, {
+    return new MongoClient(url, {
         connectTimeoutMS: timeoutMs,
         serverSelectionTimeoutMS: timeoutMs,
     });
 }
 
-export async function checkMongoDatabaseAndUser(dbName: string, userName: string): Promise<boolean> {
-    const client = createMongoClient();
+export async function checkMongoDatabaseAndUser(
+    dbName: string,
+    userName: string,
+    serverId: string = MAIN_SERVER_ID
+): Promise<boolean> {
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -60,8 +78,8 @@ export async function checkMongoDatabaseAndUser(dbName: string, userName: string
     }
 }
 
-export async function createDatabaseAndUser(name: string, password: string) {
-    const client = createMongoClient();
+export async function createDatabaseAndUser(name: string, password: string, serverId: string = MAIN_SERVER_ID) {
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -95,8 +113,8 @@ export async function createDatabaseAndUser(name: string, password: string) {
     console.log(`Database and user created: ${name}`);
 }
 
-export async function deleteDatabaseAndUser(name: string) {
-    const client = createMongoClient();
+export async function deleteDatabaseAndUser(name: string, serverId: string = MAIN_SERVER_ID) {
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -116,8 +134,8 @@ export async function deleteDatabaseAndUser(name: string) {
     console.log(`Database and user deleted: ${name}`);
 }
 
-export async function getCollections(dbName: string) {
-    const client = createMongoClient();
+export async function getCollections(dbName: string, serverId: string = MAIN_SERVER_ID) {
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -131,12 +149,12 @@ export async function getCollections(dbName: string) {
     }
 }
 
-export async function getLastDbEntry(dbName: string) {
-    if (!(await checkMongoDatabaseAndUser(dbName, dbName))) {
+export async function getLastDbEntry(dbName: string, serverId: string = MAIN_SERVER_ID) {
+    if (!(await checkMongoDatabaseAndUser(dbName, dbName, serverId))) {
         return null;
     }
 
-    const client = createMongoClient();
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -159,7 +177,7 @@ export async function getLastDbEntry(dbName: string) {
     }
 }
 
-export async function getLastDbEntries(dbNames: string[]) {
+export async function getLastDbEntries(dbNames: string[], serverId: string = MAIN_SERVER_ID) {
     const lastEntries = new Map<string, Date | null>();
     const uniqueDbNames = Array.from(new Set(dbNames));
 
@@ -167,7 +185,7 @@ export async function getLastDbEntries(dbNames: string[]) {
         return lastEntries;
     }
 
-    const client = createMongoClient();
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -195,12 +213,12 @@ export async function getLastDbEntries(dbNames: string[]) {
     }
 }
 
-export async function getDbSize(dbName: string) {
-    if (!(await checkMongoDatabaseAndUser(dbName, dbName))) {
+export async function getDbSize(dbName: string, serverId: string = MAIN_SERVER_ID) {
+    if (!(await checkMongoDatabaseAndUser(dbName, dbName, serverId))) {
         return null;
     }
 
-    const client = createMongoClient();
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -214,7 +232,10 @@ export async function getDbSize(dbName: string) {
     }
 }
 
-export async function getDbSizes(dbNames: string[]): Promise<Map<string, DatabaseSize | null>> {
+export async function getDbSizes(
+    dbNames: string[],
+    serverId: string = MAIN_SERVER_ID
+): Promise<Map<string, DatabaseSize | null>> {
     const sizes = new Map<string, DatabaseSize | null>();
     const uniqueDbNames = Array.from(new Set(dbNames));
 
@@ -222,7 +243,7 @@ export async function getDbSizes(dbNames: string[]): Promise<Map<string, Databas
         return sizes;
     }
 
-    const client = createMongoClient();
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();
@@ -261,9 +282,10 @@ export const DEFAULT_TRIMMABLE_COLLECTIONS: Record<string, string> = {
 export async function trimDatabase(
     dbName: string,
     cutoff: Date,
-    trimmableCollections: Record<string, string> = DEFAULT_TRIMMABLE_COLLECTIONS
+    trimmableCollections: Record<string, string> = DEFAULT_TRIMMABLE_COLLECTIONS,
+    serverId: string = MAIN_SERVER_ID
 ): Promise<DatabaseTrimResult> {
-    const client = createMongoClient();
+    const client = createMongoClient(serverId);
 
     try {
         await client.connect();

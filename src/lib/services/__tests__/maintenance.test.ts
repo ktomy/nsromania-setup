@@ -68,6 +68,7 @@ function domain(overrides: Partial<NSDomain>): NSDomain {
         dbPassword: null,
         nsversion: null,
         authUserId: null,
+        server: null,
         ...overrides,
     };
 }
@@ -171,8 +172,24 @@ describe('maintenance inactive users service', () => {
         await getInactiveUserPreview({ days: 90, now });
 
         expect(mockGetLastDbEntries).toHaveBeenCalledTimes(1);
-        expect(mockGetLastDbEntries).toHaveBeenCalledWith(['one', 'two']);
+        expect(mockGetLastDbEntries).toHaveBeenCalledWith(['one', 'two'], 'main');
         expect(mockGetLastDbEntry).not.toHaveBeenCalled();
+    });
+
+    it('checks preview glucose entries with one batch per hosting server', async () => {
+        mockFindMany.mockResolvedValue([
+            domain({ id: 10, domain: 'one' }),
+            domain({ id: 11, domain: 'two', server: 'd1' }),
+            domain({ id: 12, domain: 'three' }),
+        ]);
+        mockGetLastDbEntries.mockImplementation(async (names: string[]) => new Map(names.map((n) => [n, oldGlucose])));
+
+        const preview = await getInactiveUserPreview({ days: 90, now });
+
+        expect(mockGetLastDbEntries).toHaveBeenCalledTimes(2);
+        expect(mockGetLastDbEntries).toHaveBeenCalledWith(['one', 'three'], 'main');
+        expect(mockGetLastDbEntries).toHaveBeenCalledWith(['two'], 'd1');
+        expect(preview.counts.inactiveCandidates).toBe(3);
     });
 
     it('rejects destroy without deactivate', async () => {
@@ -249,12 +266,17 @@ describe('maintenance inactive users service', () => {
 
         const result = await trimDatabaseForSites({ siteIds: [8], days: 30, now });
 
-        expect(mockTrimDatabase).toHaveBeenCalledWith('selected', new Date('2026-04-14T12:00:00.000Z'), {
-            entries: 'date',
-            'custom-treatments': 'created_at',
-            devicestatus: 'created_at',
-            activity: 'created_at',
-        });
+        expect(mockTrimDatabase).toHaveBeenCalledWith(
+            'selected',
+            new Date('2026-04-14T12:00:00.000Z'),
+            {
+                entries: 'date',
+                'custom-treatments': 'created_at',
+                devicestatus: 'created_at',
+                activity: 'created_at',
+            },
+            'main'
+        );
         expect(result.results[0]).toEqual(expect.objectContaining({ id: 8, deletedDocuments: 3 }));
         await expect(trimDatabaseForSites({ siteIds: [8], days: 60 as never, now })).rejects.toThrow(
             'Retention must be 30, 90, or 180 days'

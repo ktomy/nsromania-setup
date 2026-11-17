@@ -1,7 +1,9 @@
 import { exec } from 'child_process';
 import { promises as fs } from 'fs';
+import { callRemoteAgent } from './remoteagent';
+import { isRemoteServer, MAIN_SERVER_ID } from './servers';
 
-export async function createVirtualHost(domain: string, port: number) {
+export async function createVirtualHost(domain: string, port: number, serverId: string = MAIN_SERVER_ID) {
     if (!domain) {
         throw new Error('Domain name is required');
     }
@@ -24,6 +26,12 @@ export async function createVirtualHost(domain: string, port: number) {
 
     if (port < 11000 || port > 12000) {
         throw new Error('Port must be between 11000 and 12000');
+    }
+
+    if (isRemoteServer(serverId)) {
+        console.log('Creating virtual host:', domain, 'on port:', port, 'on', serverId);
+        await callRemoteAgent(serverId, ['vhost-create', domain, port.toString()]);
+        return;
     }
 
     console.log('Creating virtual host:', domain, 'on port:', port);
@@ -57,9 +65,15 @@ export async function createVirtualHost(domain: string, port: number) {
     }
 }
 
-export async function deleteVirtualHost(domain: string) {
+export async function deleteVirtualHost(domain: string, serverId: string = MAIN_SERVER_ID) {
     if (!domain) {
         throw new Error('Domain name is required');
+    }
+
+    if (isRemoteServer(serverId)) {
+        console.log('Deleting virtual host:', domain, 'on', serverId);
+        await callRemoteAgent(serverId, ['vhost-delete', domain]);
+        return;
     }
 
     const virtualHosts = await getVirtualHosts();
@@ -88,7 +102,11 @@ export async function deleteVirtualHost(domain: string) {
     }
 }
 
-export async function getVirtualHosts() {
+export async function getVirtualHosts(serverId: string = MAIN_SERVER_ID): Promise<string[]> {
+    if (isRemoteServer(serverId)) {
+        return callRemoteAgent<string[]>(serverId, ['vhost-list']);
+    }
+
     const sitesAvailableDir = '/etc/nginx/sites-available';
     const files = await fs.readdir(sitesAvailableDir);
 

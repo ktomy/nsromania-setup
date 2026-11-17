@@ -2,7 +2,7 @@ import { getAllNSDomains, getNSDomainsByUserId, createNSDomain } from '@/lib/ser
 import { auth } from '@/auth';
 import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
-import { getProcessesList } from '@/lib/services/nsruntime';
+import { domainStatusFrom, getProcessesByServer } from '@/lib/services/nsruntime';
 import { CreateDomainRequest } from '@/types/domains';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,10 +19,10 @@ export async function GET(req: NextRequest) {
 
     try {
         const nsDomains = user.role === 'admin' ? await getAllNSDomains() : await getNSDomainsByUserId(user.id);
-        const processes = await getProcessesList();
+        const processesByServer = await getProcessesByServer();
         const domainsWithStatus = nsDomains.map((domain) => ({
             ...domain,
-            status: processes?.find((p) => p.name.endsWith('_' + domain.domain))?.status || 'not running',
+            status: domainStatusFrom(processesByServer, domain),
         }));
 
         return new Response(JSON.stringify(domainsWithStatus), {

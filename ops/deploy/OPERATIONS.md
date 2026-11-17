@@ -44,6 +44,7 @@ The prohibition on production Prisma migrations and `prisma db push` applies to 
 | Panel port | `127.0.0.1:11000` |
 | Public URL | `https://setup.nsromania.info` |
 | Health endpoint | `/api/health` (does not import or call auth/Prisma services) |
+| Additional hosting servers | `d1.nsromania.info` (31.220.43.162) since 2026-11-17; see `ops/servers/README.md` |
 
 The live production environment file is `/var/log/nightscout/setup/.env`. Its last verified metadata was `ktomy:nightscout` mode `0600`. The application deployment copies it into a fully prepared candidate immediately before activation; it never includes it in the uploaded artifact.
 
@@ -119,6 +120,25 @@ per minute) as evidence for the hosting provider. See `ops/cpu-steal/README.md`;
 
 Install or update with `./ops/cpu-steal/install.sh`, which backs up replaced files to
 `/var/log/nightscout/backup/cpu-steal-<UTC>` and restarts only `nsromania-cpu-steal.service`.
+
+### Additional hosting servers
+
+Since 2026-11-17 instances with `ns_domain.server = 'd1'` run on `d1.nsromania.info` (31.220.43.162); NULL means this
+server. The panel, MySQL and DNS stay here. The panel controls d1 as root over SSH with
+`/root/.ssh/nsromania-servers/id_ed25519` (pinned `known_hosts` next to it): on d1 that key belongs to the locked
+`nsagent` user and can only run the validated host agent or forward to d1's MongoDB, which the panel reaches through
+`nsromania-server-tunnel@d1.service` on `127.0.0.1:27118`. The panel `.env` has the `NS_REMOTE_SERVERS` and
+`NS_SERVER_D1_*` keys. Architecture, provisioning, instance moves, rollback and failure behavior:
+`ops/servers/README.md`.
+
+| Change on this server (2026-11-17) | Backup |
+| --- | --- |
+| `d1` A record in `/etc/bind/zones/nsromania.info.header` | `/var/log/nightscout/backup/dns-d1-record-20261117T203007Z` |
+| DDL `ALTER TABLE ns_domain ADD COLUMN server VARCHAR(32) NULL DEFAULT NULL, ALGORITHM=INSTANT` (by hand, no Prisma migration) and the `.env` keys | `/var/log/nightscout/backup/multi-server-20261117T211226Z` |
+| Panel key, pinned host key, tunnel unit and `/etc/nsromania/servers/d1.env` | `/var/log/nightscout/backup/panel-access-20261117T210450Z` (nothing was replaced) |
+| `ktomy` moved to d1; its vhost here is now a forwarder; app stopped but still in root PM2 until finalized | `/var/log/nightscout/backup/migrate-ktomy-20261117T211532Z` |
+
+The wildcard certificate (expires 2026-12-31) must be renewed on both servers.
 
 ### Accounts and privilege boundaries
 

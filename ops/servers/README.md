@@ -11,7 +11,7 @@ This document contains no secret values. Credentials live only in the files name
 | Id | Host | Address | Hardware | Role |
 | --- | --- | --- | --- | --- |
 | `main` | `nsromania.info` | 45.134.39.79 | 8 vCPU | panel, MySQL, DNS, instances with `ns_domain.server IS NULL` |
-| `d1` | `d1.nsromania.info` | 31.220.43.162 | 12 vCPU (EPYC 7763), 64 GB, 180 GB | instances with `ns_domain.server = 'd1'` |
+| `d1` | `d1.nsromania.info` (PTR set) | 31.220.43.162 | 12 vCPU (EPYC 7763), 64 GB, 180 GB | instances with `ns_domain.server = 'd1'` |
 
 d1 was provisioned on 2026-11-17 to mirror main: Ubuntu 24.04, MongoDB 8.3 (auth enforced, loopback only,
 `CPUWeight=1000`/`OOMScoreAdjust=-900`), Node `v22.12.0` and PM2 at the same pinned paths, `pm2-root.service` with the
@@ -190,7 +190,7 @@ counted once, on main).
 
 | Instance | Date | Notes |
 | --- | --- | --- |
-| `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; finalized 22:05 (`finalize-ktomy-20261117T220554Z`); main DB copy dropped 22:10 after checking it against the backup's dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost on main kept while an ESP32 display still uses the old address |
+| `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; finalized 22:05 (`finalize-ktomy-20261117T220554Z`); main DB copy dropped 22:10 after checking it against the backup's dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost on main removed 22:24 after the ESP32 display was restarted and moved to d1 (`forwarder-ktomy-20261117T222442Z`) |
 | 200 smallest sites (by MongoDB storage + index size, 0.3–65.6 MB) | 2026-11-18 02:30–05:19 UTC | `batch-migrate.sh`; 27–77 s downtime each (average 48 s); all 200 online on d1 and answering through public DNS afterwards. Finalized and main's database copies dropped 06:50–07:30 (`dropmain`); forwarders removed at 06:52 for the 155 sites that had no request on main after their move, 45 kept. List, per-site results and log: `/var/log/nightscout/backup/batch-migrate-20261118T023056Z` (per-site backups `migrate-SUB-20261118T*`). `rusu-sofia` failed and was rolled back automatically, see below |
 
 ## Certificates

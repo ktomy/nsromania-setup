@@ -2,10 +2,10 @@ import { NSDomain } from '@/generated/client';
 
 const mockDeleteSubdomain = jest.fn();
 const mockListSubdomains = jest.fn();
-const mockUpdateNSDomain = jest.fn();
+const mockSetDomainDbExists = jest.fn();
 const mockDeleteVirtualHost = jest.fn();
 const mockGetVirtualHosts = jest.fn();
-const mockCheckMongoDatabaseAndUser = jest.fn();
+const mockGetDatabaseState = jest.fn();
 const mockDeleteDatabaseAndUser = jest.fn();
 const mockIsDomainRunning = jest.fn();
 const mockTryStopDomain = jest.fn();
@@ -22,7 +22,7 @@ jest.mock('../dnsmanagement', () => ({
 
 jest.mock('../domains', () => ({
     assignServerBeforeInitialization: mockAssignServerBeforeInitialization,
-    updateNSDomain: mockUpdateNSDomain,
+    setDomainDbExists: mockSetDomainDbExists,
 }));
 
 jest.mock('../nginxmanagement', () => ({
@@ -32,7 +32,7 @@ jest.mock('../nginxmanagement', () => ({
 }));
 
 jest.mock('../nsdatbasea', () => ({
-    checkMongoDatabaseAndUser: mockCheckMongoDatabaseAndUser,
+    getDatabaseState: mockGetDatabaseState,
     createDatabaseAndUser: mockCreateDatabaseAndUser,
     deleteDatabaseAndUser: mockDeleteDatabaseAndUser,
 }));
@@ -83,16 +83,16 @@ describe('destroyDomainInfrastructure', () => {
         mockDeleteVirtualHost.mockResolvedValue(undefined);
         mockListSubdomains.mockResolvedValue([]);
         mockDeleteSubdomain.mockResolvedValue(undefined);
-        mockCheckMongoDatabaseAndUser.mockResolvedValue(false);
+        mockGetDatabaseState.mockResolvedValue({ database: false, user: false });
         mockDeleteDatabaseAndUser.mockResolvedValue(undefined);
-        mockUpdateNSDomain.mockResolvedValue({});
+        mockSetDomainDbExists.mockResolvedValue({});
     });
 
     it('stops a running site before deleting nginx, DNS, and Mongo resources', async () => {
         mockIsDomainRunning.mockResolvedValue(true);
         mockGetVirtualHosts.mockResolvedValue(['cleanup']);
         mockListSubdomains.mockResolvedValue(['cleanup']);
-        mockCheckMongoDatabaseAndUser.mockResolvedValue(true);
+        mockGetDatabaseState.mockResolvedValue({ database: true, user: true });
 
         const result = await destroyDomainInfrastructure(domain());
 
@@ -100,7 +100,7 @@ describe('destroyDomainInfrastructure', () => {
         expect(mockDeleteVirtualHost).toHaveBeenCalledWith('cleanup', 'main');
         expect(mockDeleteSubdomain).toHaveBeenCalledWith('cleanup');
         expect(mockDeleteDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'main');
-        expect(mockUpdateNSDomain).toHaveBeenCalledWith(10, { dbExists: 0 });
+        expect(mockSetDomainDbExists).toHaveBeenCalledWith(10, 0);
         expect(result).toEqual({ stopped: true, nginxDeleted: true, dnsDeleted: true, databaseDeleted: true });
         expect(mockTryStopDomain.mock.invocationCallOrder[0]).toBeLessThan(
             mockDeleteVirtualHost.mock.invocationCallOrder[0]
@@ -111,36 +111,68 @@ describe('destroyDomainInfrastructure', () => {
         mockIsDomainRunning.mockResolvedValue(true);
         mockGetVirtualHosts.mockResolvedValue(['cleanup']);
         mockListSubdomains.mockResolvedValue(['cleanup']);
-        mockCheckMongoDatabaseAndUser.mockResolvedValue(true);
+        mockGetDatabaseState.mockResolvedValue({ database: true, user: true });
 
         await destroyDomainInfrastructure(domain({ server: 'd1' }));
 
         expect(mockIsDomainRunning).toHaveBeenCalledWith(expect.objectContaining({ server: 'd1' }));
         expect(mockGetVirtualHosts).toHaveBeenCalledWith('d1');
         expect(mockDeleteVirtualHost).toHaveBeenCalledWith('cleanup', 'd1');
-        expect(mockCheckMongoDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'cleanup', 'd1');
+        expect(mockGetDatabaseState).toHaveBeenCalledWith('cleanup', 'cleanup', 'd1');
         expect(mockDeleteDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'd1');
         // DNS stays on the main server for every site
         expect(mockDeleteSubdomain).toHaveBeenCalledWith('cleanup');
     });
 
-    it('tolerates missing nginx, DNS, and Mongo resources', async () => {
+    it('tolerates missing nginx, DNS, and Mongo resources and still marks the site not initialized', async () => {
         const result = await destroyDomainInfrastructure(domain());
 
         expect(mockDeleteVirtualHost).not.toHaveBeenCalled();
         expect(mockDeleteSubdomain).not.toHaveBeenCalled();
         expect(mockDeleteDatabaseAndUser).not.toHaveBeenCalled();
-        expect(mockUpdateNSDomain).not.toHaveBeenCalled();
+        // The database was already gone (for example deleted by hand): the flag must not keep claiming it exists
+        expect(mockSetDomainDbExists).toHaveBeenCalledWith(10, 0);
         expect(result).toEqual({ stopped: false, nginxDeleted: false, dnsDeleted: false, databaseDeleted: false });
+    });
+
+    it.each([
+        ['only the user', { database: false, user: true }],
+        ['only the database', { database: true, user: false }],
+    ])('deletes a half-removed database when %s is left', async (_, state) => {
+        mockGetDatabaseState.mockResolvedValue(state);
+
+        const result = await destroyDomainInfrastructure(domain());
+
+        expect(mockDeleteDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'main');
+        expect(mockSetDomainDbExists).toHaveBeenCalledWith(10, 0);
+        expect(result.databaseDeleted).toBe(true);
+    });
+
+    it('fails without touching the flag when the database server cannot be checked', async () => {
+        mockGetDatabaseState.mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:27017'));
+
+        await expect(destroyDomainInfrastructure(domain())).rejects.toThrow('ECONNREFUSED');
+
+        expect(mockDeleteDatabaseAndUser).not.toHaveBeenCalled();
+        expect(mockSetDomainDbExists).not.toHaveBeenCalled();
+    });
+
+    it('keeps the flag when deleting the database fails', async () => {
+        mockGetDatabaseState.mockResolvedValue({ database: true, user: true });
+        mockDeleteDatabaseAndUser.mockRejectedValue(new Error('not authorized'));
+
+        await expect(destroyDomainInfrastructure(domain())).rejects.toThrow('not authorized');
+
+        expect(mockSetDomainDbExists).not.toHaveBeenCalled();
     });
 
     it('awaits the dbExists update after deleting Mongo resources', async () => {
         const calls: string[] = [];
-        mockCheckMongoDatabaseAndUser.mockResolvedValue(true);
+        mockGetDatabaseState.mockResolvedValue({ database: true, user: true });
         mockDeleteDatabaseAndUser.mockImplementation(async () => {
             calls.push('delete');
         });
-        mockUpdateNSDomain.mockImplementation(async () => {
+        mockSetDomainDbExists.mockImplementation(async () => {
             calls.push('update');
         });
 
@@ -161,12 +193,12 @@ describe('initializeDomainInfrastructure', () => {
             NS_SERVER_D1_HOSTNAME: 'd1.nsromania.info',
             NS_SERVER_D1_SSH: 'nsagent@31.220.43.162',
         };
-        mockCheckMongoDatabaseAndUser.mockResolvedValue(false);
+        mockGetDatabaseState.mockResolvedValue({ database: false, user: false });
         mockAssignServerBeforeInitialization.mockResolvedValue(true);
         mockCreateDatabaseAndUser.mockResolvedValue(undefined);
         mockCreateSubdomain.mockResolvedValue(undefined);
         mockCreateVirtualHost.mockResolvedValue(undefined);
-        mockUpdateNSDomain.mockResolvedValue({});
+        mockSetDomainDbExists.mockResolvedValue({});
     });
 
     afterAll(() => {
@@ -180,10 +212,10 @@ describe('initializeDomainInfrastructure', () => {
 
         await expect(initializeDomainInfrastructure(fresh(), { server: 'd1' })).resolves.toEqual({ server: 'd1' });
 
-        expect(mockCheckMongoDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'cleanup', 'main');
+        expect(mockGetDatabaseState).toHaveBeenCalledWith('cleanup', 'cleanup', 'main');
         expect(mockAssignServerBeforeInitialization).toHaveBeenCalledWith(10, 'd1');
         expect(mockCreateDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'secret', 'd1');
-        expect(mockUpdateNSDomain).toHaveBeenCalledWith(10, { dbExists: 1 });
+        expect(mockSetDomainDbExists).toHaveBeenCalledWith(10, 1);
         expect(mockCreateSubdomain).toHaveBeenCalledWith('cleanup', 'd1');
         expect(mockCreateVirtualHost).toHaveBeenCalledWith('cleanup', 11010, 'd1');
         expect(mockAssignServerBeforeInitialization.mock.invocationCallOrder[0]).toBeLessThan(
@@ -205,7 +237,7 @@ describe('initializeDomainInfrastructure', () => {
         await expect(initializeDomainInfrastructure(fresh({ server: 'd1' }))).resolves.toEqual({ server: 'd1' });
 
         expect(mockAssignServerBeforeInitialization).not.toHaveBeenCalled();
-        expect(mockCheckMongoDatabaseAndUser).not.toHaveBeenCalled();
+        expect(mockGetDatabaseState).not.toHaveBeenCalled();
         expect(mockCreateDatabaseAndUser).toHaveBeenCalledWith('cleanup', 'secret', 'd1');
     });
 
@@ -223,7 +255,7 @@ describe('initializeDomainInfrastructure', () => {
         ['a database found on the current server', fresh(), 'd1', true, true, 409],
         ['a site initialized meanwhile', fresh(), 'd1', false, false, 409],
     ])('refuses to move %s before creating anything', async (_, site, server, databaseExists, assigned, status) => {
-        mockCheckMongoDatabaseAndUser.mockResolvedValue(databaseExists);
+        mockGetDatabaseState.mockResolvedValue({ database: databaseExists, user: databaseExists });
         mockAssignServerBeforeInitialization.mockResolvedValue(assigned);
 
         const attempt = initializeDomainInfrastructure(site, { server });
@@ -233,5 +265,13 @@ describe('initializeDomainInfrastructure', () => {
         expect(mockCreateDatabaseAndUser).not.toHaveBeenCalled();
         expect(mockCreateSubdomain).not.toHaveBeenCalled();
         expect(mockCreateVirtualHost).not.toHaveBeenCalled();
+    });
+
+    it('refuses to move a site when its current server cannot be checked', async () => {
+        mockGetDatabaseState.mockRejectedValue(new Error('connect ECONNREFUSED'));
+
+        await expect(initializeDomainInfrastructure(fresh(), { server: 'd1' })).rejects.toThrow('ECONNREFUSED');
+        expect(mockAssignServerBeforeInitialization).not.toHaveBeenCalled();
+        expect(mockCreateDatabaseAndUser).not.toHaveBeenCalled();
     });
 });

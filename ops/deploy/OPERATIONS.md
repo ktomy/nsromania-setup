@@ -140,6 +140,13 @@ server. The panel, MySQL and DNS stay here. The panel controls d1 as root over S
 
 The wildcard certificate (expires 2026-12-31) must be renewed on both servers.
 
+### `ns_domain` maintenance (2026-11-17)
+
+| Change | Backup and rollback |
+| --- | --- |
+| `db_exists` set to 1 for 259 sites whose database and user exist (the edit form had reset it to 0 on every save since 2025-05; fixed in code the same day). Afterwards all 388 sites matched MongoDB. | `/var/log/nightscout/backup/dbflag-fix-20261117T215448Z` (`changed-ids.txt`, `ROLLBACK.txt`) |
+| `last_updated` now `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` (`ALGORITHM=INSTANT`); existing values unchanged. MySQL refreshes it on any change of the row; panel edits also set it explicitly. | `/var/log/nightscout/backup/last-updated-on-update-20261117T220328Z` (`ROLLBACK.sql`) |
+
 ### Accounts and privilege boundaries
 
 - `nsdeploy` is the locked GitHub Actions account. Its key has an OpenSSH forced command and `restrict`; it cannot obtain a shell or forward ports.

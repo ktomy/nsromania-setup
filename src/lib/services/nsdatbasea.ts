@@ -50,31 +50,46 @@ function createMongoClient(serverId: string = MAIN_SERVER_ID) {
     });
 }
 
+export type DatabaseState = {
+    // MongoDB lists a database only while it holds data
+    database: boolean;
+    user: boolean;
+};
+
+// Whether a site's database and its user exist. Throws when the server cannot be asked, so that an outage is never
+// mistaken for "no database" by code that deletes or moves things.
+export async function getDatabaseState(
+    dbName: string,
+    userName: string,
+    serverId: string = MAIN_SERVER_ID
+): Promise<DatabaseState> {
+    const client = createMongoClient(serverId);
+
+    try {
+        await client.connect();
+        const { databases } = await client.db(dbName).admin().listDatabases({ nameOnly: true });
+        const users = await client.db(dbName).command({ usersInfo: 1 });
+        return {
+            database: databases.some((db) => db.name === dbName),
+            user: users.users.some((user: MongoUser) => user.user === userName),
+        };
+    } finally {
+        await client.close();
+    }
+}
+
+// Lenient check for display: both exist. Any error counts as "no".
 export async function checkMongoDatabaseAndUser(
     dbName: string,
     userName: string,
     serverId: string = MAIN_SERVER_ID
 ): Promise<boolean> {
-    const client = createMongoClient(serverId);
-
     try {
-        await client.connect();
-        const adminDb = client.db(dbName).admin();
-
-        // Check if database exists
-        const databases = await adminDb.listDatabases();
-        const dbExists = databases.databases.some((db) => db.name === dbName);
-        if (!dbExists) {
-            return false;
-        }
-        const users = await client.db(dbName).command({ usersInfo: 1 });
-        const userExists = users.users.some((user: MongoUser) => user.user === userName);
-        return userExists;
+        const state = await getDatabaseState(dbName, userName, serverId);
+        return state.database && state.user;
     } catch (error) {
         console.error('Error checking database and user:', error);
         return false;
-    } finally {
-        await client.close();
     }
 }
 
@@ -120,8 +135,14 @@ export async function deleteDatabaseAndUser(name: string, serverId: string = MAI
         await client.connect();
         const userDb = client.db(name);
 
-        // Drop user
-        await userDb.command({ dropUser: name });
+        // Drop the user; it may already be gone when an earlier attempt stopped half-way
+        try {
+            await userDb.command({ dropUser: name });
+        } catch (error) {
+            if ((error as { codeName?: string }).codeName !== 'UserNotFound') {
+                throw error;
+            }
+        }
 
         // Drop database
         await userDb.dropDatabase();

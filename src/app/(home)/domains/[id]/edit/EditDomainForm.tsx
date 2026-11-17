@@ -126,7 +126,6 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
             title,
             apiSecret,
             active: active ? 1 : 0,
-            dbExists: 0,
             enable,
             showPlugins,
             mmconnectUsername: null,

@@ -1,9 +1,9 @@
 import { NSDomain } from '@/generated/client';
 import { PartialNSDomainWithEnvironments } from '@/types/domains';
 import { createSubdomain, deleteSubdomain, listSubdomains } from './dnsmanagement';
-import { assignServerBeforeInitialization, updateNSDomain } from './domains';
+import { assignServerBeforeInitialization, setDomainDbExists } from './domains';
 import { createVirtualHost, deleteVirtualHost, getVirtualHosts } from './nginxmanagement';
-import { checkMongoDatabaseAndUser, createDatabaseAndUser, deleteDatabaseAndUser } from './nsdatbasea';
+import { createDatabaseAndUser, deleteDatabaseAndUser, getDatabaseState } from './nsdatbasea';
 import { isDomainRunning, saveProcessListIfHealthy, tryStopDomain } from './nsruntime';
 import { getServerIds, serverIdOf } from './servers';
 
@@ -45,7 +45,9 @@ export async function initializeDomainInfrastructure(
                 409
             );
         }
-        if (await checkMongoDatabaseAndUser(domain.domain, domain.domain, serverId)) {
+        // Throws when the current server cannot be checked: never move a site that may have data there
+        const existing = await getDatabaseState(domain.domain, domain.domain, serverId);
+        if (existing.database || existing.user) {
             throw new DomainInitializationError(
                 `A database for this site already exists on ${serverId}; destroy it first or initialize there`,
                 409
@@ -60,7 +62,7 @@ export async function initializeDomainInfrastructure(
 
     if (domain.dbExists === 0) {
         await createDatabaseAndUser(domain.domain, domain.apiSecret, serverId);
-        await updateNSDomain(domain.id, { dbExists: 1 });
+        await setDomainDbExists(domain.id, 1);
     }
 
     await createSubdomain(domain.domain, serverId);
@@ -114,13 +116,16 @@ export async function destroyDomainInfrastructure(
         console.log('Subdomain does not exist, nothing to delete');
     }
 
-    if (await checkMongoDatabaseAndUser(domain.domain, domain.domain, serverId)) {
+    // Throws when the server cannot be checked, so an outage never counts as "no database"
+    const database = await getDatabaseState(domain.domain, domain.domain, serverId);
+    if (database.database || database.user) {
         await deleteDatabaseAndUser(domain.domain, serverId);
-        await updateNSDomain(domain.id, { dbExists: 0 });
         result.databaseDeleted = true;
     } else {
         console.log('Database does not exist, nothing to delete');
     }
+    // The site's database and user are gone from its server, whether deleted now or earlier
+    await setDomainDbExists(domain.id, 0);
 
     return result;
 }

@@ -74,3 +74,73 @@ describe('Nightscout database trimming', () => {
         expect(mockClose).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('site database state and removal', () => {
+    const { checkMongoDatabaseAndUser, deleteDatabaseAndUser, getDatabaseState } =
+        require('../nsdatbasea') as typeof import('../nsdatbasea');
+    const mockListDatabases = jest.fn();
+    const mockCommand = jest.fn();
+    const mockDropDatabase = jest.fn();
+
+    beforeAll(() => {
+        process.env.MONGO_URL = 'mongodb://127.0.0.1:27017/test';
+    });
+
+    afterAll(() => {
+        if (originalMongoUrl === undefined) {
+            delete process.env.MONGO_URL;
+        } else {
+            process.env.MONGO_URL = originalMongoUrl;
+        }
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockConnect.mockResolvedValue(undefined);
+        mockClose.mockResolvedValue(undefined);
+        mockListDatabases.mockResolvedValue({ databases: [{ name: 'admin' }, { name: 'site' }] });
+        mockCommand.mockImplementation(async (command: Record<string, unknown>) =>
+            'usersInfo' in command ? { users: [{ user: 'site', db: 'site', roles: [] }] } : { ok: 1 }
+        );
+        mockDropDatabase.mockResolvedValue(true);
+        mockDb.mockReturnValue({
+            admin: () => ({ listDatabases: mockListDatabases }),
+            command: mockCommand,
+            dropDatabase: mockDropDatabase,
+        });
+    });
+
+    it('reports the database and the user separately', async () => {
+        await expect(getDatabaseState('site', 'site')).resolves.toEqual({ database: true, user: true });
+
+        mockListDatabases.mockResolvedValue({ databases: [{ name: 'admin' }] });
+        await expect(getDatabaseState('site', 'site')).resolves.toEqual({ database: false, user: true });
+        expect(mockClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws when the server cannot be asked, while the display check says no', async () => {
+        mockConnect.mockRejectedValue(new Error('connect ECONNREFUSED'));
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        await expect(getDatabaseState('site', 'site')).rejects.toThrow('ECONNREFUSED');
+        await expect(checkMongoDatabaseAndUser('site', 'site')).resolves.toBe(false);
+    });
+
+    it('deletes a database whose user is already gone', async () => {
+        mockCommand.mockRejectedValue(
+            Object.assign(new Error('User site@site not found'), { codeName: 'UserNotFound' })
+        );
+        jest.spyOn(console, 'log').mockImplementation(() => {});
+
+        await expect(deleteDatabaseAndUser('site')).resolves.toBeUndefined();
+        expect(mockDropDatabase).toHaveBeenCalled();
+    });
+
+    it('does not hide other errors while dropping the user', async () => {
+        mockCommand.mockRejectedValue(Object.assign(new Error('not authorized'), { codeName: 'Unauthorized' }));
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        await expect(deleteDatabaseAndUser('site')).rejects.toThrow('not authorized');
+        expect(mockDropDatabase).not.toHaveBeenCalled();
+    });
+});

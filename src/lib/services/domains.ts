@@ -188,9 +188,19 @@ export async function assignServerBeforeInitialization(id: number, serverId: str
     return result.count === 1;
 }
 
+// Records whether the site's MongoDB database and user exist; set by initialization and destroy only
+export async function setDomainDbExists(id: number, dbExists: 0 | 1) {
+    return prisma.nSDomain.update({
+        where: { id },
+        data: { dbExists },
+    });
+}
+
 export async function updateNSDomain(id: number, data: PartialNSDomainWithEnvironments) {
     try {
-        const updateData: Partial<NSDomain> = {};
+        // MySQL refreshes last_updated whenever the row changes (ON UPDATE CURRENT_TIMESTAMP); set it explicitly too,
+        // so that a save which only changes environment variables (another table) also counts as an edit
+        const updateData: Partial<NSDomain> = { lastUpdated: new Date() };
 
         if (data.domain) updateData.domain = data.domain;
         if (data.authUserId) updateData.authUserId = data.authUserId;
@@ -207,7 +217,8 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
         if (data.dbPassword) updateData.dbPassword = data.dbPassword;
         if (data.nsversion) updateData.nsversion = data.nsversion;
         if (data.active !== undefined) updateData.active = data.active; // as it can be 0
-        if (data.dbExists !== undefined) updateData.dbExists = data.dbExists;
+        // dbExists is not editable here: it records whether initialization created the database and changes only
+        // through setDomainDbExists (initialize/destroy). The edit form used to send 0 and reset it on every save.
 
         const updatedDomain = await prisma.nSDomain.update({
             where: { id },

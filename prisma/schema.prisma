@@ -25,6 +25,7 @@ model NSDomain {
   bridgePassword    String?               @map("bridge_password") @db.VarChar(32)
   bridgeServer      String?               @default("EU") @map("bridge_server") @db.Char(2)
   created           DateTime              @default(now()) @db.Timestamp(0)
+  // MySQL: DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP (added by hand 2026-11-17; Prisma cannot express it)
   lastUpdated       DateTime?             @default(now()) @map("last_updated") @db.Timestamp(0)
   dbPassword        String?               @map("db_password") @db.VarChar(64)
   nsversion         String?               @db.VarChar(50)

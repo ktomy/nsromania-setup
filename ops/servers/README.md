@@ -85,6 +85,21 @@ All scripts back up anything they replace under `/var/log/nightscout/backup/<ste
 
 Updating the agent: run `install-host-agent.sh` again with the new `host_agent.py`; it changes only what differs.
 
+Practical notes from adding d1:
+
+- Install Ubuntu 24.04: MongoDB publishes no server packages for newer releases. The provider's root password is
+  needed only to install the first SSH key; `harden-ssh.sh` then disables passwords and root login.
+- Server ids match `^[a-z][a-z0-9]{0,31}$` and must not be `main`. Each server needs its own free local tunnel port
+  on main (`d1` uses 27118; take 27119 for the next one).
+- Verify the new host key out of band (provider console) before `setup-panel-access.sh server`; it is pinned and
+  never learned at runtime.
+- Stage scripts on a server in a new root-only directory and run them from there, for example:
+  `tar -C ops/servers -cf - FILES | ssh ... "sudo install -d -m 0700 /root/staging-servers-<UTC> && sudo tar -C
+  /root/staging-servers-<UTC> -xf - --no-same-owner"`. Use `ssh -n` (or `</dev/null`) for commands that must not
+  read the local stdin.
+- Afterwards add the server to the table above, to the topology table in `ops/deploy/OPERATIONS.md` and, if it
+  becomes the default for new sites, set `NS_DEFAULT_SERVER`.
+
 ## Moving an instance
 
 `migrate-instance.sh` runs as root on main, from a copy in a root-only staging directory:
@@ -106,20 +121,102 @@ vhost into a TLS-verified forwarder to d1 (for clients that still resolve the ol
 the panel sets (its fixed keys plus the domain's environment rows); PM2 and systemd internals and anything inherited
 from whoever started the app stay behind. The main database stays as the rollback source.
 
-After the move: the forwarder vhost on main can be deleted once clients have followed the new CNAME (a few days), and
-the main database copy dropped when rollback is no longer wanted. Both are manual.
+After the move: the forwarder vhost on main can be deleted once clients have followed the new CNAME, and the main
+database copy dropped when rollback is no longer wanted. Both are manual (see the runbook).
+
+### Runbook
+
+From a workstation, with `MAIN` being the strict-host-key SSH command for `ktomy@nsromania.info`
+(`ssh -F /dev/null -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o BatchMode=yes -i
+$HOME/.ssh/id_rsa ktomy@nsromania.info`; `ktomy` has passwordless sudo on main and d1):
+
+1. **Stage** the script from the repository: copy `migrate-instance.sh` into a new `/root/staging-servers-<UTC>`
+   directory on main (as in the notes above) and compare `sha256sum` with the local file. Re-stage after every change
+   to the script.
+2. **Preflight** (read-only): `sudo bash STAGE/migrate-instance.sh preflight SUB d1`. It needs the site active,
+   initialized (`db_exists = 1`) and on main, its PM2 app with the matching port, its Nightscout version installed on
+   the target, and no app or database of that name there yet.
+3. **Rehearse** (optional, no downtime): copies the live database to the target, compares users and documents, and
+   drops the copy again. Counts may differ while the site writes; useful to time large databases.
+4. **Migrate**: `sudo bash STAGE/migrate-instance.sh migrate SUB d1`. The downtime is the database copy plus about
+   20 s (`ktomy`, 13 MB compressed: 25 s). It refuses to run while a deployment holds the lock. On any failure it
+   stops with the next step to take, normally `rollback`.
+5. **Verify**: `https://SUB.nsromania.info/api/v1/status.json` answers and `/api/v1/entries.json?count=1` shows new
+   entries arriving; the site page in the panel shows `Server: d1 (d1.nsromania.info)` and status online; on main
+   the agent lists it online:
+   `sudo /usr/bin/ssh -n -F /dev/null -T -i /root/.ssh/nsromania-servers/id_ed25519 -o IdentitiesOnly=yes -o
+   UserKnownHostsFile=/root/.ssh/nsromania-servers/known_hosts -o StrictHostKeyChecking=yes -o BatchMode=yes --
+   nsagent@31.220.43.162 pm2-list`. Ask the owner (or the user) to confirm before finalizing.
+6. **Finalize**: `sudo bash STAGE/migrate-instance.sh finalize SUB d1` deletes the stopped app from main's PM2 and
+   removes only its entry from `dump.pm2` and `dump.pm2.bak` (backup `finalize-SUB-<UTC>`). After this, `rollback` no
+   longer works; returning the site is a manual restore from the backups.
+7. **Drop main's database copy** (manual, when rollback is no longer wanted): check that the dump in
+   `migrate-SUB-<UTC>/mongo/SUB` has exactly the documents of main's copy (per collection, plus the user), that no
+   connection uses it (`$currentOp` with `allUsers`, `idleConnections`, matching `effectiveUsers.user` or `ns`), and
+   that `ns_domain.server` is the target; then `dropUser` and `dropDatabase` on main with `mongosh` (URL from the
+   panel `.env` in the environment, never on the command line) and write the restore command into
+   `RESTORE-MAIN-DB.txt` next to the dump:
+   `mongorestore --uri="$MONGO_URL" --gzip --db=SUB --restoreDbUsersAndRoles .../mongo/SUB`.
+8. **Remove main's forwarder** once main's nginx log shows no more requests for the site, for example
+   `sudo grep '^SUB.nsromania.info' /var/log/nginx/access.log | awk -F'"' '{print $6}' | sort | uniq -c` (requests
+   per user agent; in the `vcombined` format the time is the 5th space-separated field; the log keeps 14 days). Back
+   up `/etc/nginx/sites-available/SUB`, remove it and the `/etc/nginx/sites-enabled/SUB` symlink, `nginx -t`,
+   `systemctl reload nginx`.
+9. **Record** the move in the table below and in the `ops/deploy/OPERATIONS.md` change table.
+
+Lessons from the first move (`ktomy`): browsers followed the new CNAME (TTL 300 s) within 20 minutes, but an ESP32
+glucose display (`ESP32HTTPClient`) kept calling main's address; such devices resolve DNS once at boot and follow
+only after a restart. Usage statistics come from main's nginx log, so after the move only forwarder traffic is
+counted.
 
 ### Moves done
 
 | Instance | Date | Notes |
 | --- | --- | --- |
-| `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; not finalized yet; main DB copy and forwarder vhost kept |
+| `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; finalized 22:05 (`finalize-ktomy-20261117T220554Z`); main DB copy dropped 22:10 after checking it against the backup's dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost on main kept while an ESP32 display still uses the old address |
 
 ## Certificates
 
 Both servers serve the wildcard `*.nsromania.info` certificate from `/etc/nginx/cert/star_nsromania_info.crt` and
 `.key` (0600). It expires **2026-12-31**. Install a renewed certificate on every server, then `nginx -t` and
 `systemctl reload nginx` on each.
+
+## Extending the migration tooling
+
+`migrate-instance.sh` is one bash script run as root on main; every action first runs the shared checks (schema
+column, `ns_domain` row, PM2 name `11<id padded to 3>_SUB` and port `11000 + id`). Keep these invariants when
+changing it:
+
+- Changing actions take the deployment lock (`flock` on `deployment.lock`) and write every file and row they change
+  to `/var/log/nightscout/backup/<action>-SUB-<UTC>` first. `preflight` stays read-only.
+- Reach the target only through the host agent operations (`host_agent.py`: `ping`, `pm2-list`, `pm2-start` with
+  the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-delete`, `vhost-list`) and the MongoDB
+  tunnel. A new remote operation means changing `host_agent.py` and its tests, then re-running
+  `install-host-agent.sh` on every server.
+- Secrets never reach a command line or the output: MongoDB URLs go through the environment (`mongo_eval`) or a
+  temporary 0600 YAML `--config` (`mongo_tool_config`), and only named keys are read from the panel `.env`.
+- The environment carried to the target is an allowlist that mirrors `buildDomainProcess` in
+  `src/lib/services/nsruntime.ts` (fixed keys plus the domain's `ns_domain_environment` rows). Update both together.
+- Never run a global PM2 `save`, `restart all` or similar on main; remove single entries from the dump files as
+  `finalize` does. On the target, `pm2-save` saves only when at least 90% of apps are online.
+- Edit the zone only through `set_cname` (candidate file, `named-checkzone`, atomic replace, `rndc reload`).
+
+Pitfalls already hit: inside a function called in a `||` context bash ignores `set -e`, so each step needs its own
+`|| return 1`; `--quiet` hides `mongorestore` errors; `mongorestore --restoreDbUsersAndRoles` works only with a
+directory dump restored with `--db`; parse `mysql` output with a non-whitespace separator (`|`) so empty fields keep
+their position; `ssh` without `-n` swallows a script piped to the outer shell.
+
+Not supported yet (candidates for extension):
+
+- moving a site back to main or between additional servers (`SERVER` must not be `main`, and preflight requires
+  `ns_domain.server IS NULL`);
+- several sites in one run (one lock and one backup directory per site today);
+- automating runbook steps 7 and 8 (a `cleanup` action that verifies the dump and checks forwarder traffic);
+- moving from the panel instead of the shell.
+
+There are no automated tests for `migrate-instance.sh`. Check changes with `bash -n` (and `shellcheck` when
+available), then `preflight` and `rehearse` against a live site, which change nothing visible. The host agent has
+unit tests: `python3 -m unittest ops/servers/test_host_agent.py`.
 
 ## Known gaps
 

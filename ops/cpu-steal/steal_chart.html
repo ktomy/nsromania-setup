@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CPU Steal and Load</title>
+<style>
+:root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --ring: rgba(11, 11, 11, 0.10);
+    --s-cpu: #2a78d6;
+    --s-steal: #eb6834;
+    --s-load: #1baf7a;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page: #0d0d0d;
+        --surface: #1a1a19;
+        --ink: #f0efec;
+        --ink-2: #c3c2b7;
+        --muted: #898781;
+        --grid: #2c2c2a;
+        --axis: #383835;
+        --ring: rgba(255, 255, 255, 0.10);
+        --s-cpu: #3987e5;
+        --s-steal: #d95926;
+        --s-load: #199e70;
+    }
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --ring: rgba(255, 255, 255, 0.10);
+    --s-cpu: #3987e5;
+    --s-steal: #d95926;
+    --s-load: #199e70;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+.sub { color: var(--ink-2); margin: 0 0 20px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 12px 14px; }
+.tile .label { color: var(--ink-2); font-size: 13px; }
+.tile .value { font-size: 26px; font-weight: 600; margin-top: 2px; }
+.tile .note { color: var(--muted); font-size: 12.5px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; margin-bottom: 12px; }
+.ctl { display: flex; align-items: center; gap: 8px; }
+.ctl-label { color: var(--ink-2); font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid var(--axis); border-radius: 6px; overflow: hidden; }
+.seg button {
+    font: inherit; font-size: 13px; background: transparent; color: var(--ink-2);
+    border: 0; padding: 4px 11px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--axis); }
+.seg button:hover { background: var(--ring); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+#charts { position: relative; outline: none; border-radius: 8px; }
+#charts:focus-visible { box-shadow: 0 0 0 2px var(--s-cpu); }
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 12px 12px 4px; margin-bottom: 12px; }
+.card h2 { font-size: 14px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+.card p { margin: 2px 0 4px; color: var(--ink-2); font-size: 12.5px; }
+.key { width: 16px; height: 2px; border-radius: 1px; display: inline-block; flex: none; }
+.key.steal { background: var(--s-steal); }
+.key.cpu { background: var(--s-cpu); }
+.key.load { background: var(--s-load); }
+.key.none { background: transparent; }
+.plot svg { display: block; width: 100%; touch-action: pan-y; }
+.tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tick.day { fill: var(--ink-2); font-weight: 600; }
+.grid { stroke: var(--grid); stroke-width: 1; }
+.axis { stroke: var(--axis); stroke-width: 1; }
+.mark { stroke: var(--ink-2); stroke-width: 1; opacity: 0.55; }
+.mark-label { fill: var(--ink-2); font-size: 11.5px; }
+.line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dense .line { stroke-width: 1.25; }
+.line.steal { stroke: var(--s-steal); }
+.line.cpu { stroke: var(--s-cpu); }
+.line.load { stroke: var(--s-load); }
+.wash.steal { fill: var(--s-steal); opacity: 0.1; }
+.endlabel { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.xhair { stroke: var(--ink-2); stroke-width: 1; }
+.dot { stroke: var(--surface); stroke-width: 2; }
+.dot.steal { fill: var(--s-steal); }
+.dot.cpu { fill: var(--s-cpu); }
+.dot.load { fill: var(--s-load); }
+.tip {
+    position: absolute; pointer-events: none; display: none; z-index: 2; min-width: 230px;
+    background: var(--surface); border: 1px solid var(--ring); border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14); padding: 8px 10px; font-size: 12.5px;
+}
+.tip .time { font-weight: 600; }
+.tip .time2 { color: var(--muted); margin-bottom: 6px; }
+.tip .row { display: flex; align-items: center; gap: 8px; line-height: 1.6; }
+.tip .row b { font-weight: 600; min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+.tip .row span.name { color: var(--ink-2); }
+details { margin-top: 16px; }
+summary { cursor: pointer; color: var(--ink-2); }
+.tablewrap { max-height: 440px; overflow: auto; border: 1px solid var(--ring); border-radius: 6px; background: var(--surface); margin-top: 8px; }
+table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; width: 100%; }
+th, td { padding: 4px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--surface); color: var(--ink-2); font-weight: 600; }
+th:first-child, td:first-child { text-align: left; }
+.foot { color: var(--muted); font-size: 12.5px; margin-top: 16px; max-width: 900px; }
+.foot p { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<main>
+    <h1>CPU steal and our load</h1>
+    <p class="sub" id="sub"></p>
+    <div class="tiles" id="tiles"></div>
+
+    <div class="controls">
+        <div class="ctl">
+            <span class="ctl-label" id="res-label">Resolution</span>
+            <div class="seg" id="res" role="group" aria-labelledby="res-label">
+                <button type="button" data-step="1" aria-pressed="false">1 min</button>
+                <button type="button" data-step="5" aria-pressed="false">5 min</button>
+                <button type="button" data-step="10" aria-pressed="false">10 min</button>
+                <button type="button" data-step="30" aria-pressed="false">30 min</button>
+                <button type="button" data-step="60" aria-pressed="false">1 h</button>
+            </div>
+        </div>
+        <div class="ctl">
+            <span class="ctl-label" id="tz-label">Times in</span>
+            <div class="seg" id="tz" role="group" aria-labelledby="tz-label">
+                <button type="button" data-tz="0" aria-pressed="true">UTC</button>
+                <button type="button" data-tz="7200" aria-pressed="false">Romania (UTC+2)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="charts" tabindex="0"
+         aria-label="Charts of CPU steal, our CPU use and load average over time. Left and right arrow keys move the readout; the table view below lists every value.">
+        <section class="card">
+            <h2><span class="key steal"></span>CPU steal</h2>
+            <p>Time our vCPUs were ready to run but the hypervisor gave the physical CPU to something else: capacity we pay for and do not get.</p>
+            <div class="plot" data-panel="steal"></div>
+        </section>
+        <section class="card">
+            <h2><span class="key cpu"></span>Our CPU use</h2>
+            <p>Work our services got done (user + nice + system + IRQ time) as a share of all vCPUs. Our use + steal + idle = 100%.</p>
+            <div class="plot" data-panel="cpu"></div>
+        </section>
+        <section class="card">
+            <h2><span class="key load"></span>Load average (1 min)</h2>
+            <p>Tasks running or waiting for a CPU. Waiting caused by steal raises it too, so it can climb without any extra work.</p>
+            <div class="plot" data-panel="load"></div>
+        </section>
+        <div class="tip" id="tip"></div>
+    </div>
+
+    <details id="tablebox">
+        <summary>Table view (<span id="table-count"></span>)</summary>
+        <div class="tablewrap"><table id="table"></table></div>
+    </details>
+
+    <div class="foot">
+        <p>Generated by <code>ops/cpu-steal/chart.sh</code> from the <code>nsromania-cpu-steal</code> collector, which reads <code>/proc/stat</code> every 5 seconds and writes one line per minute. Steal is the same counter as <code>top</code>/<code>vmstat</code>/<code>sar</code> "st". Effective vCPUs = vCPUs × (1 − steal). Idle includes iowait (about 0.1%).</p>
+        <p>Points are averages over the chosen resolution, drawn at the middle of each period. The tooltip also shows the highest 5-second steal sample in the period.</p>
+    </div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+    const D = /*__DATA__*/null;
+    const NPROC = D.nproc;
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const NS = 'http://www.w3.org/2000/svg';
+    const M = { l: 46, r: 54, t: 14, b: 26 };
+    const PANELS = [
+        { id: 'steal', key: 'steal', unit: '%', zero: true, wash: true, h: 236, top: 30 },
+        { id: 'cpu', key: 'our', unit: '%', zero: false, wash: false, h: 180 },
+        { id: 'load', key: 'load1', unit: '', zero: true, wash: false, h: 160 },
+    ];
+    for (const p of PANELS) {
+        p.box = document.querySelector('.plot[data-panel="' + p.id + '"]');
+    }
+    const charts = document.getElementById('charts');
+    const tip = document.getElementById('tip');
+    const STEPS = [1, 5, 10, 30, 60];
+    // Start at the finest resolution that keeps the chart at 400 points or fewer.
+    let step = STEPS.find((s) => (D.to - D.from) / (s * 60) <= 400) || 60;
+    let tzOff = 0;
+    let buckets = [];
+    let idx = -1;
+    let geom = null;
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const tzName = (off) => (off ? 'Romania' : 'UTC');
+    function hm(t, off) {
+        const d = new Date((t + off) * 1000);
+        return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+    }
+    function dayLabel(t, off) {
+        const d = new Date((t + off) * 1000);
+        return DAYS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()];
+    }
+    function fmt(v, digits) {
+        return v.toFixed(digits === undefined ? 1 : digits);
+    }
+    function svgEl(name, attrs, parent) {
+        const e = document.createElementNS(NS, name);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+    function textEl(name, cls, text, parent) {
+        const e = document.createElement(name);
+        if (cls) e.className = cls;
+        e.textContent = text;
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+
+    // Weighted aggregation of the 1-minute rows into periods of `mins` minutes.
+    // Row: [epoch, interval_s, steal, our, idle, load1, runq, steal_max_5s]
+    function aggregate(mins) {
+        const out = [];
+        const span = mins * 60;
+        let cur = null;
+        for (const r of D.rows) {
+            const k = Math.floor(r[0] / span);
+            if (!cur || cur.k !== k) {
+                cur = { k: k, t: k * span, w: 0, n: 0, steal: 0, our: 0, idle: 0, load1: 0, runq: 0, max5: 0 };
+                out.push(cur);
+            }
+            const w = r[1] > 0 ? r[1] : 60;
+            cur.w += w;
+            cur.n += 1;
+            cur.steal += r[2] * w;
+            cur.our += r[3] * w;
+            cur.idle += r[4] * w;
+            cur.load1 += r[5];
+            cur.runq += r[6] * w;
+            cur.max5 = Math.max(cur.max5, r[7]);
+        }
+        for (const b of out) {
+            b.steal /= b.w;
+            b.our /= b.w;
+            b.idle /= b.w;
+            b.runq /= b.w;
+            b.load1 /= b.n;
+            b.eff = NPROC * (1 - b.steal / 100);
+            b.end = Math.min(b.t + span, D.to);
+            b.tm = Math.min(Math.max(b.t + span / 2, D.from), D.to);
+        }
+        return out;
+    }
+
+    function niceStep(range, target) {
+        if (!(range > 0)) return 1;
+        const raw = range / target;
+        const p = Math.pow(10, Math.floor(Math.log10(raw)));
+        for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw - 1e-9) return m * p;
+        return 10 * p;
+    }
+    function yDomain(p, vals) {
+        const max = Math.max.apply(null, vals);
+        const min = Math.min.apply(null, vals);
+        if (p.zero) {
+            const s = niceStep(max, 4);
+            return { lo: 0, hi: Math.max(s, Math.ceil(max / s) * s), step: s };
+        }
+        const s = niceStep(max - min, 3);
+        let lo = Math.floor(min / s) * s;
+        let hi = Math.ceil(max / s) * s;
+        if (hi <= lo) hi = lo + s;
+        return { lo: Math.max(0, lo), hi: Math.min(100, hi), step: s };
+    }
+    function xTicks(width) {
+        const span = D.to - D.from;
+        let hours = 168;
+        for (const h of [1, 2, 3, 4, 6, 12, 24, 48, 168]) {
+            if (width / (span / (h * 3600)) >= 64) {
+                hours = h;
+                break;
+            }
+        }
+        const s = hours * 3600;
+        const ticks = [];
+        for (let t = Math.ceil((D.from + tzOff) / s) * s - tzOff; t <= D.to; t += s) ticks.push(t);
+        return ticks;
+    }
+
+    function render() {
+        buckets = aggregate(step);
+        const W = Math.max(320, Math.floor(PANELS[0].box.clientWidth));
+        const iw = W - M.l - M.r;
+        const x = (t) => M.l + ((t - D.from) / (D.to - D.from)) * iw;
+        const ticks = xTicks(iw);
+        geom = { W: W, x: x, iw: iw };
+        for (const p of PANELS) {
+            p.box.textContent = '';
+            const H = p.h;
+            const T = p.top || M.t;
+            const svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img' }, p.box);
+            svg.setAttribute('class', step === 1 ? 'dense' : '');
+            svg.setAttribute('aria-hidden', 'true');
+            const dom = yDomain(p, buckets.map((b) => b[p.key]));
+            const y = (v) => T + (1 - (v - dom.lo) / (dom.hi - dom.lo)) * (H - T - M.b);
+            p.y = y;
+            const base = H - M.b;
+            for (let v = dom.lo; v <= dom.hi + 1e-9; v += dom.step) {
+                svgEl('line', { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), class: v === dom.lo ? 'axis' : 'grid' }, svg);
+                const lbl = svgEl('text', { x: M.l - 6, y: y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg);
+                lbl.textContent = (Math.round(v * 10) / 10) + p.unit;
+            }
+            for (const t of ticks) {
+                svgEl('line', { x1: x(t), x2: x(t), y1: base, y2: base + 4, class: 'axis' }, svg);
+                const d = new Date((t + tzOff) * 1000);
+                const midnight = d.getUTCHours() === 0;
+                const lbl = svgEl('text', { x: x(t), y: base + 17, 'text-anchor': 'middle', class: midnight ? 'tick day' : 'tick' }, svg);
+                lbl.textContent = midnight ? d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] : hm(t, tzOff);
+            }
+            for (const m of D.marks) {
+                if (m.t < D.from || m.t > D.to) continue;
+                svgEl('line', { x1: x(m.t), x2: x(m.t), y1: p.top ? 6 : T - 6, y2: base, class: 'mark' }, svg);
+                if (p.id === 'steal') {
+                    // Right of the rule if it fits, else left of it, else a short label kept inside the chart.
+                    const mx = x(m.t);
+                    const lbl = svgEl('text', { x: mx + 6, y: 16, class: 'mark-label' }, svg);
+                    lbl.textContent = hm(m.t, tzOff) + ' ' + tzName(tzOff) + ': ' + m.label;
+                    let len = lbl.getComputedTextLength();
+                    if (mx + 6 + len > W - 4 && mx - 6 - len >= 4) {
+                        lbl.setAttribute('text-anchor', 'end');
+                        lbl.setAttribute('x', mx - 6);
+                    } else if (mx + 6 + len > W - 4) {
+                        lbl.textContent = hm(m.t, tzOff) + ' ' + (m.short || m.label);
+                        len = lbl.getComputedTextLength();
+                        lbl.setAttribute('x', Math.max(4, Math.min(mx + 6, W - 4 - len)));
+                    }
+                }
+            }
+            // Line (broken across missing periods) and, for steal, a light wash down to zero.
+            const segs = [];
+            let seg = null;
+            let prevK = null;
+            for (const b of buckets) {
+                if (prevK === null || b.k - prevK > 1) {
+                    seg = [];
+                    segs.push(seg);
+                }
+                seg.push([x(b.tm), y(b[p.key])]);
+                prevK = b.k;
+            }
+            const pts = (s) => s.map((q) => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+            if (p.wash) {
+                const dWash = segs.map((s) => 'M' + s[0][0].toFixed(1) + ',' + base + 'L' + pts(s) + 'L' + s[s.length - 1][0].toFixed(1) + ',' + base + 'Z').join('');
+                svgEl('path', { d: dWash, class: 'wash ' + p.id }, svg);
+            }
+            svgEl('path', { d: segs.map((s) => 'M' + pts(s)).join(''), class: 'line ' + p.id }, svg);
+            const last = buckets[buckets.length - 1];
+            if (last) {
+                const end = svgEl('text', { x: x(last.tm) + 8, y: y(last[p.key]) + 4, class: 'endlabel' }, svg);
+                end.textContent = fmt(last[p.key]) + p.unit;
+            }
+            p.xh = svgEl('line', { y1: T - 6, y2: base, class: 'xhair', visibility: 'hidden' }, svg);
+            p.dot = svgEl('circle', { r: 4, class: 'dot ' + p.id, visibility: 'hidden' }, svg);
+        }
+        if (idx >= buckets.length) idx = buckets.length - 1;
+        if (tip.style.display === 'block' && idx >= 0) show(idx, null);
+        renderTable();
+    }
+
+    function nearest(t) {
+        let lo = 0;
+        let hi = buckets.length - 1;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (buckets[mid].tm < t) lo = mid + 1;
+            else hi = mid;
+        }
+        if (lo > 0 && Math.abs(buckets[lo - 1].tm - t) <= Math.abs(buckets[lo].tm - t)) lo -= 1;
+        return lo;
+    }
+
+    function tipRow(cls, value, name) {
+        const row = textEl('div', 'row', '', tip);
+        textEl('span', 'key ' + (cls || 'none'), '', row);
+        textEl('b', '', value, row);
+        textEl('span', 'name', name, row);
+    }
+
+    function show(i, ev) {
+        if (i < 0 || !buckets.length) return;
+        idx = i;
+        const b = buckets[i];
+        for (const p of PANELS) {
+            const cx = geom.x(b.tm);
+            p.xh.setAttribute('x1', cx);
+            p.xh.setAttribute('x2', cx);
+            p.xh.setAttribute('visibility', 'visible');
+            p.dot.setAttribute('cx', cx);
+            p.dot.setAttribute('cy', p.y(b[p.key]));
+            p.dot.setAttribute('visibility', 'visible');
+        }
+        tip.textContent = '';
+        const other = tzOff ? 0 : 7200;
+        textEl('div', 'time', dayLabel(b.t, tzOff) + ', ' + hm(b.t, tzOff) + '–' + hm(b.end, tzOff) + ' ' + tzName(tzOff), tip);
+        textEl('div', 'time2', hm(b.t, other) + '–' + hm(b.end, other) + ' ' + tzName(other), tip);
+        tipRow('steal', fmt(b.steal) + '%', 'CPU steal');
+        tipRow('cpu', fmt(b.our) + '%', 'Our CPU use');
+        tipRow('', fmt(b.idle) + '%', 'Idle');
+        tipRow('load', fmt(b.load1), 'Load average (1 min)');
+        tipRow('', fmt(b.eff, 2), 'Effective vCPUs of ' + NPROC);
+        tipRow('', fmt(b.max5) + '%', 'Highest 5-second steal');
+        tip.style.display = 'block';
+        const cr = charts.getBoundingClientRect();
+        const pr = PANELS[0].box.getBoundingClientRect();
+        const px = pr.left - cr.left + geom.x(b.tm);
+        const tw = tip.offsetWidth;
+        const th = tip.offsetHeight;
+        let left = px + 14;
+        if (left + tw > cr.width) left = px - 14 - tw;
+        tip.style.left = Math.max(0, left) + 'px';
+        const py = ev ? ev.clientY - cr.top - th / 2 : pr.top - cr.top + 30;
+        tip.style.top = Math.max(0, Math.min(cr.height - th, py)) + 'px';
+    }
+
+    function hide() {
+        tip.style.display = 'none';
+        for (const p of PANELS) {
+            if (p.xh) p.xh.setAttribute('visibility', 'hidden');
+            if (p.dot) p.dot.setAttribute('visibility', 'hidden');
+        }
+    }
+
+    charts.addEventListener('pointermove', (ev) => {
+        if (!geom || !buckets.length) return;
+        const pr = PANELS[0].box.getBoundingClientRect();
+        const px = ev.clientX - pr.left;
+        if (px < M.l - 8 || px > geom.W - M.r + 8) {
+            hide();
+            return;
+        }
+        const t = D.from + ((px - M.l) / geom.iw) * (D.to - D.from);
+        show(nearest(t), ev);
+    });
+    charts.addEventListener('pointerleave', hide);
+    charts.addEventListener('keydown', (ev) => {
+        if (!buckets.length) return;
+        let i = idx < 0 ? buckets.length - 1 : idx;
+        if (ev.key === 'ArrowLeft') i = Math.max(0, i - 1);
+        else if (ev.key === 'ArrowRight') i = Math.min(buckets.length - 1, i + 1);
+        else if (ev.key === 'Home') i = 0;
+        else if (ev.key === 'End') i = buckets.length - 1;
+        else if (ev.key === 'Escape') {
+            hide();
+            return;
+        } else return;
+        ev.preventDefault();
+        show(i, null);
+    });
+    charts.addEventListener('blur', hide);
+
+    function renderTable() {
+        document.getElementById('table-count').textContent = buckets.length + ' rows at ' + step + '-minute resolution';
+        if (!document.getElementById('tablebox').open) return;
+        const table = document.getElementById('table');
+        table.textContent = '';
+        const head = document.createElement('tr');
+        for (const h of ['Start (' + tzName(tzOff) + ')', 'Steal %', 'Our CPU %', 'Idle %', 'Load (1 min)', 'Effective vCPUs', 'Max 5 s steal %']) {
+            textEl('th', '', h, head);
+        }
+        const thead = document.createElement('thead');
+        thead.appendChild(head);
+        table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        for (const b of buckets) {
+            const tr = document.createElement('tr');
+            for (const v of [dayLabel(b.t, tzOff) + ' ' + hm(b.t, tzOff), fmt(b.steal), fmt(b.our), fmt(b.idle), fmt(b.load1), fmt(b.eff, 2), fmt(b.max5)]) {
+                textEl('td', '', v, tr);
+            }
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+    }
+    document.getElementById('tablebox').addEventListener('toggle', renderTable);
+
+    function renderSummary() {
+        const rows = D.rows;
+        let w = 0, steal = 0, our = 0, idle = 0, load = 0, peak = null;
+        for (const r of rows) {
+            const rw = r[1] > 0 ? r[1] : 60;
+            w += rw;
+            steal += r[2] * rw;
+            our += r[3] * rw;
+            idle += r[4] * rw;
+            load += r[5];
+            if (!peak || r[2] > peak[2]) peak = r;
+        }
+        steal /= w;
+        our /= w;
+        idle /= w;
+        load /= rows.length;
+        const loads = rows.map((r) => r[5]).sort((a, b) => a - b);
+        const p95 = loads[Math.min(loads.length - 1, Math.floor(0.95 * loads.length))];
+        const covered = (rows.length * 60) / (D.to - D.from);
+        document.getElementById('sub').textContent =
+            D.host + ' · ' + NPROC + ' vCPUs · ' + dayLabel(D.from, 0) + ' ' + hm(D.from, 0) + ' to ' + dayLabel(D.to, 0) + ' ' + hm(D.to, 0) +
+            ' UTC · ' + rows.length + ' minutes (' + Math.round(covered * 1000) / 10 + '% coverage) · generated ' + D.generated;
+        const tiles = document.getElementById('tiles');
+        tiles.textContent = '';
+        const tile = (label, value, note) => {
+            const t = textEl('div', 'tile', '', tiles);
+            textEl('div', 'label', label, t);
+            textEl('div', 'value', value, t);
+            textEl('div', 'note', note, t);
+        };
+        tile('Mean CPU steal', fmt(steal) + '%', 'We got ' + fmt(NPROC * (1 - steal / 100), 2) + ' of ' + NPROC + ' vCPUs on average');
+        tile('Worst minute of steal', fmt(peak[2]) + '%', dayLabel(peak[0], 0) + ', ' + hm(peak[0], 0) + ' UTC (' + hm(peak[0], 7200) + ' Romania)');
+        tile('Our mean CPU use', fmt(our) + '%', 'About ' + fmt((NPROC * our) / 100) + ' vCPUs of work; idle ' + fmt(idle) + '%');
+        tile('Mean load average', fmt(load), '95th percentile ' + fmt(p95) + ' (1-minute load)');
+    }
+
+    function bindSeg(id, attr, apply) {
+        const group = document.getElementById(id);
+        group.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('button');
+            if (!btn) return;
+            for (const b of group.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b === btn));
+            apply(Number(btn.getAttribute(attr)));
+            render();
+        });
+    }
+    bindSeg('res', 'data-step', (v) => {
+        step = v;
+        hide();
+        idx = -1;
+    });
+    bindSeg('tz', 'data-tz', (v) => {
+        tzOff = v;
+    });
+
+    for (const b of document.querySelectorAll('#res button')) {
+        b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-step')) === step));
+    }
+    renderSummary();
+    render();
+    let pending = null;
+    window.addEventListener('resize', () => {
+        if (pending) cancelAnimationFrame(pending);
+        pending = requestAnimationFrame(render);
+    });
+})();
+</script>
+</body>
+</html>

@@ -111,7 +111,8 @@ the counts of each additional hosting server, fetched through that server's host
 
 Since 2026-11-15 a lightweight collector records hypervisor CPU steal (from `/proc/stat` every 5 seconds, one CSV line
 per minute) as evidence for the hosting provider. See `ops/cpu-steal/README.md`; the report is generated with
-`./ops/cpu-steal/report.sh --from YYYY-MM-DD --to YYYY-MM-DD` (read-only, no sudo).
+`./ops/cpu-steal/report.sh --from YYYY-MM-DD --to YYYY-MM-DD` (read-only, no sudo), and `./ops/cpu-steal/chart.sh >
+chart.html` draws steal, our CPU use and load as one HTML page (last 24 hours by default).
 
 | Server file | Purpose |
 | --- | --- |

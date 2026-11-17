@@ -1,5 +1,6 @@
 import calendar
 import io
+import json
 import lzma
 import os
 import shutil
@@ -15,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import collect_cpu_steal as c  # noqa: E402
 import steal_report as r  # noqa: E402
+import steal_chart as sc  # noqa: E402
 
 STAT = """cpu  1000 10 200 5000 50 0 40 700 0 0
 cpu0 500 5 100 2500 25 0 20 350 0 0
@@ -387,6 +389,62 @@ class OutputTest(unittest.TestCase):
             r.main(['--from', '2026-11-17', '--to', '2026-11-16'])
         with self.assertRaises(SystemExit), mock.patch.object(sys, 'stderr', io.StringIO()):
             r.main(['--from', 'yesterday'])
+
+
+class ChartTest(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        lines = [csv_line(T0 + i * 60, 20.0 if i < 60 else 10.0) for i in range(120)] + ['torn,li']
+        with open(os.path.join(self.dir, 'steal-2026-11.csv'), 'w') as f:
+            f.write(c.HEADER + '\n' + '\n'.join(lines) + '\n')
+
+    def run_chart(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(sys, 'stdout', out), mock.patch.object(sys, 'stderr', err):
+            code = sc.main(['--data-dir', self.dir] + list(argv))
+        return code, out.getvalue(), err.getvalue()
+
+    @staticmethod
+    def data(html):
+        start = html.index('const D = ') + len('const D = ')
+        return json.loads(html[start:html.index(';\n', start)])
+
+    def test_embeds_rows_marks_and_escapes(self):
+        code, html, err = self.run_chart('--from', '2026-11-16T00:00', '--to', '2026-11-16T01:30',
+                                         '--mark', '2026-11-16T01:00|drop </script><b>x|drop')
+        self.assertEqual(code, 0)
+        d = self.data(html)
+        self.assertEqual((d['from'], d['to'], d['nproc'], len(d['rows'])), (T0, T0 + 5400, 8, 90))
+        # steal 20, our = user 70 + nice 0 + system 6 + irq 1, idle = idle 2 + iowait 1, load, runq, 5 s max
+        self.assertEqual(d['rows'][0], [T0, 60.0, 20.0, 77.0, 3.0, 150.0, 40.0, 25.0])
+        self.assertEqual(d['rows'][60][2], 10.0)
+        self.assertEqual(d['marks'], [{'t': T0 + 3600, 'label': 'drop </script><b>x', 'short': 'drop'}])
+        self.assertNotIn('</script><b>', html)
+        self.assertEqual(html.count('</script>'), 1)
+        self.assertNotIn(sc.PLACEHOLDER, html)
+        self.assertIn('90 minutes from 1 file(s), 1 malformed line(s) skipped', err)
+
+    def test_default_range_out_file_and_months(self):
+        out = os.path.join(self.dir, 'chart.html')
+        with mock.patch.object(sc.time, 'time', return_value=T0 + 7200 + 30):
+            code, stdout, _ = self.run_chart('--out', out)
+        self.assertEqual((code, stdout), (0, ''))
+        with open(out) as f:
+            d = self.data(f.read())
+        self.assertEqual((d['from'], d['to'], len(d['rows'])), (T0 + 7200 - 86400, T0 + 7200, 120))
+        self.assertEqual(self.run_chart('--list-months', '--from', '2026-11-30', '--to', '2027-01-01')[1],
+                         '2026-11\n2026-12\n2027-01\n')
+        self.assertEqual(self.run_chart('--list-months', '--from', '2026-11-30', '--to', '2026-12-31')[1],
+                         '2026-11\n2026-12\n')
+
+    def test_errors(self):
+        code, html, err = self.run_chart('--from', '2026-10-01', '--to', '2026-10-02')
+        self.assertEqual((code, html), (1, ''))
+        self.assertIn('no collector data', err)
+        for argv in (['--mark', 'no-label'], ['--mark', '2026-11-16T25:00|x'], ['--from', '2026-11-17', '--to', '2026-11-16']):
+            with self.assertRaises(SystemExit), mock.patch.object(sys, 'stderr', io.StringIO()):
+                sc.main(['--data-dir', self.dir] + argv)
 
 
 if __name__ == '__main__':

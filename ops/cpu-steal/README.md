@@ -109,6 +109,26 @@ Use `--source sar` for periods before 2026-11-15 22:01 UTC, when the collector s
 Offline: copy the CSVs (`ssh … 'tar -C /var/log/nsromania-cpu-steal -cf - .' | tar -xf - -C DIR`) and run
 `python3 ops/cpu-steal/steal_report.py --data-dir DIR --no-sar …`.
 
+## Chart (HTML)
+
+```bash
+./ops/cpu-steal/chart.sh > steal-chart.html                                   # last 24 hours
+./ops/cpu-steal/chart.sh --from 2026-11-16 --to 2026-11-22 > steal-week.html  # a whole week
+./ops/cpu-steal/chart.sh --mark '2026-11-16T05:42|steal drops (avg 14.7% before, 8.8% after)|steal drops' > chart.html
+```
+
+One standalone page (no network needed; about 25 KB plus 75 KB per day of data) with CPU steal, our CPU use (user +
+nice + system + IRQ, so our use + steal + idle = 100%) and the 1-minute load average on a shared time axis, each on
+its own scale. It has summary figures, 1/5/10/30/60-minute resolution (it opens at the finest that keeps 400 points or
+fewer), UTC or Romania time, a hover and arrow-key readout that adds idle, effective vCPUs and the highest 5-second
+steal, a table view and dark mode. `--mark 'TIME|label[|short label]'` draws an annotated rule (repeatable; the short
+label is used where the long one does not fit).
+
+`chart.sh` streams only the month files the range needs from the server (`tar` to stdout; read-only, no sudo, nothing
+written there) into a local temporary directory that it removes, then runs `steal_chart.py` with the
+`steal_chart.html` template locally. `--from`/`--to` behave as in the report, but the default is the last 24 hours.
+Offline: `python3 -I ops/cpu-steal/steal_chart.py --data-dir DIR --out chart.html`.
+
 ## Verification at installation (2026-11-15)
 
 - `vmstat -t 5` started on a minute boundary versus the collector for the same minutes: 22:03 UTC steal 14.92% (5 s
@@ -155,4 +175,5 @@ python3 -I ops/cpu-steal/test_cpu_steal.py -v
 
 They cover `/proc/stat` parsing and aggregation, the writer (header, monthly files, torn lines, schema change,
 disk/size guards), a real 3-second collector run with `SIGTERM`, and the report (weighted percentiles,
-thresholds, gaps, windows, CSV loading, `sadf` parsing, compressed sysstat files, Markdown and CSV output).
+thresholds, gaps, windows, CSV loading, `sadf` parsing, compressed sysstat files, Markdown and CSV output), and the chart
+(embedded rows, annotations and escaping, default range, month list, errors).

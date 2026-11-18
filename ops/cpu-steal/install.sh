@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Install or update the CPU steal collector on production in one step.
 #   ./ops/cpu-steal/install.sh
+#   NSROMANIA_SSH_TARGET=ktomy@d1.nsromania.info ./ops/cpu-steal/install.sh   # another server
 # Runs the tests, streams the files over SSH into a private temporary directory, runs
 # install-on-server.sh with sudo (ktomy has passwordless sudo; nothing prompts), and removes the
 # temporary directory. Does not touch PM2, Nightscout, the panel, databases, nginx or the firewall.

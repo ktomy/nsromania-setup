@@ -5,6 +5,18 @@ production VPS (`nsromania.info`, 8 vCPUs, KVM). It was installed on 2026-11-15 
 9–12% to about 19% (10-minute samples up to 33%, 5-second samples above 40%) and overloaded the host. See
 "Overload incident maintenance" in `ops/deploy/OPERATIONS.md`.
 
+It also runs on the additional hosting server `d1.nsromania.info` (12 vCPUs) since 2026-11-18 07:43 UTC, to follow
+its load and steal as instances move there. Same files and schema on both servers; select the server with
+`NSROMANIA_SSH_TARGET` (default `ktomy@nsromania.info`):
+
+```bash
+NSROMANIA_SSH_TARGET=ktomy@d1.nsromania.info ./ops/cpu-steal/install.sh
+NSROMANIA_SSH_TARGET=ktomy@d1.nsromania.info ./ops/cpu-steal/report.sh --from 2026-11-18 > d1-steal.md
+```
+
+On d1, sysstat (`HISTORY=60`) has collected since provisioning on 2026-11-17, so `--source sar` covers the time
+before the collector started.
+
 **Generate the report** (from the repository root; read-only, no sudo, prints Markdown):
 
 ```bash
@@ -97,7 +109,7 @@ firewall or deployment locks).
 ```
 
 `report.sh` pipes `steal_report.py` to `python3 -I -` on the server (nothing is copied or left there) and passes
-all arguments through. Dates are UTC; `--to` includes that day, `YYYY-MM-DDTHH:MM` gives exact bounds, and both
+all arguments through (adding `--host` with the target's host name unless given). Dates are UTC; `--to` includes that day, `YYYY-MM-DDTHH:MM` gives exact bounds, and both
 default to the last 7 days. Other options: `--contracted-vcpus N` (default: vCPUs the guest sees), `--top N`,
 `--csv daily|hourly|minute`, `--no-sar`.
 

@@ -122,7 +122,8 @@ chart.html` draws steal, our CPU use and load as one HTML page (last 24 hours by
 | `/etc/sysstat/sysstat` | `HISTORY=60` (was 7), so `sar` files are now `/var/log/sysstat/saYYYYMMDD`; previous file in `/var/log/nightscout/backup/sysstat-history-20261115T215121Z` |
 
 Install or update with `./ops/cpu-steal/install.sh`, which backs up replaced files to
-`/var/log/nightscout/backup/cpu-steal-<UTC>` and restarts only `nsromania-cpu-steal.service`.
+`/var/log/nightscout/backup/cpu-steal-<UTC>` and restarts only `nsromania-cpu-steal.service`. The same collector runs on
+d1 since 2026-11-18 (`NSROMANIA_SSH_TARGET=ktomy@d1.nsromania.info` for `install.sh` and `report.sh`).
 
 ### Additional hosting servers
 

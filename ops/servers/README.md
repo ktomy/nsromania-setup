@@ -87,6 +87,8 @@ All scripts back up anything they replace under `/var/log/nightscout/backup/<ste
 6. Install the usage collector on the server: `ops/usage-stats/collect_usage_stats.py` →
    `/usr/local/sbin/nsromania-usage-stats` (`0755 root:root`, no cron), and check from main with
    `nsromania-usage-stats --dry-run` that the server's line appears.
+7. Install the CPU steal and load collector: `NSROMANIA_SSH_TARGET=ktomy@HOST ./ops/cpu-steal/install.sh` (see
+   `ops/cpu-steal/README.md`; d1 since 2026-11-18).
 
 Updating the agent: run `install-host-agent.sh` again with the new `host_agent.py`; it changes only what differs.
 
@@ -249,5 +251,4 @@ unit tests: `python3 -m unittest ops/servers/test_host_agent.py`.
 
 - Usage statistics before 2026-11-18 cover only main's nginx log: for days before that, d1 instances show only
   forwarder traffic. Do not treat a moved instance as unused because of those rows.
-- `ops/cpu-steal` is not installed on d1.
 - d1 has no MongoDB backup job (neither has main at the time of writing).

@@ -16,8 +16,11 @@ Operations (every argument is validated; nothing is passed to a shell):
     vhost-list               nginx instance vhosts
     vhost-create SUB PORT    render the main server's vhost template for SUB -> 127.0.0.1:PORT
     vhost-delete SUB         remove SUB's vhost (a copy is kept in the backup directory)
+    usage-stats YYYY-MM-DD   per-instance request counts of that day from this server's nginx log (read-only; runs
+                             the installed ops/usage-stats collector with --json --exclude-forwarders)
 """
 
+import datetime
 import fcntl
 import json
 import os
@@ -46,6 +49,10 @@ class Config:
     lock_file: str = '/run/lock/nsromania-host-agent.lock'
     nginx: str = '/usr/sbin/nginx'
     systemctl: str = '/usr/bin/systemctl'
+    python: str = '/usr/bin/python3'
+    usage_collector: str = '/usr/local/sbin/nsromania-usage-stats'
+    # Lowest CPU and I/O priority, like the cron job on the main server
+    low_priority: tuple = ('/usr/bin/nice', '-n', '19', '/usr/bin/ionice', '-c3')
 
 
 CONFIG = Config()
@@ -60,6 +67,9 @@ MAX_STDIN = 256 * 1024
 MAX_ENV_VARS = 256
 MAX_ENV_VALUE = 16384
 SAVE_MIN_ONLINE_RATIO = 0.9
+# nginx keeps 14 days of logs
+USAGE_MAX_AGE_DAYS = 15
+USAGE_TIMEOUT = 600
 
 
 class AgentError(Exception):
@@ -348,6 +358,46 @@ def op_vhost_delete(subdomain, config=CONFIG):
     return {'subdomain': subdomain, 'backup': backup}
 
 
+# --- usage statistics -----------------------------------------------------------------------------------------
+
+
+def validate_day(value, today=None):
+    if not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', value or ''):
+        raise AgentError('invalid date')
+    try:
+        day = datetime.date.fromisoformat(value)
+    except ValueError:
+        raise AgentError('invalid date') from None
+    today = today or datetime.date.today()
+    if not today - datetime.timedelta(days=USAGE_MAX_AGE_DAYS) <= day <= today:
+        raise AgentError('date out of range')
+    return day
+
+
+def op_usage_stats(value, config=CONFIG):
+    day = validate_day(value)
+    if not os.path.isfile(config.usage_collector):
+        raise AgentError('usage collector is not installed')
+    command = [*config.low_priority, config.python, '-I', config.usage_collector,
+               '--json', '--exclude-forwarders', '--date', day.isoformat()]
+    try:
+        completed = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                   timeout=USAGE_TIMEOUT, check=False)
+    except subprocess.TimeoutExpired:
+        raise AgentError('usage collector timed out') from None
+    if completed.returncode != 0:
+        detail = completed.stderr.strip().splitlines()[-1:] or ['no output']
+        raise AgentError(f'usage collector failed: {detail[0][:200]}')
+    try:
+        result = json.loads(completed.stdout)
+    except ValueError:
+        raise AgentError('usage collector returned invalid JSON') from None
+    if (not isinstance(result, dict) or result.get('day') != day.isoformat()
+            or not isinstance(result.get('domains'), dict)):
+        raise AgentError('usage collector returned an unexpected result')
+    return result
+
+
 # --- dispatch -------------------------------------------------------------------------------------------------
 
 
@@ -370,6 +420,7 @@ OPERATIONS = {
     'vhost-list': (0, False, False, lambda args, stdin, config: vhost_names(config)),
     'vhost-create': (2, False, True, lambda args, stdin, config: op_vhost_create(args[0], args[1], config)),
     'vhost-delete': (1, False, True, lambda args, stdin, config: op_vhost_delete(args[0], config)),
+    'usage-stats': (1, False, False, lambda args, stdin, config: op_usage_stats(args[0], config)),
 }
 
 

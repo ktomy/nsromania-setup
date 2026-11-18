@@ -103,7 +103,9 @@ Since 2026-11-15 `/etc/nginx/nginx.conf` writes `/var/log/nginx/access.log` in t
 previous file is in `/var/log/nightscout/backup/nginx-vhostlog-20261115T161422Z`. Logs rotate daily and keep 14 days.
 
 The `ops/usage-stats` cron job (`/etc/cron.d/nsromania-usage-stats`, 02:15) aggregates the previous day into the
-standalone MySQL table `nightscout.ns_domain_daily_stats` (not in the Prisma schema). See `ops/usage-stats/README.md`.
+standalone MySQL table `nightscout.ns_domain_daily_stats` (not in the Prisma schema). Since 2026-11-18 it also adds
+the counts of each additional hosting server, fetched through that server's host agent (`usage-stats`). See
+`ops/usage-stats/README.md`.
 
 ### CPU steal monitoring
 

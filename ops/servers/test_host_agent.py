@@ -243,6 +243,56 @@ class VhostTest(AgentTestCase):
                 self.run_op(command)
 
 
+# Fake collector: echoes its arguments as the result, or fails when asked to
+FAKE_COLLECTOR = textwrap.dedent(
+    """\
+    import json, os, sys
+    if os.environ.get('FAKE_COLLECTOR_FAIL'):
+        print('boom', file=sys.stderr)
+        sys.exit(1)
+    day = sys.argv[sys.argv.index('--date') + 1]
+    print('summary line', file=sys.stderr)
+    print(json.dumps({'day': day, 'domains': {'a': {'hits': 1}}, 'args': sys.argv[1:]}))
+    """
+)
+
+
+class UsageStatsTest(AgentTestCase):
+    def setUp(self):
+        super().setUp()
+        open(self.path('collector.py'), 'w').write(FAKE_COLLECTOR)
+        self.config.usage_collector = self.path('collector.py')
+        self.config.python = sys.executable
+        self.config.low_priority = ()
+
+    def test_runs_the_collector_for_a_valid_day(self):
+        import datetime
+        day = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+        result = self.run_op(f'usage-stats {day}')
+        self.assertEqual(result['day'], day)
+        self.assertEqual(result['domains'], {'a': {'hits': 1}})
+        self.assertEqual(result['args'], ['--json', '--exclude-forwarders', '--date', day])
+
+    def test_rejects_invalid_days(self):
+        import datetime
+        old = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
+        future = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+        for command in ('usage-stats', 'usage-stats 2026-13-01', 'usage-stats 2026-1-1', f'usage-stats {old}',
+                        f'usage-stats {future}', 'usage-stats ../x', 'usage-stats 2026-11-15 extra'):
+            with self.assertRaises(agent.AgentError, msg=command):
+                self.run_op(command)
+
+    def test_reports_collector_failure(self):
+        import datetime
+        day = datetime.date.today().isoformat()
+        with mock.patch.dict(os.environ, {'FAKE_COLLECTOR_FAIL': '1'}):
+            with self.assertRaisesRegex(agent.AgentError, 'boom'):
+                self.run_op(f'usage-stats {day}')
+        self.config.usage_collector = self.path('missing.py')
+        with self.assertRaisesRegex(agent.AgentError, 'not installed'):
+            self.run_op(f'usage-stats {day}')
+
+
 class MainTest(AgentTestCase):
     def test_main_prints_one_json_line_and_exit_status(self):
         with mock.patch.object(agent, 'CONFIG', self.config), mock.patch('os.geteuid', return_value=0), \

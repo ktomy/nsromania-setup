@@ -82,4 +82,21 @@ describe('site edits', () => {
         expect(mockDeleteMany).toHaveBeenCalledWith({ where: { nsDomainId: 7 } });
         expect(mockCreate).toHaveBeenCalledWith({ data: { nsDomainId: 7, variable: 'DISPLAY_UNITS', value: 'mmol' } });
     });
+
+    it('store environment variable names without spaces or other invalid characters', async () => {
+        await updateNSDomain(7, {
+            environments: [
+                { variable: 'LOOP_APNS_KEY ', value: 'key' },
+                { variable: ' BASAL_RENDER:', value: 'default' },
+                { variable: ' :', value: 'dropped' },
+                { variable: '1ABC', value: 'dropped' },
+            ],
+        });
+
+        expect(mockCreate).toHaveBeenCalledTimes(2);
+        expect(mockCreate).toHaveBeenCalledWith({ data: { nsDomainId: 7, variable: 'LOOP_APNS_KEY', value: 'key' } });
+        expect(mockCreate).toHaveBeenCalledWith({
+            data: { nsDomainId: 7, variable: 'BASAL_RENDER', value: 'default' },
+        });
+    });
 });

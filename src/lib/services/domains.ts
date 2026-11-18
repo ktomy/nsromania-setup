@@ -1,4 +1,5 @@
 import { CreateDomainRequest, GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
+import { sanitizeEnvVariableName } from '@/lib/envVariables';
 import { prisma } from '../prisma';
 import { getProcessesList } from './nsruntime';
 import { getDefaultServerForNewDomains, isRemoteServer, serverIdOf } from './servers';
@@ -56,15 +57,14 @@ export async function getNSDomainsByUserId(id: string) {
 }
 
 export async function getFullDOmainData(id: number): Promise<GetDomainByIdResponse | null> {
-    const nsDomain = await getNSDomainById(id) as GetDomainByIdResponse;
+    const nsDomain = (await getNSDomainById(id)) as GetDomainByIdResponse;
     if (!nsDomain) {
         return null;
     }
     const serverId = serverIdOf(nsDomain);
     const processList = await getProcessesList(serverId);
     // check if a process having the domain name is running and if yes, set "status" field to the process's status
-    nsDomain.status =
-        processList.find((proc) => proc.name.endsWith(`_${nsDomain.domain}`))?.status || 'not running';
+    nsDomain.status = processList.find((proc) => proc.name.endsWith(`_${nsDomain.domain}`))?.status || 'not running';
     nsDomain.dbInitialized = await checkMongoDatabaseAndUser(nsDomain.domain, nsDomain.domain, serverId);
     nsDomain.lastDbEntry = await getLastDbEntry(nsDomain.domain, serverId);
     nsDomain.dbSize = await getDbSize(nsDomain.domain, serverId);
@@ -140,10 +140,12 @@ export async function createNSDomain(data: CreateDomainRequest) {
             dbExists: data.dbExists,
             environments: data.environments
                 ? {
-                      create: data.environments.map((env) => ({
-                          variable: env.variable || '',
-                          value: env.value || null,
-                      })),
+                      create: data.environments
+                          .map((env) => ({
+                              variable: sanitizeEnvVariableName(env.variable),
+                              value: env.value || null,
+                          }))
+                          .filter((env) => env.variable !== ''),
                   }
                 : undefined,
         },
@@ -234,11 +236,12 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
         });
 
         for (const env of data.environments) {
-            if (env.value != null) {
+            const variable = sanitizeEnvVariableName(env.variable);
+            if (env.value != null && variable !== '') {
                 await prisma.nSDomainEnvironment.create({
                     data: {
                         nsDomainId: id,
-                        variable: env.variable || '',
+                        variable,
                         value: env.value,
                     },
                 });
@@ -270,7 +273,6 @@ export async function deleteNSDomainAndRelated(id: number) {
                 where: { id: domain.authUserId },
             });
             if (user != null && user.role !== 'admin') {
-            
                 const userDomains = await prisma.nSDomain.findMany({
                     where: { authUserId: domain.authUserId },
                 });
@@ -288,13 +290,17 @@ export async function deleteNSDomainAndRelated(id: number) {
                     const result9 = await prisma.user.delete({
                         where: { id: domain.authUserId },
                     });
-                    console.log(`Deleted User ID ${domain.authUserId} as it had only this domain, deleted rows: ${result ? 1 : 0}`);
+                    console.log(
+                        `Deleted User ID ${domain.authUserId} as it had only this domain, deleted rows: ${result ? 1 : 0}`
+                    );
 
                     // is there a related request? delete that one as well
                     let deleteRequestResult = await prisma.register_request.deleteMany({
                         where: { subdomain: domain.domain },
                     });
-                    console.log(`Deleted ${deleteRequestResult.count} register_request records for subdomain ${domain.domain}`);
+                    console.log(
+                        `Deleted ${deleteRequestResult.count} register_request records for subdomain ${domain.domain}`
+                    );
                 }
             }
         }
@@ -303,8 +309,6 @@ export async function deleteNSDomainAndRelated(id: number) {
             where: { id },
         });
         console.log(`Deleted NSDomain ID ${id}, deleted rows: ${domainSeleteResult ? 1 : 0}`);
-
-
     } catch (error) {
         console.error('Error deleting NSDomain and related records:', error);
         throw error;

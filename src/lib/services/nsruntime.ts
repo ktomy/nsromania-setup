@@ -1,5 +1,6 @@
 import { resolveNightscoutNodeInterpreter } from '@/lib/services/nsnode';
 import { PartialNSDomainWithEnvironments } from '@/types/domains';
+import { sanitizeEnvVariableName } from '@/lib/envVariables';
 import { callRemoteAgent } from './remoteagent';
 import { getServerIds, isRemoteServer, MAIN_SERVER_ID, serverIdOf } from './servers';
 
@@ -220,12 +221,14 @@ export async function buildDomainProcess(
     let connectionStringInVariables = false;
 
     // add all the variables and values from domain.environments with variable as key and value as value
+    // Names are cleaned as when saved, so rows stored before that check cannot break a start on another server
     domain.environments?.forEach((env) => {
-        if (env.variable && env.value) {
-            if (env.variable === 'MONGODB_URI' || env.variable === 'MONGO_CONNECTION') {
+        const variable = sanitizeEnvVariableName(env.variable);
+        if (variable && env.value) {
+            if (variable === 'MONGODB_URI' || variable === 'MONGO_CONNECTION') {
                 connectionStringInVariables = true;
             }
-            nsEnvironment[env.variable] = env.value;
+            nsEnvironment[variable] = env.value;
         }
     });
 

@@ -140,6 +140,8 @@ server. The panel, MySQL and DNS stay here. The panel controls d1 as root over S
 | Panel key, pinned host key, tunnel unit and `/etc/nsromania/servers/d1.env` | `/var/log/nightscout/backup/panel-access-20261117T210450Z` (nothing was replaced) |
 | `ktomy` moved to d1; its vhost here is now a forwarder (kept while clients still use it) | `/var/log/nightscout/backup/migrate-ktomy-20261117T211532Z` |
 | `ktomy` finalized: removed from root PM2 and from `dump.pm2`/`dump.pm2.bak` only; its MongoDB database and user dropped here after comparing them with the move's dump | `/var/log/nightscout/backup/finalize-ktomy-20261117T220554Z`; restore command in `migrate-ktomy-20261117T211532Z/RESTORE-MAIN-DB.txt` |
+| 2026-11-18 02:30–05:19 UTC: the 200 sites with the smallest MongoDB footprint moved to d1 with `batch-migrate.sh` (not finalized; main keeps stopped apps, forwarder vhosts and database copies). `rusu-sofia` failed (invalid environment variable names) and was rolled back. Afterwards main had 187 active sites (load about 5, 15 GB available) and d1 201 | `/var/log/nightscout/backup/batch-migrate-20261118T023056Z`, per site `migrate-SUB-20261118T*` |
+| 2026-11-18: usage collector updated (adds additional servers' counts) and day 2026-11-17 re-collected | `/var/log/nightscout/backup/usage-stats-20261118T023431Z` (previous script, cron file, that day's rows) |
 
 The wildcard certificate (expires 2026-12-31) must be renewed on both servers.
 

@@ -169,6 +169,12 @@ $HOME/.ssh/id_rsa ktomy@nsromania.info`; `ktomy` has passwordless sudo on main a
    `systemctl reload nginx`.
 9. **Record** the move in the table below and in the `ops/deploy/OPERATIONS.md` change table.
 
+`rusu-sofia` (id 767) stays on main: its `ns_domain_environment` has variable names ending in `:`
+(`BASAL_RENDER:`, `LOOP_DEVELOPER_TEAM_ID:`, `LOOP_PUSH_SERVER_ENVIRONMENT:`), which the host agent rejects. The
+rollback restarted it on main within 30 s; a copy of its database and user was left on d1 and must be dropped there
+before it can be moved again (preflight refuses an existing database). Fix the names with the owner first. Names
+with surrounding spaces (several other sites) are harmless: `migrate` trims them.
+
 Lessons from the first move (`ktomy`): browsers followed the new CNAME (TTL 300 s) within 20 minutes, but an ESP32
 glucose display (`ESP32HTTPClient`) kept calling main's address; such devices resolve DNS once at boot and follow
 only after a restart. Since 2026-11-18 usage statistics include each server's own nginx log (forwarded requests are
@@ -179,6 +185,7 @@ counted once, on main).
 | Instance | Date | Notes |
 | --- | --- | --- |
 | `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; finalized 22:05 (`finalize-ktomy-20261117T220554Z`); main DB copy dropped 22:10 after checking it against the backup's dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost on main kept while an ESP32 display still uses the old address |
+| 200 smallest sites (by MongoDB storage + index size, 0.3–65.6 MB) | 2026-11-18 02:30–05:19 UTC | `batch-migrate.sh`; 27–77 s downtime each (average 48 s); all 200 online on d1 and answering through public DNS afterwards. Not finalized: main keeps the stopped apps, the forwarder vhosts and the database copies, so each can still be rolled back. List, per-site results and log: `/var/log/nightscout/backup/batch-migrate-20261118T023056Z` (per-site backups `migrate-SUB-20261118T*`). `rusu-sofia` failed and was rolled back automatically, see below |
 
 ## Certificates
 
@@ -206,6 +213,13 @@ changing it:
   `finalize` does. On the target, `pm2-save` saves only when at least 90% of apps are online.
 - Edit the zone only through `set_cname` (candidate file, `named-checkzone`, atomic replace, `rndc reload`).
 
+`batch-migrate.sh LIST SERVER` (run as root on main from the staging directory, normally with `setsid nohup`) runs
+`migrate` for each subdomain in LIST in turn, rolls a site back immediately when `migrate` fails after creating its
+backup, writes `results.tsv` (subdomain, outcome, seconds) next to itself, and stops when a `STOP` file appears
+there, after 3 consecutive or 6 total failures, or when a rollback fails. It does not finalize. It reads LIST once
+at start, so to change the queue create `STOP`, wait for `batch finished` in the log and start it again with a new
+list.
+
 Pitfalls already hit: inside a function called in a `||` context bash ignores `set -e`, so each step needs its own
 `|| return 1`; `--quiet` hides `mongorestore` errors; `mongorestore --restoreDbUsersAndRoles` works only with a
 directory dump restored with `--db`; parse `mysql` output with a non-whitespace separator (`|`) so empty fields keep
@@ -215,7 +229,8 @@ Not supported yet (candidates for extension):
 
 - moving a site back to main or between additional servers (`SERVER` must not be `main`, and preflight requires
   `ns_domain.server IS NULL`);
-- several sites in one run (one lock and one backup directory per site today);
+- several sites in one lock and one backup directory (`batch-migrate.sh` runs `migrate` once per site);
+- `finalize` and the runbook's steps 7 and 8 for many sites at once;
 - automating runbook steps 7 and 8 (a `cleanup` action that verifies the dump and checks forwarder traffic);
 - moving from the panel instead of the shell.
 

@@ -176,7 +176,8 @@ export default function EditDomainForm({ domainData, idNumber }: EditDomainFormP
     };
 
     const handleNewEnvKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setNewEnvKey(e.target.value);
+        // Only characters valid in an environment variable name (no spaces, no ':')
+        setNewEnvKey(e.target.value.replace(/[^A-Za-z0-9_]/g, ''));
     };
 
     return (

@@ -171,6 +171,24 @@ describe('tryStartDomain', () => {
         );
     });
 
+    it('passes stored variable names with invalid characters under their clean name', async () => {
+        const domain = {
+            id: 7,
+            domain: 'demo',
+            environments: [
+                { variable: 'BASAL_RENDER:', value: 'default' },
+                { variable: ' SHOW_FORECAST ', value: 'ar2' },
+                { variable: ':', value: 'dropped' },
+            ],
+        } as PartialNSDomainWithEnvironments;
+
+        await expect(tryStartDomain(domain)).resolves.toBe('ok');
+
+        const { env } = mockStart.mock.calls[0][0] as { env: Record<string, string> };
+        expect(env).toEqual(expect.objectContaining({ BASAL_RENDER: 'default', SHOW_FORECAST: 'ar2' }));
+        expect(Object.keys(env).every((key) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(key))).toBe(true);
+    });
+
     it('fails clearly before connecting to PM2 when NS_HOME is missing', async () => {
         delete process.env.NS_HOME;
 

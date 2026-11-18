@@ -9,6 +9,8 @@
 #   migrate-instance.sh migrate   SUBDOMAIN SERVER_ID   copy and switch over (a few minutes of downtime)
 #   migrate-instance.sh finalize  SUBDOMAIN SERVER_ID   after verification: drop the stopped app from main's PM2
 #   migrate-instance.sh rollback  SUBDOMAIN SERVER_ID   before finalize: return the instance to the main server
+#   migrate-instance.sh dropmain  SUBDOMAIN SERVER_ID   after finalize: drop main's copy of the database and its
+#                                                       user once they match the move's dump exactly
 #
 # migrate: backs up the PM2 dump, the app definition, the vhost, the zone file and the panel rows; stops (does not
 # delete) the app on main; copies its MongoDB database and database user to the target; starts the identical app
@@ -35,7 +37,7 @@ readonly DEPLOYMENT_LOCK=/var/log/nightscout/.deployment-control/deployment.lock
 readonly BACKUP_ROOT=/var/log/nightscout/backup
 
 [[ $EUID -eq 0 ]] || { echo 'must run as root on the main server' >&2; exit 1; }
-[[ $ACTION =~ ^(preflight|rehearse|migrate|finalize|rollback)$ ]] || { sed -n '2,24p' "$0"; exit 1; }
+[[ $ACTION =~ ^(preflight|rehearse|migrate|finalize|rollback|dropmain)$ ]] || { sed -n '2,26p' "$0"; exit 1; }
 [[ $SUB =~ ^[A-Za-z0-9](-?[A-Za-z0-9])*$ && ${#SUB} -le 63 ]] || { echo 'invalid subdomain' >&2; exit 1; }
 [[ $SERVER =~ ^[a-z][a-z0-9]{0,31}$ && $SERVER != main ]] || { echo 'invalid server id' >&2; exit 1; }
 
@@ -386,6 +388,77 @@ rollback() {
     mysql nightscout -e "UPDATE ns_domain SET server = NULL WHERE id = $ID AND domain = '$SUB'"
     pm2 restart "$NAME" >/dev/null
     log "restarted $NAME on main; the database copy on $SERVER was left in place"
+}
+
+# Runbook step 7: main's database copy may go once the move is finalized, the move's dump holds exactly the same
+# documents and users, and nothing is connected to it. The restore command is written next to the dump.
+dropmain() {
+    exec 9<>"$DEPLOYMENT_LOCK"
+    flock -n 9 || fail 'a deployment or another migration holds the deployment lock'
+    [[ $CURRENT_SERVER == "$SERVER" ]] || fail "ns_domain.server is not $SERVER"
+    [[ -z "$(app_json "$NAME")" ]] || fail "$NAME is still in main PM2; run finalize first"
+    W="$(ls -d "$BACKUP_ROOT/migrate-$SUB-"* 2>/dev/null | sort | tail -1)"
+    local dump="$W/mongo/$SUB"
+    [[ -d $dump ]] || fail "no dump of $SUB in the migration backup"
+    if ! mongo_eval main 'print(conn.getDB("admin").adminCommand({listDatabases: 1, nameOnly: true}).databases
+            .some(d => d.name === process.env.DB_NAME) ? "present" : "absent")' | grep -qx present; then
+        log "main has no database $SUB (already dropped)"
+        return 0
+    fi
+
+    local summary dump_counts dump_users main_counts main_users connections
+    # Document counts and user names straight from the BSON files (each document starts with its int32 length)
+    summary="$(python3 -I -c '
+import glob, gzip, json, os, struct, sys
+def documents(path):
+    data = gzip.open(path).read()
+    offset, docs = 0, []
+    while offset < len(data):
+        size = struct.unpack_from("<i", data, offset)[0]
+        docs.append(data[offset:offset + size])
+        offset += size
+    if offset != len(data):
+        sys.exit("truncated BSON in " + path)
+    return docs
+counts = []
+for path in sorted(glob.glob(os.path.join(sys.argv[1], "*.bson.gz"))):
+    name = os.path.basename(path)[:-len(".bson.gz")]
+    if not name.startswith("$admin."):
+        counts.append([name, len(documents(path))])
+users = []
+users_file = os.path.join(sys.argv[1], "$admin.system.users.bson.gz")
+if os.path.exists(users_file):
+    for doc in documents(users_file):
+        key = doc.find(b"\x02user\x00")
+        if key < 0:
+            sys.exit("user document without a name")
+        start = key + len(b"\x02user\x00")
+        length = struct.unpack_from("<i", doc, start)[0]
+        users.append(doc[start + 4:start + 4 + length - 1].decode())
+print(json.dumps(sorted(counts), separators=(",", ":")), json.dumps(sorted(users), separators=(",", ":")))
+' "$dump")" || fail 'could not read the dump'
+    read -r dump_counts dump_users <<<"$summary"
+    main_counts="$(mongo_eval main "$COUNTS_JS")"
+    main_users="$(mongo_eval main 'print(JSON.stringify(conn.getDB(process.env.DB_NAME).getUsers().users.map(u => u.user).sort()))')"
+    log "documents dump: $dump_counts"
+    log "documents main: $main_counts"
+    log "users dump: $dump_users main: $main_users"
+    [[ $dump_counts == "$main_counts" ]] || fail 'main differs from the dump; not dropping'
+    [[ $dump_users == "$main_users" && $main_users != '[]' ]] || fail 'database users differ from the dump; not dropping'
+    connections="$(mongo_eval main 'print(conn.getDB("admin").aggregate([{$currentOp: {allUsers: true, idleConnections: true}},
+        {$match: {$or: [{"effectiveUsers.user": process.env.DB_NAME},
+                        {ns: {$regex: "^" + process.env.DB_NAME.replace(/[-]/g, "\\-") + "\\."}}]}}]).toArray().length)')"
+    [[ $connections == 0 ]] || fail "$connections connection(s) still use $SUB on main"
+
+    {
+        echo "Main's copy of the $SUB database and its user were dropped on $(date -u +%Y-%m-%dT%H:%M:%SZ) after the move to $SERVER was finalized."
+        echo "mongo/$SUB holds them as they were at the move, verified document-for-document against main before the drop."
+        echo 'To recreate them on main (run as root on main, with MONGO_URL from the panel .env in the environment, never echoed):'
+        echo "  mongorestore --uri=\"\$MONGO_URL\" --gzip --db=$SUB --restoreDbUsersAndRoles $dump"
+    } > "$W/RESTORE-MAIN-DB.txt"
+    mongo_eval main 'const d = conn.getDB(process.env.DB_NAME); d.dropAllUsers(); d.dropDatabase();
+        print("dropped", process.env.DB_NAME, "on main")'
+    log "restore instructions: $W/RESTORE-MAIN-DB.txt"
 }
 
 "$ACTION"

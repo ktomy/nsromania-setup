@@ -35,6 +35,8 @@ readonly KEY=/root/.ssh/nsromania-servers/id_ed25519
 readonly KNOWN_HOSTS=/root/.ssh/nsromania-servers/known_hosts
 readonly DEPLOYMENT_LOCK=/var/log/nightscout/.deployment-control/deployment.lock
 readonly BACKUP_ROOT=/var/log/nightscout/backup
+# Backup directories end in -<UTC stamp>; a bare * would also match sites named SUB-something (glicemia-eliza)
+readonly STAMP_GLOB='[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]Z'
 
 [[ $EUID -eq 0 ]] || { echo 'must run as root on the main server' >&2; exit 1; }
 [[ $ACTION =~ ^(preflight|rehearse|migrate|finalize|rollback|dropmain)$ ]] || { sed -n '2,26p' "$0"; exit 1; }
@@ -373,7 +375,7 @@ PY
 rollback() {
     exec 9<>"$DEPLOYMENT_LOCK"
     flock -n 9 || fail 'a deployment or another migration holds the deployment lock'
-    W="$(ls -d "$BACKUP_ROOT/migrate-$SUB-"* 2>/dev/null | sort | tail -1)"
+    W="$(ls -d "$BACKUP_ROOT/migrate-$SUB-"$STAMP_GLOB 2>/dev/null | sort | tail -1)"
     [[ -d $W ]] || fail 'no migration backup found'
     APP="$(app_json "$NAME")"
     [[ -n $APP ]] || fail "$NAME is no longer in main PM2 (finalized); restore manually from $W"
@@ -397,7 +399,7 @@ dropmain() {
     flock -n 9 || fail 'a deployment or another migration holds the deployment lock'
     [[ $CURRENT_SERVER == "$SERVER" ]] || fail "ns_domain.server is not $SERVER"
     [[ -z "$(app_json "$NAME")" ]] || fail "$NAME is still in main PM2; run finalize first"
-    W="$(ls -d "$BACKUP_ROOT/migrate-$SUB-"* 2>/dev/null | sort | tail -1)"
+    W="$(ls -d "$BACKUP_ROOT/migrate-$SUB-"$STAMP_GLOB 2>/dev/null | sort | tail -1)"
     local dump="$W/mongo/$SUB"
     [[ -d $dump ]] || fail "no dump of $SUB in the migration backup"
     if ! mongo_eval main 'print(conn.getDB("admin").adminCommand({listDatabases: 1, nameOnly: true}).databases

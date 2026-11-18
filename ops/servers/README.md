@@ -115,6 +115,7 @@ migrate-instance.sh rehearse  SUB d1   # no downtime: copy the database and its 
 migrate-instance.sh migrate   SUB d1   # ~30 s downtime
 migrate-instance.sh finalize  SUB d1   # after checking the instance: remove the stopped app from main's PM2 lists
 migrate-instance.sh rollback  SUB d1   # before finalize; data written on d1 meanwhile is not copied back
+migrate-instance.sh dropmain  SUB d1   # after finalize: drop main's database copy once it matches the move's dump
 ```
 
 `migrate` takes the deployment lock, backs up the PM2 dump, app definition, vhost, zone and panel rows to
@@ -155,7 +156,9 @@ $HOME/.ssh/id_rsa ktomy@nsromania.info`; `ktomy` has passwordless sudo on main a
 6. **Finalize**: `sudo bash STAGE/migrate-instance.sh finalize SUB d1` deletes the stopped app from main's PM2 and
    removes only its entry from `dump.pm2` and `dump.pm2.bak` (backup `finalize-SUB-<UTC>`). After this, `rollback` no
    longer works; returning the site is a manual restore from the backups.
-7. **Drop main's database copy** (manual, when rollback is no longer wanted): check that the dump in
+7. **Drop main's database copy** when rollback is no longer wanted: `sudo bash STAGE/migrate-instance.sh dropmain
+   SUB d1` (after `finalize`) does every check below, writes the restore command and drops the copy; it refuses when
+   anything differs. Done by hand it is: check that the dump in
    `migrate-SUB-<UTC>/mongo/SUB` has exactly the documents of main's copy (per collection, plus the user), that no
    connection uses it (`$currentOp` with `allUsers`, `idleConnections`, matching `effectiveUsers.user` or `ns`), and
    that `ns_domain.server` is the target; then `dropUser` and `dropDatabase` on main with `mongosh` (URL from the
@@ -169,11 +172,12 @@ $HOME/.ssh/id_rsa ktomy@nsromania.info`; `ktomy` has passwordless sudo on main a
    `systemctl reload nginx`.
 9. **Record** the move in the table below and in the `ops/deploy/OPERATIONS.md` change table.
 
-`rusu-sofia` (id 767) stays on main: its `ns_domain_environment` has variable names ending in `:`
+`rusu-sofia` (id 767) stays on main: its `ns_domain_environment` had variable names ending in `:`
 (`BASAL_RENDER:`, `LOOP_DEVELOPER_TEAM_ID:`, `LOOP_PUSH_SERVER_ENVIRONMENT:`), which the host agent rejects. The
-rollback restarted it on main within 30 s; a copy of its database and user was left on d1 and must be dropped there
-before it can be moved again (preflight refuses an existing database). Fix the names with the owner first. Names
-with surrounding spaces (several other sites) are harmless: `migrate` trims them.
+rollback restarted it on main within 30 s. The names were fixed on 2026-11-18 (see `ops/deploy/OPERATIONS.md`), so
+it can move now, but a copy of its database and user from the failed attempt is still on d1 and must be dropped
+there first (preflight refuses an existing database). Since `84bfda7` the panel keeps variable names valid when they
+are typed, saved and started.
 
 Lessons from the first move (`ktomy`): browsers followed the new CNAME (TTL 300 s) within 20 minutes, but an ESP32
 glucose display (`ESP32HTTPClient`) kept calling main's address; such devices resolve DNS once at boot and follow
@@ -185,7 +189,7 @@ counted once, on main).
 | Instance | Date | Notes |
 | --- | --- | --- |
 | `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; finalized 22:05 (`finalize-ktomy-20261117T220554Z`); main DB copy dropped 22:10 after checking it against the backup's dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost on main kept while an ESP32 display still uses the old address |
-| 200 smallest sites (by MongoDB storage + index size, 0.3–65.6 MB) | 2026-11-18 02:30–05:19 UTC | `batch-migrate.sh`; 27–77 s downtime each (average 48 s); all 200 online on d1 and answering through public DNS afterwards. Not finalized: main keeps the stopped apps, the forwarder vhosts and the database copies, so each can still be rolled back. List, per-site results and log: `/var/log/nightscout/backup/batch-migrate-20261118T023056Z` (per-site backups `migrate-SUB-20261118T*`). `rusu-sofia` failed and was rolled back automatically, see below |
+| 200 smallest sites (by MongoDB storage + index size, 0.3–65.6 MB) | 2026-11-18 02:30–05:19 UTC | `batch-migrate.sh`; 27–77 s downtime each (average 48 s); all 200 online on d1 and answering through public DNS afterwards. Finalized and main's database copies dropped 06:50–07:30 (`dropmain`); forwarders removed at 06:52 for the 155 sites that had no request on main after their move, 45 kept. List, per-site results and log: `/var/log/nightscout/backup/batch-migrate-20261118T023056Z` (per-site backups `migrate-SUB-20261118T*`). `rusu-sofia` failed and was rolled back automatically, see below |
 
 ## Certificates
 
@@ -202,8 +206,8 @@ changing it:
 - Changing actions take the deployment lock (`flock` on `deployment.lock`) and write every file and row they change
   to `/var/log/nightscout/backup/<action>-SUB-<UTC>` first. `preflight` stays read-only.
 - Reach the target only through the host agent operations (`host_agent.py`: `ping`, `pm2-list`, `pm2-start` with
-  the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-delete`, `vhost-list`, `usage-stats`) and the MongoDB
-  tunnel. A new remote operation means changing `host_agent.py` and its tests, then re-running
+  the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-delete`, `vhost-list`, `usage-stats`)
+  and the MongoDB tunnel. A new remote operation means changing `host_agent.py` and its tests, then re-running
   `install-host-agent.sh` on every server.
 - Secrets never reach a command line or the output: MongoDB URLs go through the environment (`mongo_eval`) or a
   temporary 0600 YAML `--config` (`mongo_tool_config`), and only named keys are read from the panel `.env`.
@@ -220,18 +224,21 @@ there, after 3 consecutive or 6 total failures, or when a rollback fails. It doe
 at start, so to change the queue create `STOP`, wait for `batch finished` in the log and start it again with a new
 list.
 
-Pitfalls already hit: inside a function called in a `||` context bash ignores `set -e`, so each step needs its own
-`|| return 1`; `--quiet` hides `mongorestore` errors; `mongorestore --restoreDbUsersAndRoles` works only with a
-directory dump restored with `--db`; parse `mysql` output with a non-whitespace separator (`|`) so empty fields keep
-their position; `ssh` without `-n` swallows a script piped to the outer shell.
+Pitfalls already hit: a backup directory lookup with `migrate-$SUB-*` also matches sites named `SUB-something`
+(`glicemia` matched `glicemia-eliza`), so lookups use the exact `-<UTC stamp>` suffix (`STAMP_GLOB`); inside a function
+called in a `||` context bash ignores `set -e`, so each step needs its own `|| return 1`; `--quiet` hides `mongorestore`
+errors; `mongorestore --restoreDbUsersAndRoles` works only with a directory dump restored with `--db`; parse `mysql`
+output with a non-whitespace separator (`|`) so empty fields keep their position; `ssh` without `-n` swallows a script
+piped to the outer shell.
 
 Not supported yet (candidates for extension):
 
 - moving a site back to main or between additional servers (`SERVER` must not be `main`, and preflight requires
   `ns_domain.server IS NULL`);
 - several sites in one lock and one backup directory (`batch-migrate.sh` runs `migrate` once per site);
-- `finalize` and the runbook's steps 7 and 8 for many sites at once;
-- automating runbook steps 7 and 8 (a `cleanup` action that verifies the dump and checks forwarder traffic);
+- `finalize`, `dropmain` and step 8 for many sites at once (on 2026-11-18 a loop ran `finalize` + `dropmain` per
+  site, and a one-off script removed forwarders without traffic; see the moves table);
+- automating runbook step 8 (checking forwarder traffic and removing the vhost);
 - moving from the panel instead of the shell.
 
 There are no automated tests for `migrate-instance.sh`. Check changes with `bash -n` (and `shellcheck` when

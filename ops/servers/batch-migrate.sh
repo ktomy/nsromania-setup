@@ -13,13 +13,13 @@ while read -r SUB; do
     n=$((n + 1))
     if [[ -e $DIR/STOP ]]; then echo "STOP file present; stopping before $SUB"; break; fi
     echo "=== [$n] $SUB $(date -u +%FT%TZ)"
-    before="$(ls -d /var/log/nightscout/backup/migrate-"$SUB"-* 2>/dev/null | wc -l)"
+    before="$(ls -d /var/log/nightscout/backup/migrate-"$SUB"-[0-9]*T*Z 2>/dev/null | wc -l)"
     start=$SECONDS
     if bash "$DIR/migrate-instance.sh" migrate "$SUB" "$SERVER"; then
         printf '%s\tok\t%s\n' "$SUB" $((SECONDS - start)) >> "$DIR/results.tsv"
         consecutive=0
     else
-        after="$(ls -d /var/log/nightscout/backup/migrate-"$SUB"-* 2>/dev/null | wc -l)"
+        after="$(ls -d /var/log/nightscout/backup/migrate-"$SUB"-[0-9]*T*Z 2>/dev/null | wc -l)"
         if [[ $after -gt $before ]]; then
             echo "--- migrate failed after backup; rolling back $SUB"
             if bash "$DIR/migrate-instance.sh" rollback "$SUB" "$SERVER"; then st=failed-rolledback; else st=failed-ROLLBACK-FAILED; fi

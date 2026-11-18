@@ -1,7 +1,11 @@
 import datetime as dt
+import io
+import json
 import os
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import collect_usage_stats as c  # noqa: E402
@@ -61,6 +65,77 @@ class SqlTest(unittest.TestCase):
         self.assertIn("DELETE FROM ns_domain_daily_stats WHERE day = '2026-11-15';", sql)
         self.assertIn("('a','2026-11-15',1,1,0,0,1,1)", sql)
         self.assertTrue(sql.startswith('START TRANSACTION;') and sql.rstrip().endswith('COMMIT;'))
+
+
+class ForwarderTest(unittest.TestCase):
+    def test_exclude_forwarders_skips_main_addresses(self):
+        lines = [
+            line('a.nsromania.info', ip='45.134.39.79'),
+            line('a.nsromania.info', ip='2a0e:97c0:3ea:6c4::1'),
+            line('a.nsromania.info', ip='9.9.9.9'),
+        ]
+        self.assertEqual(c.aggregate(lines, DAY)['a']['hits'], 3)
+        r = c.aggregate(lines, DAY, c.MAIN_ADDRESSES)['a']
+        self.assertEqual((r['hits'], r['unique_ips']), (1, 1))
+
+    def test_json_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = os.path.join(tmp, 'access.log')
+            open(log, 'w').write(line('a.nsromania.info') + line('a.nsromania.info', ip='45.134.39.79'))
+            with mock.patch.object(c, 'LOG_GLOB', os.path.join(tmp, 'access.log*')), \
+                    mock.patch('sys.stdout', new_callable=io.StringIO) as out, mock.patch('sys.stderr', io.StringIO()):
+                self.assertEqual(c.main(['--json', '--exclude-forwarders', '--date', '2026-11-15']), 0)
+        self.assertEqual(json.loads(out.getvalue()), {
+            'day': '2026-11-15',
+            'domains': {'a': {'hits': 1, 'ok_hits': 1, 'uploads': 0, 'api_reads': 0, 'web_hits': 1, 'unique_ips': 1}},
+        })
+
+
+class RemoteTest(unittest.TestCase):
+    ROW = {'hits': 3, 'ok_hits': 2, 'uploads': 1, 'api_reads': 1, 'web_hits': 0, 'unique_ips': 2}
+
+    def answer(self, domains, day='2026-11-15'):
+        return {'ok': True, 'result': {'day': day, 'domains': domains}}
+
+    def test_validate_and_merge(self):
+        remote = c.validate_remote(self.answer({'b': self.ROW, 'a': self.ROW}), DAY)
+        total = c.aggregate([line('a.nsromania.info')], DAY)
+        c.merge(total, remote)
+        self.assertEqual(total['a'], {'hits': 4, 'ok_hits': 3, 'uploads': 1, 'api_reads': 1, 'web_hits': 1,
+                                      'unique_ips': 3})
+        self.assertEqual(total['b'], self.ROW)
+
+    def test_rejects_bad_answers(self):
+        bad = [
+            {'ok': False, 'error': 'boom'},
+            self.answer({}, day='2026-11-14'),
+            self.answer({"x';drop": self.ROW}),
+            self.answer({'a.b': self.ROW}),
+            self.answer({'a': {**self.ROW, 'hits': -1}}),
+            self.answer({'a': {**self.ROW, 'hits': '3'}}),
+            self.answer({'a': {k: v for k, v in self.ROW.items() if k != 'uploads'}}),
+            [],
+        ]
+        for payload in bad:
+            with self.assertRaises(RuntimeError, msg=payload):
+                c.validate_remote(payload, DAY)
+
+    def test_remote_servers_from_env(self):
+        with tempfile.NamedTemporaryFile('w', suffix='.env') as env:
+            env.write('DATABASE_URL="mysql://u:p@h/db"\nNS_REMOTE_SERVERS="d1"\n'
+                      'NS_SERVER_D1_SSH="nsagent@31.220.43.162"\n')
+            env.flush()
+            self.assertEqual(c.remote_servers(env.name), [('d1', 'nsagent@31.220.43.162')])
+            self.assertEqual(c.mysql_credentials(env.name).hostname, 'h')
+        with tempfile.NamedTemporaryFile('w', suffix='.env') as env:
+            env.write('NS_REMOTE_SERVERS="d1"\nNS_SERVER_D1_SSH="root@1.2.3.4; rm -rf /"\n')
+            env.flush()
+            with self.assertRaises(RuntimeError):
+                c.remote_servers(env.name)
+        with tempfile.NamedTemporaryFile('w', suffix='.env') as env:
+            env.write('X=1\n')
+            env.flush()
+            self.assertEqual(c.remote_servers(env.name), [])
 
 
 if __name__ == '__main__':

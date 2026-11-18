@@ -38,7 +38,9 @@ panel (main, root PM2) ──ssh nsagent@d1 <operation>──▶ forced command:
   the server is fixed and moving the site needs `migrate-instance.sh`. Site owners who initialize their own site get
   the stored server and cannot choose. The site page shows the server and its hostname.
 - **Host agent** (`host_agent.py` → `/usr/local/libexec/nsromania-host-agent`): the only thing the panel's key can
-  run. It accepts a fixed list of operations, validates every argument (process names `11<id>_<subdomain>` with the
+  run. Besides PM2 and vhost operations it answers the read-only `usage-stats YYYY-MM-DD` used by the usage
+  statistics job on main (`ops/usage-stats/README.md`), which needs the collector installed at
+  `/usr/local/sbin/nsromania-usage-stats`. It accepts a fixed list of operations, validates every argument (process names `11<id>_<subdomain>` with the
   matching port, Nightscout `cwd` and Node interpreter inside the installed version trees, environment size and
   names), takes a lock for changes, refuses the reserved vhosts (`00-default`, `default`, `setup`), backs up vhosts it
   replaces or deletes to `/var/log/nightscout/backup/vhosts`, and logs to syslog (`journalctl -t nsromania-host-agent`).
@@ -82,6 +84,9 @@ All scripts back up anything they replace under `/var/log/nightscout/backup/<ste
    with the host key verified out of band and a free local port.
 5. Add the `NS_REMOTE_SERVERS`/`NS_SERVER_<ID>_*` keys to the panel `.env` (backup first, never print it) and restart
    the panel through a normal deployment.
+6. Install the usage collector on the server: `ops/usage-stats/collect_usage_stats.py` →
+   `/usr/local/sbin/nsromania-usage-stats` (`0755 root:root`, no cron), and check from main with
+   `nsromania-usage-stats --dry-run` that the server's line appears.
 
 Updating the agent: run `install-host-agent.sh` again with the new `host_agent.py`; it changes only what differs.
 
@@ -166,8 +171,8 @@ $HOME/.ssh/id_rsa ktomy@nsromania.info`; `ktomy` has passwordless sudo on main a
 
 Lessons from the first move (`ktomy`): browsers followed the new CNAME (TTL 300 s) within 20 minutes, but an ESP32
 glucose display (`ESP32HTTPClient`) kept calling main's address; such devices resolve DNS once at boot and follow
-only after a restart. Usage statistics come from main's nginx log, so after the move only forwarder traffic is
-counted.
+only after a restart. Since 2026-11-18 usage statistics include each server's own nginx log (forwarded requests are
+counted once, on main).
 
 ### Moves done
 
@@ -190,7 +195,7 @@ changing it:
 - Changing actions take the deployment lock (`flock` on `deployment.lock`) and write every file and row they change
   to `/var/log/nightscout/backup/<action>-SUB-<UTC>` first. `preflight` stays read-only.
 - Reach the target only through the host agent operations (`host_agent.py`: `ping`, `pm2-list`, `pm2-start` with
-  the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-delete`, `vhost-list`) and the MongoDB
+  the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-delete`, `vhost-list`, `usage-stats`) and the MongoDB
   tunnel. A new remote operation means changing `host_agent.py` and its tests, then re-running
   `install-host-agent.sh` on every server.
 - Secrets never reach a command line or the output: MongoDB URLs go through the environment (`mongo_eval`) or a
@@ -220,7 +225,7 @@ unit tests: `python3 -m unittest ops/servers/test_host_agent.py`.
 
 ## Known gaps
 
-- `ops/usage-stats` reads only main's nginx log: d1 instances are counted only while clients reach them through
-  main's forwarder. Do not treat a moved instance as unused because of `ns_domain_daily_stats`.
+- Usage statistics before 2026-11-18 cover only main's nginx log: for days before that, d1 instances show only
+  forwarder traffic. Do not treat a moved instance as unused because of those rows.
 - `ops/cpu-steal` is not installed on d1.
 - d1 has no MongoDB backup job (neither has main at the time of writing).

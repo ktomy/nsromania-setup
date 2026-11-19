@@ -177,11 +177,11 @@ $HOME/.ssh/id_rsa ktomy@nsromania.info`; `ktomy` has passwordless sudo on main a
    `systemctl reload nginx`.
 9. **Record** the move in the table below and in the `ops/deploy/OPERATIONS.md` change table.
 
-`rusu-sofia` (id 767) stays on main: its `ns_domain_environment` had variable names ending in `:`
-(`BASAL_RENDER:`, `LOOP_DEVELOPER_TEAM_ID:`, `LOOP_PUSH_SERVER_ENVIRONMENT:`), which the host agent rejects. The
-rollback restarted it on main within 30 s. The names were fixed on 2026-11-18 (see `ops/deploy/OPERATIONS.md`), so
-it can move now, but a copy of its database and user from the failed attempt is still on d1 and must be dropped
-there first (preflight refuses an existing database). Since `84bfda7` the panel keeps variable names valid when they
+`rusu-sofia` (id 767) failed in the batch of 2026-11-18: its `ns_domain_environment` had variable names ending in `:`
+(`BASAL_RENDER:`, `LOOP_DEVELOPER_TEAM_ID:`, `LOOP_PUSH_SERVER_ENVIRONMENT:`), which the host agent rejects, and the
+rollback restarted it on main within 30 s. The names were fixed the same day (see `ops/deploy/OPERATIONS.md`) and it
+moved on 2026-11-19 (moves table). A failed attempt leaves the database copy on the target, which preflight refuses:
+back it up with `mongodump` and drop it there first. Since `84bfda7` the panel keeps variable names valid when they
 are typed, saved and started.
 
 Lessons from the first move (`ktomy`): browsers followed the new CNAME (TTL 300 s) within 20 minutes, but an ESP32
@@ -195,6 +195,8 @@ counted once, on main).
 | --- | --- | --- |
 | `ktomy` (id 224) | 2026-11-17 21:15 UTC | test move; 25 s downtime; backup `migrate-ktomy-20261117T211532Z`; finalized 22:05 (`finalize-ktomy-20261117T220554Z`); main DB copy dropped 22:10 after checking it against the backup's dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost on main removed 22:24 after the ESP32 display was restarted and moved to d1 (`forwarder-ktomy-20261117T222442Z`) |
 | 200 smallest sites (by MongoDB storage + index size, 0.3–65.6 MB) | 2026-11-18 02:30–05:19 UTC | `batch-migrate.sh`; 27–77 s downtime each (average 48 s); all 200 online on d1 and answering through public DNS afterwards. Finalized and main's database copies dropped 06:50–07:30 (`dropmain`); forwarders removed at 06:52 for the 155 sites that had no request on main after their move, 45 kept. List, per-site results and log: `/var/log/nightscout/backup/batch-migrate-20261118T023056Z` (per-site backups `migrate-SUB-20261118T*`). `rusu-sofia` failed and was rolled back automatically, see below |
+| `rusu-sofia` (id 767) | 2026-11-19 22:17 UTC | after its failed attempt of 2026-11-18: the stale copy on d1 was dumped to `d1-leftover-rusu-sofia-20261119T221718Z` (on main) and dropped; then `migrate` with 35 s downtime, backup `migrate-rusu-sofia-20261119T221750Z`; new entries arrived on d1 at 22:21; finalized 22:23 (`finalize-rusu-sofia-20261119T222344Z`); main database copy dropped 22:32 after matching the dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost still on main |
+| forwarder cleanup | 2026-11-19 22:26 UTC | 44 of the 46 remaining forwarders on main removed after checking that day's log (no requests, a scanner only, or the client already on d1); `bali` and `rusu-sofia` kept. Backup `forwarders-20261119T222613Z` |
 
 ## Certificates
 

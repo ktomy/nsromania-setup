@@ -87,7 +87,7 @@ All scripts back up anything they replace under `/var/log/nightscout/backup/<ste
 6. Install the usage collector on the server: `ops/usage-stats/collect_usage_stats.py` →
    `/usr/local/sbin/nsromania-usage-stats` (`0755 root:root`, no cron), and check from main with
    `nsromania-usage-stats --dry-run` that the server's line appears.
-7. Install the CPU steal and load collector: `NSROMANIA_SSH_TARGET=ktomy@HOST ./ops/cpu-steal/install.sh` (see
+7. Install the CPU steal, load and memory collector: `NSROMANIA_SSH_TARGET=ktomy@HOST ./ops/cpu-steal/install.sh` (see
    `ops/cpu-steal/README.md`; d1 since 2026-11-18).
 
 Updating the agent: run `install-host-agent.sh` again with the new `host_agent.py`; it changes only what differs.

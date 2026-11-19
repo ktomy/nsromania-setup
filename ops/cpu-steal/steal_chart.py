@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw CPU steal, our CPU use and the load average for a time range as one standalone HTML page.
+"""Draw CPU steal, our CPU use, the load average and memory for a time range as one standalone HTML page.
 
 Reads the collector's 1-minute CSVs (steal-YYYY-MM.csv) with steal_report.py's loader, embeds the
 rows in the steal_chart.html template and writes the page. The page needs no network: it aggregates
@@ -48,8 +48,19 @@ def parse_mark(s):
     return {'t': sr.parse_bound(when, False), 'label': label.strip(), 'short': short.strip() or label.strip()}
 
 
+def _round(v, digits):
+    """Round for the page; None (source unavailable) stays null. digits=0 gives an int."""
+    if v is None:
+        return None
+    return int(round(v)) if digits == 0 else round(v, digits)
+
+
 def build(recs, t0, t1, marks, host):
-    """Return the page with the records embedded. Row: [start, interval, steal, our, idle, load1, runq, max5]."""
+    """Return the page with the records embedded.
+
+    Row: [start, interval, steal, our, idle, load1, runq, max5] plus, for minutes with memory columns,
+    [mem in use %, lowest available MiB, swap used MiB, swap pages/s, major faults/s, PSI some %, PSI full %, OOM kills].
+    """
     rows = []
     for r in recs:
         rows.append([
@@ -62,11 +73,17 @@ def build(recs, t0, t1, marks, host):
             round(r.runq, 1) if r.runq is not None else 0.0,
             round(r.steal_max if r.steal_max is not None else r.steal, 1),
         ])
+        if sr.has_mem(r):  # minutes recorded since the memory update carry 8 more values
+            swap_io = r.swapin + r.swapout if r.swapin is not None and r.swapout is not None else None
+            rows[-1] += [round(sr.mem_used(r), 2), int(sr.low_avail(r)), _round(r.swap_used, 0), _round(swap_io, 2),
+                         _round(r.majflt, 2), _round(r.psi_some, 2), _round(r.psi_full, 2), _round(r.oom, 0)]
     nprocs = [r.nproc for r in recs if r.nproc]
+    totals = [r.mem_total for r in recs if sr.has_mem(r)]
     data = {
         'from': t0,
         'to': t1,
         'nproc': max(nprocs) if nprocs else 1,
+        'mem_total_mib': int(max(totals)) if totals else None,
         'host': host,
         'marks': marks,
         'rows': rows,

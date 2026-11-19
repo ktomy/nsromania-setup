@@ -67,10 +67,13 @@ rollback() {
 
 systemctl daemon-reload
 systemctl enable "$SERVICE"
-before=$(data_bytes)
 if [[ $changed -eq 1 ]] || ! systemctl is-active --quiet "$SERVICE"; then
-    systemctl restart "$SERVICE"
-    # The first line is written at the second minute boundary after start.
+    # Stop first: the old collector writes its partial minute when it stops, and that line must not count as
+    # output of the new one.
+    systemctl stop "$SERVICE"
+    before=$(data_bytes)
+    systemctl start "$SERVICE"
+    # The first line is written at the second minute boundary after start (up to about 2 minutes).
     for _ in $(seq 1 30); do
         sleep 5
         [[ $(data_bytes) -gt $before ]] && break

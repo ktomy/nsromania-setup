@@ -1,7 +1,7 @@
-# CPU steal collector for the hosting-provider report. Repository: ops/cpu-steal/.
+# CPU steal and memory collector (hosting-provider evidence, capacity). Repository: ops/cpu-steal/.
 # Installed as /etc/systemd/system/nsromania-cpu-steal.service by ops/cpu-steal/install.sh.
 [Unit]
-Description=NSRomania CPU steal collector (/proc/stat every 5 s, one CSV line per minute)
+Description=NSRomania CPU steal and memory collector (/proc every 5 s, one CSV line per minute)
 After=local-fs.target
 # Retry forever: a crash loop must never disable data collection permanently.
 StartLimitIntervalSec=0
@@ -19,7 +19,7 @@ UMask=0022
 MemoryMax=64M
 CPUQuota=5%
 TasksMax=4
-# Sandbox: reads /proc/stat and /proc/loadavg, writes only its log directory.
+# Sandbox: reads /proc/{stat,meminfo,loadavg,vmstat,pressure/memory}, writes only its log directory.
 NoNewPrivileges=yes
 CapabilityBoundingSet=
 AmbientCapabilities=

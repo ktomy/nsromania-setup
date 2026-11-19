@@ -65,6 +65,80 @@ class ParseTest(unittest.TestCase):
         self.assertIsNone(c.percentages([0, 0, 0]))
 
 
+MEMINFO = """MemTotal:       65847920 kB
+MemFree:        17639212 kB
+MemAvailable:   27711012 kB
+Buffers:          169452 kB
+SwapTotal:       8388604 kB
+SwapFree:        5181040 kB
+"""
+
+VMSTAT = """nr_free_pages 4409803
+pgmajfault 364098
+pswpin 1166254
+pswpout 7043025
+oom_kill 0
+"""
+
+PRESSURE = """some avg10=0.00 avg60=0.00 avg300=0.00 total=399868088
+full avg10=0.00 avg60=0.00 avg300=0.00 total=141895245
+"""
+
+MEM_COLS = c.HEADER.split(',')[20:]
+
+
+class MemoryParseTest(unittest.TestCase):
+    def test_parsers(self):
+        self.assertEqual(c.parse_meminfo(MEMINFO), {'MemTotal': 65847920, 'MemAvailable': 27711012,
+                                                    'SwapTotal': 8388604, 'SwapFree': 5181040})
+        self.assertEqual(c.parse_vmstat(VMSTAT), {'pgmajfault': 364098, 'pswpin': 1166254, 'pswpout': 7043025,
+                                                  'oom_kill': 0})
+        self.assertEqual(c.parse_pressure(PRESSURE), {'some': 399868088, 'full': 141895245})
+        self.assertEqual(c.parse_pressure(''), {})
+
+    def test_memory_fields(self):
+        info = c.parse_meminfo(MEMINFO)
+        c0 = c.Counters({'pswpin': 100, 'pswpout': 1000, 'pgmajfault': 50, 'oom_kill': 2},
+                        {'some': 1000000, 'full': 0}, mono=10.0)
+        # 60 s later: 30 pages in, 120 out, 6 major faults, 1 OOM kill; 3 s some (5%), 0.6 s full (1%)
+        c1 = c.Counters({'pswpin': 130, 'pswpout': 1120, 'pgmajfault': 56, 'oom_kill': 3},
+                        {'some': 4000000, 'full': 600000}, mono=70.0)
+        f = dict(zip(MEM_COLS, c.memory_fields(info, 26000000, c0, c1)))
+        self.assertEqual(f, {
+            'mem_total_mib': '64304', 'mem_avail_mib': '27061', 'mem_avail_min_mib': '25390',
+            'swap_total_mib': '8191', 'swap_used_mib': '3132', 'swapin_pages_s': '0.50', 'swapout_pages_s': '2.00',
+            'majflt_s': '0.10', 'mem_psi_some_pct': '5.00', 'mem_psi_full_pct': '1.00', 'oom_kills': '1'})
+
+    def test_memory_fields_with_missing_sources(self):
+        # No meminfo, no counters at all: every memory column empty.
+        self.assertEqual(c.memory_fields({}, None, None, None), [''] * len(MEM_COLS))
+        # PSI unavailable (kernel without it), vmstat fine; meminfo without swap lines.
+        c0 = c.Counters({'pswpin': 0, 'pswpout': 0, 'pgmajfault': 0, 'oom_kill': 0}, {}, mono=0.0)
+        c1 = c.Counters({'pswpin': 60, 'pswpout': 0, 'pgmajfault': 0, 'oom_kill': 0}, {}, mono=60.0)
+        f = dict(zip(MEM_COLS, c.memory_fields({'MemTotal': 2048, 'MemAvailable': 1024}, 1024, c0, c1)))
+        self.assertEqual((f['mem_total_mib'], f['swap_used_mib'], f['swapin_pages_s'], f['mem_psi_some_pct'],
+                          f['oom_kills']), ('2', '', '1.00', '', '0'))
+        # A counter going backwards counts as zero, never negative; PSI is capped at 100%.
+        c2 = c.Counters({'pswpin': 10, 'pswpout': 0, 'pgmajfault': 0, 'oom_kill': 0}, {'some': 0, 'full': 0}, 0.0)
+        c3 = c.Counters({'pswpin': 5, 'pswpout': 0, 'pgmajfault': 0, 'oom_kill': 0},
+                        {'some': 99000000, 'full': 0}, 60.0)
+        f = dict(zip(MEM_COLS, c.memory_fields({}, None, c2, c3)))
+        self.assertEqual((f['swapin_pages_s'], f['mem_psi_some_pct']), ('0.00', '100.00'))
+
+    def test_counters_survive_missing_proc_files(self):
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d)
+        with open(os.path.join(d, 'vmstat'), 'w') as f:
+            f.write(VMSTAT)
+        col = c.Collector(d, 5, 60, proc_dir=d)  # no meminfo, no pressure/memory
+        with mock.patch.object(c, 'log') as log:
+            k = col.counters()
+            self.assertEqual(col.meminfo(), {})
+            col.counters()  # second failure on the same file: not logged again (hourly rate limit)
+        self.assertEqual((k.vm['pswpin'], k.psi), (1166254, {}))
+        self.assertEqual(log.call_count, 2)  # pressure/memory and meminfo, once each
+
+
 class PeriodTest(unittest.TestCase):
     def test_aggregates_sub_samples(self):
         z = counters()
@@ -96,6 +170,23 @@ class PeriodTest(unittest.TestCase):
         pct_sum = sum(float(f[k]) for k in ('user_pct', 'nice_pct', 'system_pct', 'irq_pct', 'iowait_pct',
                                             'idle_pct', 'steal_pct'))
         self.assertAlmostEqual(pct_sum, 100.0, places=1)
+        self.assertEqual([f[k] for k in MEM_COLS], [''] * len(MEM_COLS))  # no memory samples, no counters
+
+    def test_memory_min_and_last_sample(self):
+        z = counters()
+        s0 = snap(z, {'cpu0': z}, mono=0.0)
+        s1 = snap(counters(user=100), {'cpu0': counters(user=100)}, mono=5.0)
+        p = c.Period(0, s0)
+        p.add(s0, s1)
+        for avail in (3 * 1024 * 1024, 1024 * 1024, 2 * 1024 * 1024):
+            p.add_mem({'MemTotal': 4 * 1024 * 1024, 'MemAvailable': avail, 'SwapTotal': 0, 'SwapFree': 0})
+        p.add_mem({})  # a failed read keeps the previous sample
+        c0 = c.Counters({'oom_kill': 0}, {'some': 0}, 0.0)
+        c1 = c.Counters({'oom_kill': 0}, {'some': 0}, 5.0)
+        f = dict(zip(c.HEADER.split(','), p.line(s1, (1, 1, 1), c0, c1).split(',')))
+        self.assertEqual((f['mem_total_mib'], f['mem_avail_mib'], f['mem_avail_min_mib'], f['swap_used_mib']),
+                         ('4096', '2048', '1024', '0'))
+        self.assertEqual((f['mem_psi_some_pct'], f['oom_kills'], f['swapin_pages_s']), ('0.00', '0', ''))
 
     def test_empty_period_and_cpu_hotplug(self):
         z = counters()
@@ -195,6 +286,11 @@ class CollectorProcessTest(unittest.TestCase):
             self.assertAlmostEqual(total, 100.0, delta=0.1)
         starts = [r.parse_utc(row['start_utc']) for row in rows]
         self.assertEqual(starts, sorted(set(starts)))
+        for row in rows:  # memory from the real /proc; PSI may be missing on the test machine
+            self.assertGreater(int(row['mem_total_mib']), 0)
+            self.assertLessEqual(int(row['mem_avail_min_mib']), int(row['mem_avail_mib']))
+            self.assertGreaterEqual(float(row['swapin_pages_s']), 0.0)
+            self.assertIn(row['oom_kills'], ('0', '1', '2', '3'))
 
 
 # ---------------------------------------------------------------- report
@@ -202,12 +298,23 @@ class CollectorProcessTest(unittest.TestCase):
 T0 = calendar.timegm((2026, 11, 16, 0, 0, 0))
 
 
-def csv_line(start, steal, interval=60.0, idle=2.0, smax=None, load1=150.0, nproc=8):
+OLD_HEADER = ','.join(c.HEADER.split(',')[:20])  # the schema from 2026-11-15 until the memory columns
+MEM_DEFAULT = {'mem_total_mib': 64000, 'mem_avail_mib': 32000, 'mem_avail_min_mib': 31000, 'swap_total_mib': 8000,
+               'swap_used_mib': 3000, 'swapin_pages_s': 0.5, 'swapout_pages_s': 1.5, 'majflt_s': 0.25,
+               'mem_psi_some_pct': 0.1, 'mem_psi_full_pct': 0.0, 'oom_kills': 0}
+
+
+def csv_line(start, steal, interval=60.0, idle=2.0, smax=None, load1=150.0, nproc=8, mem=None, old=False):
+    """One collector line; old=True gives the pre-memory schema, `mem` overrides memory values ('' = empty)."""
     user = 100 - steal - idle - 8
-    return ','.join([time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(start)), '%.2f' % interval, '12', str(nproc),
-                     '%.2f' % user, '0.00', '6.00', '1.00', '1.00', '%.2f' % idle, '%.2f' % steal,
-                     '%.2f' % max(0, steal - 2), '%.2f' % (steal + 5 if smax is None else smax), '%.2f' % (steal + 9),
-                     '%.2f' % load1, '1.00', '1.00', '40.0', '60', '0'])
+    fields = [time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(start)), '%.2f' % interval, '12', str(nproc),
+              '%.2f' % user, '0.00', '6.00', '1.00', '1.00', '%.2f' % idle, '%.2f' % steal,
+              '%.2f' % max(0, steal - 2), '%.2f' % (steal + 5 if smax is None else smax), '%.2f' % (steal + 9),
+              '%.2f' % load1, '1.00', '1.00', '40.0', '60', '0']
+    if not old:
+        m = dict(MEM_DEFAULT, **(mem or {}))
+        fields += [str(m[k]) for k in MEM_COLS]
+    return ','.join(fields)
 
 
 def make_recs(steals, start=T0, interval=60.0, nproc=8):
@@ -267,21 +374,33 @@ class LoadCollectorTest(unittest.TestCase):
 
     def test_range_dedupe_and_malformed(self):
         self.write('steal-2026-11.csv', [
-            csv_line(T0 - 60, 99),                       # before the range
-            csv_line(T0, 10),
-            csv_line(T0, 12, interval=30.0),             # duplicate start, shorter: dropped
+            csv_line(T0 - 60, 99, old=True),             # before the range
+            csv_line(T0, 10, old=True),
+            csv_line(T0, 12, interval=30.0, old=True),   # duplicate start, shorter: dropped
             'torn,li',
-            csv_line(T0 + 60, 101),                      # invalid percentage
-            csv_line(T0 + 120, 20),
+            csv_line(T0 + 60, 101, old=True),            # invalid percentage
+            csv_line(T0 + 120, 20, old=True),
+        ], header=OLD_HEADER)
+        # The memory update starts a second file for the month; a later schema may add columns again.
+        self.write('steal-2026-11.2.csv', [
+            csv_line(T0 + 180, 30),
+            csv_line(T0 + 240, 30)[:-12],                # torn inside the memory columns: too few fields
+            csv_line(T0 + 300, 30, mem={'mem_psi_some_pct': '', 'mem_psi_full_pct': ''}),
         ])
-        self.write('steal-2026-11.2.csv', [csv_line(T0 + 180, 30) + ',extra'], header=c.HEADER + ',new_col')
+        self.write('steal-2026-12.csv', [csv_line(T0 + 40 * 86400, 30) + ',extra'], header=c.HEADER + ',new_col')
         self.write('steal-2026-09.csv', ['garbage'])     # month outside the range: not even read
-        recs, bad, files = r.load_collector(self.dir, T0, T0 + 86400)
-        self.assertEqual([(x.start - T0, x.steal) for x in recs], [(0, 10), (120, 20), (180, 30)])
-        self.assertEqual(bad, 2)
-        self.assertEqual(len(files), 2)
+        recs, bad, files = r.load_collector(self.dir, T0, T0 + 41 * 86400)
+        self.assertEqual([(x.start - T0, x.steal) for x in recs],
+                         [(0, 10), (120, 20), (180, 30), (300, 30), (40 * 86400, 30)])
+        self.assertEqual(bad, 3)
+        self.assertEqual(len(files), 3)
         self.assertAlmostEqual(recs[0].user, 80.0)
         self.assertEqual((recs[0].steal_max, recs[0].cpu_max, recs[0].load1), (15.0, 19.0, 150.0))
+        self.assertEqual((recs[0].mem_total, recs[0].psi_some), (None, None))  # old schema: no memory
+        self.assertEqual((recs[2].mem_total, recs[2].mem_avail_min, recs[2].swapout, recs[2].oom),
+                         (64000.0, 31000.0, 1.5, 0.0))
+        self.assertEqual((recs[3].psi_some, recs[3].swap_used), (None, 3000.0))  # PSI missing on that host
+        self.assertEqual(recs[4].mem_total, 64000.0)
 
     def test_reads_collector_output(self):
         w = c.Writer(self.dir, min_free=0)
@@ -367,6 +486,43 @@ class OutputTest(unittest.TestCase):
         self.assertIn('Effective vCPUs: mean | 7.17 of 8 (0.83 vCPU, 10.4%, withheld)', md)
         self.assertIn('sysstat: no sysstat files', md)
         self.assertIn('**In short:** over 2.0 days of data the VM received on average 7.2 of 8', md)
+        self.assertIn('## Memory', md)
+        self.assertIn('| RAM | 62.5 GiB |', md)
+        self.assertIn('| Memory in use: mean / p95 / highest minute | 50.0% / 50.0% / 50.0% (2026-11-16 00:00) |', md)
+        self.assertIn('| Lowest available memory (5-second samples) | 30.3 GiB (2026-11-16 00:00) |', md)
+        self.assertIn('| Swap in use: mean / highest | 2.93 GiB / 2.93 GiB (2026-11-16 00:00) of 7.8 GiB |', md)
+        self.assertIn('| Memory pressure, some / full: mean | 0.10% / 0.00% |', md)
+        self.assertIn('| OOM kills | 0 |', md)
+        self.assertIn('| 2026-11-16 | 24.0 | 50.0% | 50.0% | 30.3 GiB | 2.93 GiB | 2.0 | 0.10% | 0.10% | 0 |', md)
+
+    def test_memory_section_details(self):
+        lines = [csv_line(T0 + i * 60, 10.0, old=True) for i in range(60)]
+        lines2 = [csv_line(T0 + i * 60, 10.0, mem={'mem_avail_mib': 16000, 'mem_avail_min_mib': 12000,
+                                                   'mem_psi_some_pct': 4.0, 'oom_kills': 3} if i == 90 else None)
+                  for i in range(60, 120)]
+        with open(os.path.join(self.dir, 'steal-2026-11.csv'), 'w') as f:
+            f.write(OLD_HEADER + '\n' + '\n'.join(lines) + '\n')
+        with open(os.path.join(self.dir, 'steal-2026-11.2.csv'), 'w') as f:
+            f.write(c.HEADER + '\n' + '\n'.join(lines2) + '\n')
+        md = self.run_main('--from', '2026-11-16T00:00', '--to', '2026-11-16T02:00')
+        self.assertIn('Memory columns cover 1.0 h of the 2.0 h with data (from 2026-11-16 01:00 UTC).', md)
+        self.assertIn('/ 75.0% (2026-11-16 01:30) |', md)
+        self.assertIn('| Lowest available memory (5-second samples) | 11.7 GiB (2026-11-16 01:30) |', md)
+        self.assertIn('| Memory pressure, some / full: highest minute | 4.00% (2026-11-16 01:30) / 0.00% (2026-11-16 01:00) |', md)
+        self.assertIn('| Time with memory pressure (some) above 1% | 1.7% |', md)
+        self.assertIn('| OOM kills | 3 |', md)
+        self.assertIn('- 3 OOM kill(s) in the minute starting 2026-11-16 01:30 UTC', md)
+        md = self.run_main('--from', '2026-11-16T00:00', '--to', '2026-11-16T01:00')
+        self.assertIn('Not recorded in this range: the collector writes memory columns since 2026-11-19.', md)
+        md = self.run_main('--from', '2026-11-16T00:00', '--to', '2026-11-16T01:00', '--no-sar')
+        self.assertIn('Not available (skipped with --no-sar).', md)
+        hourly = self.run_main('--from', '2026-11-16T00:00', '--to', '2026-11-16T02:00', '--csv', 'hourly').splitlines()
+        self.assertTrue(hourly[0].endswith(',mem_used_mean_pct,mem_used_max_pct,mem_avail_min_mib,swap_used_max_mib,'
+                                           'mem_psi_some_mean_pct,mem_psi_some_max_pct,oom_kills'))
+        self.assertTrue(hourly[1].endswith(',,,,,,,'))  # the hour before the memory update
+        self.assertTrue(hourly[2].endswith(',50.42,75.00,12000,3000,0.17,4.00,3'))
+        minute = self.run_main('--from', '2026-11-16T01:30', '--to', '2026-11-16T01:31', '--csv', 'minute').splitlines()
+        self.assertTrue(minute[1].endswith(',75.00,12000,3000,4.00,0.00,3'))
 
     def test_partial_range_and_empty(self):
         md = self.run_main('--from', '2026-11-16T03:00', '--to', '2026-11-16T04:00')
@@ -395,9 +551,13 @@ class ChartTest(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.dir)
-        lines = [csv_line(T0 + i * 60, 20.0 if i < 60 else 10.0) for i in range(120)] + ['torn,li']
+        # The first hour in the pre-memory schema, the second hour with memory columns (as after the update).
+        old = [csv_line(T0 + i * 60, 20.0, old=True) for i in range(60)]
+        new = [csv_line(T0 + i * 60, 10.0, mem={'oom_kills': 2} if i == 70 else None) for i in range(60, 120)]
         with open(os.path.join(self.dir, 'steal-2026-11.csv'), 'w') as f:
-            f.write(c.HEADER + '\n' + '\n'.join(lines) + '\n')
+            f.write(OLD_HEADER + '\n' + '\n'.join(old) + '\n')
+        with open(os.path.join(self.dir, 'steal-2026-11.2.csv'), 'w') as f:
+            f.write(c.HEADER + '\n' + '\n'.join(new + ['torn,li']) + '\n')
 
     def run_chart(self, *argv):
         out, err = io.StringIO(), io.StringIO()
@@ -417,13 +577,19 @@ class ChartTest(unittest.TestCase):
         d = self.data(html)
         self.assertEqual((d['from'], d['to'], d['nproc'], len(d['rows'])), (T0, T0 + 5400, 8, 90))
         # steal 20, our = user 70 + nice 0 + system 6 + irq 1, idle = idle 2 + iowait 1, load, runq, 5 s max
-        self.assertEqual(d['rows'][0], [T0, 60.0, 20.0, 77.0, 3.0, 150.0, 40.0, 25.0])
+        self.assertEqual(d['rows'][0], [T0, 60.0, 20.0, 77.0, 3.0, 150.0, 40.0, 25.0])  # no memory yet
         self.assertEqual(d['rows'][60][2], 10.0)
+        # memory: in use 50%, lowest available, swap used, swap pages/s, major faults/s, PSI some/full, OOM kills
+        self.assertEqual(d['rows'][60][8:], [50.0, 31000, 3000, 2.0, 0.25, 0.1, 0.0, 0])
+        self.assertEqual(d['rows'][70][15], 2)
+        self.assertEqual(d['mem_total_mib'], 64000)
         self.assertEqual(d['marks'], [{'t': T0 + 3600, 'label': 'drop </script><b>x', 'short': 'drop'}])
         self.assertNotIn('</script><b>', html)
         self.assertEqual(html.count('</script>'), 1)
         self.assertNotIn(sc.PLACEHOLDER, html)
-        self.assertIn('90 minutes from 1 file(s), 1 malformed line(s) skipped', err)
+        self.assertIn('90 minutes from 2 file(s), 1 malformed line(s) skipped', err)
+        code, html, _ = self.run_chart('--from', '2026-11-16T00:00', '--to', '2026-11-16T00:30')
+        self.assertIsNone(self.data(html)['mem_total_mib'])  # a range before the memory update
 
     def test_default_range_out_file_and_months(self):
         out = os.path.join(self.dir, 'chart.html')

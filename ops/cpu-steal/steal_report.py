@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Summarise hypervisor CPU steal for a date range, for the hosting-provider report.
+"""Summarise hypervisor CPU steal (and memory) for a date range, for the hosting-provider report.
 
 Primary source: the collector's 1-minute CSVs (/var/log/nsromania-cpu-steal/steal-YYYY-MM.csv),
 each line built from 5-second /proc/stat sub-samples. Independent cross-check: the sysstat data
-files (/var/log/sysstat/sa*, 10-minute samples), read with `sadf` when it is available.
+files (/var/log/sysstat/sa*, 10-minute samples), read with `sadf` when it is available. Lines
+written since 2026-11-19 also carry memory columns (in use, swap, PSI memory pressure, OOM kills),
+summarised in their own section.
 
 Prints Markdown by default; --csv daily|hourly|minute prints a CSV for charts instead.
 Dates are UTC; --to is inclusive when given as a date. Stdlib only (Python 3.8+), read-only.
@@ -38,12 +40,20 @@ GAP_S = 300
 DAY = 86400
 
 
+MEM_ATTRS = ('mem_total', 'mem_avail', 'mem_avail_min', 'swap_total', 'swap_used', 'swapin', 'swapout', 'majflt',
+             'psi_some', 'psi_full', 'oom')
+# CSV column for each memory attribute (MiB, pages/s, faults/s, % of time, count).
+MEM_COLUMNS = dict(zip(MEM_ATTRS, ('mem_total_mib', 'mem_avail_mib', 'mem_avail_min_mib', 'swap_total_mib',
+                                   'swap_used_mib', 'swapin_pages_s', 'swapout_pages_s', 'majflt_s',
+                                   'mem_psi_some_pct', 'mem_psi_full_pct', 'oom_kills')))
+
+
 class Rec:
     __slots__ = ('start', 'interval', 'nproc', 'user', 'system', 'iowait', 'idle', 'steal', 'steal_min',
-                 'steal_max', 'cpu_max', 'load1', 'runq')
+                 'steal_max', 'cpu_max', 'load1', 'runq') + MEM_ATTRS
 
     def __init__(self, start, interval, nproc, user, system, iowait, idle, steal, steal_min=None,
-                 steal_max=None, cpu_max=None, load1=None, runq=None):
+                 steal_max=None, cpu_max=None, load1=None, runq=None, **mem):
         self.start = start
         self.interval = interval
         self.nproc = nproc
@@ -57,6 +67,10 @@ class Rec:
         self.cpu_max = cpu_max
         self.load1 = load1
         self.runq = runq
+        for a in MEM_ATTRS:
+            setattr(self, a, mem.pop(a, None))
+        if mem:
+            raise TypeError('unknown fields: %s' % ', '.join(sorted(mem)))
 
     @property
     def end(self):
@@ -103,6 +117,8 @@ def load_collector(data_dir, t0, t1):
         with open(path, newline='') as f:
             for row in csv.DictReader(f):
                 try:
+                    if None in row or None in row.values():
+                        raise ValueError  # more or fewer fields than the header: a torn or foreign line
                     start = parse_utc(row['start_utc'])
                     steal = float(row['steal_pct'])
                     interval = float(row['interval_s'])
@@ -113,7 +129,8 @@ def load_collector(data_dir, t0, t1):
                               float(row['system_pct']) + float(row['irq_pct']),
                               float(row['iowait_pct']), float(row['idle_pct']), steal,
                               _f(row, 'steal_min_pct'), _f(row, 'steal_max_pct'), _f(row, 'steal_cpu_max_pct'),
-                              _f(row, 'load1'), _f(row, 'runq_avg'))
+                              _f(row, 'load1'), _f(row, 'runq_avg'),
+                              **{a: _f(row, col) for a, col in MEM_COLUMNS.items()})
                 except (KeyError, ValueError, TypeError, AttributeError):
                     bad += 1
                     continue
@@ -276,6 +293,64 @@ def stats(recs, contracted):
     return s
 
 
+def has_mem(r):
+    return bool(r.mem_total) and r.mem_avail is not None
+
+
+def mem_used(r):
+    """Memory in use, % of RAM: 100 - MemAvailable/MemTotal (what cannot be reclaimed without swapping)."""
+    return 100.0 * (1 - r.mem_avail / r.mem_total)
+
+
+def low_avail(r):
+    return r.mem_avail_min if r.mem_avail_min is not None else r.mem_avail
+
+
+def swap_io(r):
+    return r.swapin + r.swapout
+
+
+def mem_stats(recs):
+    """Memory statistics over the records that carry memory columns, or None."""
+    m = [r for r in recs if has_mem(r)]
+    if not m:
+        return None
+    used = [(mem_used(r), r.interval) for r in m]
+
+    def worst(rs, key):
+        rs = [r for r in rs if key(r) is not None]
+        return max(rs, key=lambda r: (key(r), -r.start)) if rs else None  # earliest of equal values
+
+    def mean(rs, key):
+        rs = [r for r in rs if key(r) is not None]
+        return wmean([(key(r), r.interval) for r in rs]) if rs else None
+
+    with_io = [r for r in m if r.swapin is not None and r.swapout is not None]
+    swap_totals = [r.swap_total for r in m if r.swap_total is not None]
+    return {
+        'covered_s': sum(r.interval for r in m),
+        'first': m[0].start,
+        'total': max(r.mem_total for r in m),
+        'used_mean': wmean(used),
+        'used_p95': wpct(used, 95),
+        'used_max': worst(m, mem_used),
+        'low': min(m, key=lambda r: (low_avail(r), r.start)),
+        'swap_total': max(swap_totals) if swap_totals else None,
+        'swap_mean': mean(m, lambda r: r.swap_used),
+        'swap_max': worst(m, lambda r: r.swap_used),
+        'swapio_mean': mean(with_io, swap_io),
+        'swapio_max': worst(with_io, swap_io),
+        'majflt_mean': mean(m, lambda r: r.majflt),
+        'majflt_max': worst(m, lambda r: r.majflt),
+        'psi_some_mean': mean(m, lambda r: r.psi_some),
+        'psi_full_mean': mean(m, lambda r: r.psi_full),
+        'psi_some_max': worst(m, lambda r: r.psi_some),
+        'psi_full_max': worst(m, lambda r: r.psi_full),
+        'psi_above1': frac_above(m, 1, 'psi_some'),
+        'oom': [r for r in m if r.oom],
+    }
+
+
 def gaps(recs, t0, t1):
     out = []
     prev_end = t0
@@ -343,6 +418,15 @@ def pc(v, digits=1):
 
 def num(v, digits=2):
     return 'n/a' if v is None else ('%.' + str(digits) + 'f') % v
+
+
+def gib(mib, digits=1):
+    return 'n/a' if mib is None else ('%.' + str(digits) + 'f GiB') % (mib / 1024.0)
+
+
+def at(r, value):
+    """'value (YYYY-MM-DD HH:MM)' for the record holding a maximum or minimum."""
+    return 'n/a' if r is None else '%s (%s)' % (value, fmt_t(r.start))
 
 
 def table(headers, rows):
@@ -456,6 +540,9 @@ def markdown(args, recs, sar, notes, t0, t1, contracted):
                            num(r.load1, 1)) for r in worst]))
 
     if args.source == 'collector':
+        out += memory_markdown(recs, t0, t_end)
+
+    if args.source == 'collector':
         out += ['', '## Independent cross-check: sysstat (sar, 10-minute samples)', '']
         if sar:
             rows = []
@@ -475,7 +562,7 @@ def markdown(args, recs, sar, notes, t0, t1, contracted):
                 out += ['', 'Over %d compared 10-minute windows the two sources differ by %.2f percentage points on '
                         'average (max %.2f).' % (len(all_diffs), sum(all_diffs) / len(all_diffs), max(all_diffs))]
         else:
-            out.append('Not available (%s).' % notes[-1])
+            out.append('Not available (%s).' % ('skipped with --no-sar' if args.no_sar else notes[-1]))
 
     out += ['', '## Data quality', '']
     for a, b in gl[:args.top]:
@@ -486,26 +573,102 @@ def markdown(args, recs, sar, notes, t0, t1, contracted):
     return '\n'.join(out) + '\n'
 
 
+def memory_markdown(recs, t0, t_end):
+    """The '## Memory' section (collector source only)."""
+    out = ['', '## Memory', '']
+    m = mem_stats(recs)
+    if not m:
+        return out + ['Not recorded in this range: the collector writes memory columns since 2026-11-19.']
+    out += ['Memory in use is 100% - MemAvailable/MemTotal: what the kernel cannot reclaim without swapping '
+            '(reclaimable page cache counts as available). Memory pressure is Linux PSI (`/proc/pressure/memory`): '
+            'the share of time in which at least one task (some) or every non-idle task (full) was stalled waiting '
+            'for memory. Pressure, not swap in use, is the sign of a real shortage.', '']
+    covered = sum(r.interval for r in recs)
+    if m['covered_s'] < covered - 120:
+        out += ['Memory columns cover %.1f h of the %.1f h with data (from %s UTC).'
+                % (m['covered_s'] / 3600, covered / 3600, fmt_t(m['first'])), '']
+    rows = [
+        ('RAM', gib(m['total'])),
+        ('Memory in use: mean / p95 / highest minute', '%s / %s / %s' % (
+            pc(m['used_mean']), pc(m['used_p95']), at(m['used_max'], pc(mem_used(m['used_max']))))),
+        ('Lowest available memory (5-second samples)', at(m['low'], gib(low_avail(m['low'])))),
+    ]
+    if m['swap_max'] is not None:
+        rows.append(('Swap in use: mean / highest', '%s / %s of %s' % (
+            gib(m['swap_mean'], 2), at(m['swap_max'], gib(m['swap_max'].swap_used, 2)), gib(m['swap_total']))))
+    if m['swapio_max'] is not None:
+        rows.append(('Swapping, pages in + out per second: mean / highest minute', '%s / %s' % (
+            num(m['swapio_mean'], 1), at(m['swapio_max'], num(swap_io(m['swapio_max']), 1)))))
+    if m['majflt_max'] is not None:
+        rows.append(('Major page faults per second: mean / highest minute', '%s / %s' % (
+            num(m['majflt_mean'], 1), at(m['majflt_max'], num(m['majflt_max'].majflt, 1)))))
+    if m['psi_some_max'] is not None:
+        rows += [
+            ('Memory pressure, some / full: mean', '%s / %s' % (pc(m['psi_some_mean'], 2), pc(m['psi_full_mean'], 2))),
+            ('Memory pressure, some / full: highest minute', '%s / %s' % (
+                at(m['psi_some_max'], pc(m['psi_some_max'].psi_some, 2)),
+                at(m['psi_full_max'], pc(m['psi_full_max'].psi_full, 2)))),
+            ('Time with memory pressure (some) above 1%', pc(m['psi_above1'])),
+        ]
+    rows.append(('OOM kills', str(sum(int(r.oom) for r in m['oom']))))
+    out.append(table(['Metric', 'Value'], rows))
+    if m['oom']:
+        out.append('')
+        out += ['- %d OOM kill(s) in the minute starting %s UTC' % (int(r.oom), fmt_t(r.start)) for r in m['oom'][:20]]
+        if len(m['oom']) > 20:
+            out.append('- ... %d more minutes with OOM kills' % (len(m['oom']) - 20))
+
+    out += ['', '### Memory by day (UTC)', '']
+    rows = []
+    for d, rs in group([r for r in recs if has_mem(r)], day_key).items():
+        x = mem_stats(rs)
+        rows.append((d, num(x['covered_s'] / 3600, 1), pc(x['used_mean']), pc(mem_used(x['used_max'])),
+                     gib(low_avail(x['low'])), gib(x['swap_max'].swap_used, 2) if x['swap_max'] else 'n/a',
+                     num(x['swapio_mean'], 1), pc(x['psi_some_mean'], 2),
+                     pc(x['psi_some_max'].psi_some, 2) if x['psi_some_max'] else 'n/a',
+                     str(sum(int(r.oom) for r in x['oom']))))
+    out.append(table(['Day', 'Hours', 'In use', 'In use max', 'Lowest available', 'Swap max', 'Swap pages/s',
+                      'Pressure (some)', 'Pressure max', 'OOM kills'], rows))
+    return out
+
+
+def opt(v, digits=2):
+    return '' if v is None else num(v, digits)
+
+
 def write_csv(kind, recs, contracted, stream):
     w = csv.writer(stream, lineterminator='\n')
     if kind == 'minute':
         w.writerow(['start_utc', 'interval_s', 'nproc', 'steal_pct', 'steal_max_5s_pct', 'idle_pct',
-                    'effective_vcpus', 'load1'])
+                    'effective_vcpus', 'load1', 'mem_used_pct', 'mem_avail_min_mib', 'swap_used_mib',
+                    'mem_psi_some_pct', 'mem_psi_full_pct', 'oom_kills'])
         for r in recs:
+            m = has_mem(r)
             w.writerow([fmt_t(r.start), num(r.interval), r.nproc or contracted, num(r.steal),
                         num(r.steal_max) if r.steal_max is not None else '', num(r.idle), num(eff(r, contracted)),
-                        num(r.load1) if r.load1 is not None else ''])
+                        num(r.load1) if r.load1 is not None else '', num(mem_used(r)) if m else '',
+                        opt(low_avail(r) if m else None, 0), opt(r.swap_used, 0), opt(r.psi_some), opt(r.psi_full),
+                        opt(r.oom, 0)])
         return
     keyfn = day_key if kind == 'daily' else (lambda r: time.strftime('%Y-%m-%d %H:00', time.gmtime(r.start)))
     w.writerow([('day' if kind == 'daily' else 'hour') + '_utc', 'hours_of_data', 'steal_mean_pct', 'steal_p95_pct',
                 'steal_max_pct', 'steal_max_5s_pct', 'pct_time_above_10', 'pct_time_above_20', 'pct_time_above_30',
-                'effective_vcpus_mean', 'idle_mean_pct', 'load1_mean'])
+                'effective_vcpus_mean', 'idle_mean_pct', 'load1_mean', 'mem_used_mean_pct', 'mem_used_max_pct',
+                'mem_avail_min_mib', 'swap_used_max_mib', 'mem_psi_some_mean_pct', 'mem_psi_some_max_pct',
+                'oom_kills'])
     for k, rs in group(recs, keyfn).items():
         x = stats(rs, contracted)
+        m = mem_stats(rs)
+        mem = ['', '', '', '', '', '', '']
+        if m:
+            mem = [num(m['used_mean']), num(mem_used(m['used_max'])), opt(low_avail(m['low']), 0),
+                   opt(m['swap_max'].swap_used if m['swap_max'] else None, 0), opt(m['psi_some_mean']),
+                   opt(m['psi_some_max'].psi_some if m['psi_some_max'] else None),
+                   str(sum(int(r.oom) for r in m['oom']))]
         w.writerow([k, num(x['covered_s'] / 3600, 3), num(x['mean']), num(x['p95']), num(x['max'].steal),
                     num(x['max5'].steal_max) if x['max5'] else '', num(x['above'][10]), num(x['above'][20]),
                     num(x['above'][30]), num(x['eff_mean']), num(x['idle']),
-                    num(x['load1']) if x['load1'] is not None else ''])
+                    num(x['load1']) if x['load1'] is not None else ''] + mem)
 
 
 def main(argv=None):

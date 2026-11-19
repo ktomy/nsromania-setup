@@ -107,23 +107,27 @@ standalone MySQL table `nightscout.ns_domain_daily_stats` (not in the Prisma sch
 the counts of each additional hosting server, fetched through that server's host agent (`usage-stats`). See
 `ops/usage-stats/README.md`.
 
-### CPU steal monitoring
+### CPU steal and memory monitoring
 
 Since 2026-11-15 a lightweight collector records hypervisor CPU steal (from `/proc/stat` every 5 seconds, one CSV line
-per minute) as evidence for the hosting provider. See `ops/cpu-steal/README.md`; the report is generated with
+per minute) as evidence for the hosting provider. Since 2026-11-19 20:18 UTC the same line also records memory: in use,
+lowest available, swap, swapping, major faults, PSI memory pressure and OOM kills (`/proc/meminfo`, `/proc/vmstat`,
+`/proc/pressure/memory`). See `ops/cpu-steal/README.md`; the report is generated with
 `./ops/cpu-steal/report.sh --from YYYY-MM-DD --to YYYY-MM-DD` (read-only, no sudo), and `./ops/cpu-steal/chart.sh >
-chart.html` draws steal, our CPU use and load as one HTML page (last 24 hours by default).
+chart.html` draws steal, our CPU use, load and memory as one HTML page (last 24 hours by default).
 
 | Server file | Purpose |
 | --- | --- |
 | `/usr/local/sbin/nsromania-cpu-steal` | Collector (stdlib Python, reads only `/proc`); repository copy in `ops/cpu-steal/` |
 | `/etc/systemd/system/nsromania-cpu-steal.service` | Enabled, `Restart=always`, sandboxed, `CPUQuota=5%`, `MemoryMax=64M` |
-| `/var/log/nsromania-cpu-steal/steal-YYYY-MM.csv` | Data, about 5 MB/month, kept indefinitely; writing stops below 2 GiB free |
+| `/var/log/nsromania-cpu-steal/steal-YYYY-MM.csv` | Data, about 8 MB/month, kept indefinitely; writing stops below 2 GiB free. November 2026 continues in `steal-2026-11.2.csv` after the memory columns were added |
 | `/etc/sysstat/sysstat` | `HISTORY=60` (was 7), so `sar` files are now `/var/log/sysstat/saYYYYMMDD`; previous file in `/var/log/nightscout/backup/sysstat-history-20261115T215121Z` |
 
 Install or update with `./ops/cpu-steal/install.sh`, which backs up replaced files to
 `/var/log/nightscout/backup/cpu-steal-<UTC>` and restarts only `nsromania-cpu-steal.service`. The same collector runs on
-d1 since 2026-11-18 (`NSROMANIA_SSH_TARGET=ktomy@d1.nsromania.info` for `install.sh` and `report.sh`).
+d1 since 2026-11-18 (`NSROMANIA_SSH_TARGET=ktomy@d1.nsromania.info` for `install.sh`, `report.sh` and `chart.sh`). The
+memory update was installed on 2026-11-19 at 20:17 UTC on both servers; the previous collector and unit are in
+`/var/log/nightscout/backup/cpu-steal-20261119T201732Z` (main) and `cpu-steal-20261119T201756Z` (d1).
 
 ### Additional hosting servers
 

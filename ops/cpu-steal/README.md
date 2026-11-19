@@ -1,4 +1,4 @@
-# CPU steal monitoring
+# CPU steal and memory monitoring
 
 Continuous, data-backed evidence of how much of the contracted CPU the hosting provider actually delivers to the
 production VPS (`nsromania.info`, 8 vCPUs, KVM). It was installed on 2026-11-15 after hypervisor steal doubled from
@@ -33,19 +33,37 @@ steal only accrues while our vCPUs want to run and are refused. The host has had
 
 CPU benchmarks are deliberately not used: our own load would distort them, and they would add load.
 
+## Memory
+
+Since 2026-11-19 20:18 UTC (both servers) each line also records memory. The point is to see how full RAM is and
+whether that hurts: **memory in use** = 100% − `MemAvailable`/`MemTotal`, what the kernel cannot reclaim without
+swapping (page cache it can drop counts as available, unlike `free`'s "used"); the **lowest available** memory among
+the 5-second samples, so a short spike is not averaged away; swap in use, the swapping rate (`pswpin`/`pswpout`),
+major page faults; **memory pressure** from PSI (`/proc/pressure/memory`): the share of the minute in which at least
+one task (`some`) or every non-idle task (`full`) was stalled waiting for memory, the direct sign of a shortage; and
+OOM kills (`oom_kill` in `/proc/vmstat`).
+
+Before that only sysstat had memory data: one snapshot every 10 minutes (`sar -r -S -W`, kept 60 days; main since
+2026-11-07, d1 since 2026-11-17). It showed main at 89–95% in use from 2026-11-07 to 2026-11-17, swap full (8.0 of
+8.0 GiB) for days, available memory down to 2.6 GiB and commit up to 114%; after 200 sites moved to d1 on 2026-11-18,
+about 58% in use, 25 GiB available and no swapping (3 GiB left in swap). d1 was at about 44% and had never swapped.
+
 ## What is collected
 
 `nsromania-cpu-steal.service` runs a small Python program (stdlib only) that, every 5 seconds aligned to the UTC
-clock, reads `/proc/stat` (aggregate and per-CPU counters, `procs_running`, `procs_blocked`). Every minute it reads
-`/proc/loadavg` and appends one line to a monthly CSV file. It never forks or runs external tools.
+clock, reads `/proc/stat` (aggregate and per-CPU counters, `procs_running`, `procs_blocked`) and `/proc/meminfo`.
+Every minute it reads `/proc/loadavg`, `/proc/vmstat` and `/proc/pressure/memory` and appends one line to a monthly
+CSV file. It never forks or runs external tools. A memory source that cannot be read (for example a kernel without
+PSI) leaves its columns empty and logs once an hour; it never stops the CPU data.
 
 Sampling design:
 
 - **5-second sub-samples** catch bursts: `vmstat 5` showed 41% steal in single 5-second windows, which 10-minute
   sysstat samples average away. At 100 Hz, 5 s × 8 CPUs is 4,000 jiffies per sample (0.025% resolution).
-- **1-minute lines** keep the data small (114 bytes/line, about 5 MB/month) and give fine-grained percentiles; each
-  line keeps the min/max of its 12 sub-samples and the highest single-vCPU steal, so bursts are not lost.
-- **Cheap enough to run forever:** 12 short reads of `/proc` per minute. Measured on the loaded host: about 6 MB
+- **1-minute lines** keep the data small (about 175 bytes/line with memory, about 8 MB/month) and give fine-grained
+  percentiles; each line keeps the min/max of its 12 sub-samples and the highest single-vCPU steal, so bursts are
+  not lost.
+- **Cheap enough to run forever:** 24 short reads of `/proc` per minute plus 3 at the minute boundary. Measured on the loaded host: about 6 MB
   cgroup memory (12 MB RSS including shared libraries) and 0.02% of one vCPU (35 ms of CPU per 3 minutes). The
   unit caps it at `CPUQuota=5%` and `MemoryMax=64M`.
 - **Robust under load:** percentages are ratios of kernel counter deltas, so a late wake-up only lengthens a
@@ -57,7 +75,7 @@ Sampling design:
 | --- | --- |
 | `/usr/local/sbin/nsromania-cpu-steal` | collector (`collect_cpu_steal.py`), `root:root 0755` |
 | `/etc/systemd/system/nsromania-cpu-steal.service` | unit, enabled in `multi-user.target`; `Restart=always`, `RestartSec=10`, no start limit; sandboxed (no network, read-only system, writes only its log directory) |
-| `/var/log/nsromania-cpu-steal/steal-YYYY-MM.csv` | data, one file per UTC month, header line, `root:root 0644` (no secrets) |
+| `/var/log/nsromania-cpu-steal/steal-YYYY-MM.csv` | data, one file per UTC month, header line, `root:root 0644` (no secrets); November 2026 is split at the memory update: `steal-2026-11.csv` (old schema) and `steal-2026-11.2.csv` |
 | `/var/log/sysstat/saYYYYMMDD` | sysstat data, 10-minute samples, independent second source |
 | `/etc/sysstat/sysstat` | `HISTORY=60` (was 7); backup in `/var/log/nightscout/backup/sysstat-history-20261115T215121Z` |
 
@@ -79,12 +97,23 @@ One line per UTC minute; `start_utc` is the start of the minute, and the line is
 | `load1`, `load5`, `load15` | `/proc/loadavg` at the end of the minute |
 | `runq_avg`, `runq_max` | `procs_running` across sub-samples (includes the collector itself) |
 | `blocked_max` | highest `procs_blocked` |
+| `mem_total_mib`, `mem_avail_mib` | `MemTotal`, and `MemAvailable` at the end of the minute (MiB) |
+| `mem_avail_min_mib` | lowest `MemAvailable` among the 5-second samples |
+| `swap_total_mib`, `swap_used_mib` | swap size and use (`SwapTotal − SwapFree`) at the end of the minute |
+| `swapin_pages_s`, `swapout_pages_s` | pages swapped in/out per second over the minute (`pswpin`/`pswpout`, as `sar -W`) |
+| `majflt_s` | major page faults per second (`pgmajfault`, as `sar -B`) |
+| `mem_psi_some_pct`, `mem_psi_full_pct` | PSI memory pressure: % of the minute with some / all non-idle tasks stalled on memory |
+| `oom_kills` | OOM kills during the minute |
+
+The memory columns (from `mem_total_mib`) exist since 2026-11-19; an empty field means its source could not be read.
 
 Restarts: a stop (`SIGTERM`) writes the partial minute; after a start, collection resumes at the next minute
 boundary. A crash loses at most the current minute; a torn last line is terminated on the next start and skipped
-by the report. If the header ever changes, the collector writes `steal-YYYY-MM.N.csv` instead of mixing schemas.
+by the report (it skips any line whose field count differs from its file's header). If the header ever changes,
+the collector writes `steal-YYYY-MM.N.csv` instead of mixing schemas; the report and chart read every file of a month
+and take the columns each file has.
 
-Disk safety: about 5 MB/month (60 MB/year), kept indefinitely. The collector stops appending (and logs hourly) if
+Disk safety: about 8 MB/month (100 MB/year), kept indefinitely. The collector stops appending (and logs hourly) if
 the filesystem has less than 2 GiB free or a month file reaches 64 MiB, and resumes when the condition clears.
 
 ## Install or update
@@ -96,7 +125,8 @@ the filesystem has less than 2 GiB free or a month file reaches 64 MiB, and resu
 It runs the tests, streams the collector, unit and `install-on-server.sh` over SSH (`ktomy`, strict host-key
 checking) into a `mktemp -d` directory that is removed afterwards, and runs the installer with `sudo -n`. The
 installer validates the files, backs up every file it replaces into `/var/log/nightscout/backup/cpu-steal-<UTC>`,
-installs atomically, enables and (re)starts only `nsromania-cpu-steal.service`, waits for a new CSV line, and
+installs atomically, enables and (re)starts only `nsromania-cpu-steal.service` (stop, measure the data, start, so the
+old collector's final partial minute does not count), waits up to 150 s for a new CSV line, and
 restores the previous files if none appears. It touches nothing else (no PM2, Nightscout, panel, databases, nginx,
 firewall or deployment locks).
 
@@ -115,7 +145,10 @@ default to the last 7 days. Other options: `--contracted-vcpus N` (default: vCPU
 
 The Markdown contains: coverage and gaps; mean, p50/p95/p99 and maximum steal; the share of time above 10/20/30%
 (1-minute averages and 5-second peaks); effective vCPUs versus contracted; breakdowns by day and by hour of day;
-the worst 10-minute windows and minutes; and a cross-check against sysstat over the same 10-minute intervals.
+the worst 10-minute windows and minutes; a memory section (RAM, memory in use mean/p95/highest minute, lowest
+available, swap in use, swapping and major-fault rates, memory pressure mean/highest/time above 1%, OOM kills with
+their minutes, and a by-day table); and a cross-check against sysstat over the same 10-minute intervals. The CSV
+outputs add memory columns (empty before 2026-11-19).
 Use `--source sar` for periods before 2026-11-15 22:01 UTC, when the collector started (sysstat keeps 60 days).
 
 Offline: copy the CSVs (`ssh … 'tar -C /var/log/nsromania-cpu-steal -cf - .' | tar -xf - -C DIR`) and run
@@ -135,6 +168,10 @@ its own scale. It has summary figures, 1/5/10/30/60-minute resolution (it opens 
 fewer), UTC or Romania time, a hover and arrow-key readout that adds idle, effective vCPUs and the highest 5-second
 steal, a table view and dark mode. `--mark 'TIME|label[|short label]'` draws an annotated rule (repeatable; the short
 label is used where the long one does not fit).
+
+When the range has memory data, a fourth panel shows memory in use on a fixed 0–100% scale (the line starts where
+memory was first recorded), two figures summarise memory in use and memory pressure, and the readout and table add
+the lowest available memory, swap, swapping, major faults, pressure and OOM kills.
 
 `chart.sh` streams only the month files the range needs from the server (`tar` to stdout; read-only, no sudo, nothing
 written there) into a local temporary directory that it removes, then runs `steal_chart.py` with the
@@ -185,7 +222,9 @@ Regards,
 python3 -I ops/cpu-steal/test_cpu_steal.py -v
 ```
 
-They cover `/proc/stat` parsing and aggregation, the writer (header, monthly files, torn lines, schema change,
+They cover `/proc/stat` parsing and aggregation, `/proc/meminfo`, `/proc/vmstat` and PSI parsing with rates,
+pressure and missing sources, the writer (header, monthly files, torn lines, schema change,
 disk/size guards), a real 3-second collector run with `SIGTERM`, and the report (weighted percentiles,
-thresholds, gaps, windows, CSV loading, `sadf` parsing, compressed sysstat files, Markdown and CSV output), and the chart
-(embedded rows, annotations and escaping, default range, month list, errors).
+thresholds, gaps, windows, CSV loading across schemas, `sadf` parsing, compressed sysstat files, Markdown and CSV
+output including memory), and the chart (embedded rows with and without memory, annotations and escaping, default
+range, month list, errors).

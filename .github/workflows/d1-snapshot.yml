@@ -1,0 +1,58 @@
+name: d1 snapshot
+run-name: d1 snapshot (${{ github.event_name }}${{ inputs.dry_run && ', dry run' || '' }})
+
+# Weekly HostHatch snapshot of d1 through the provider API, keeping the newest 2 snapshots this job made.
+# Snapshots taken by hand are never deleted. See ops/servers/HOSTHATCH-API.md ("Scheduled snapshots").
+
+on:
+    schedule:
+        # Sundays 01:30 UTC (03:30 in Romania). GitHub can start scheduled runs late.
+        - cron: '30 1 * * 0'
+    workflow_dispatch:
+        inputs:
+            dry_run:
+                description: Only read, and show what would be taken and deleted
+                type: boolean
+                default: false
+
+permissions:
+    contents: read
+
+concurrency:
+    group: d1-snapshot
+    cancel-in-progress: false
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    snapshot:
+        name: Snapshot d1 and keep the newest 2
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-22.04
+        timeout-minutes: 240
+        # The environment holds HOSTHATCH_API_KEY and allows only the main branch.
+        environment: hosthatch
+
+        steps:
+            - name: Check out
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 1
+                  persist-credentials: false
+
+            - name: Test the snapshot job
+              run: python3 -m unittest ops/servers/test_hosthatch_snapshot.py
+
+            - name: Take the snapshot and delete the oldest
+              env:
+                  HOSTHATCH_API_KEY: ${{ secrets.HOSTHATCH_API_KEY }}
+                  DRY_RUN: ${{ inputs.dry_run }}
+              run: |
+                  set -euo pipefail
+                  args=(--project default-22638 --server df9f48 --hostname d1 --prefix auto-d1- --keep 2)
+                  if [[ "${DRY_RUN:-}" == 'true' ]]; then
+                      args+=(--dry-run)
+                  fi
+                  python3 -I ops/servers/hosthatch_snapshot.py "${args[@]}"

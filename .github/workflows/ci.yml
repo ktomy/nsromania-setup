@@ -41,6 +41,9 @@ jobs:
             - name: Test deployment safeguards
               run: ops/deploy/test.sh
 
+            - name: Test the d1 snapshot job
+              run: python3 -m unittest ops/servers/test_hosthatch_snapshot.py
+
             - name: Build the application
               run: pnpm run build
 

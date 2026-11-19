@@ -13,6 +13,9 @@ This document contains no secret values. Credentials live only in the files name
 | `main` | `nsromania.info` | 45.134.39.79 | 8 vCPU | panel, MySQL, DNS, instances with `ns_domain.server IS NULL` |
 | `d1` | `d1.nsromania.info` (PTR set) | 31.220.43.162 | 12 vCPU (EPYC 7763), 64 GB, 180 GB | instances with `ns_domain.server = 'd1'` |
 
+d1 is a HostHatch VPS. Its provider API (server details, power, snapshots, reverse DNS, provider firewall, upgrades),
+the key's location and which calls are safe are in [`HOSTHATCH-API.md`](HOSTHATCH-API.md).
+
 d1 was provisioned on 2026-11-17 to mirror main: Ubuntu 24.04, MongoDB 8.3 (auth enforced, loopback only,
 `CPUWeight=1000`/`OOMScoreAdjust=-900`), Node `v22.12.0` and PM2 at the same pinned paths, `pm2-root.service` with the
 dump guard and timeouts from `ops/pm2/`, `pm2-logrotate`, the same nginx `proxy_params`, `certs_paths`, vhost
@@ -251,4 +254,6 @@ unit tests: `python3 -m unittest ops/servers/test_host_agent.py`.
 
 - Usage statistics before 2026-11-18 cover only main's nginx log: for days before that, d1 instances show only
   forwarder traffic. Do not treat a moved instance as unused because of those rows.
-- d1 has no MongoDB backup job (neither has main at the time of writing).
+- d1 has no MongoDB backup job (neither has main at the time of writing). Since 2026-11-19 a weekly provider snapshot
+  of d1's whole disk is taken (newest 2 kept, `HOSTHATCH-API.md`, "Scheduled snapshots"); it is crash-consistent,
+  not a logical database dump.

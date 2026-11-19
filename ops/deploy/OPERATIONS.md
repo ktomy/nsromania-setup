@@ -227,6 +227,20 @@ Do not add production `DATABASE_URL`, `SHADOW_DATABASE_URL`, `MONGO_URL`, OAuth,
 
 The build job has no production environment or SSH key. A fresh protected deploy job downloads one opaque artifact, verifies its SHA-256 and size, and only then receives the environment-scoped SSH credentials.
 
+### Hosting provider key (d1 snapshots)
+
+Since 2026-11-19, by the owner's decision, the GitHub environment `hosthatch` (exact `main` branch policy) holds the
+secret `HOSTHATCH_API_KEY`, a HostHatch API key used only by `.github/workflows/d1-snapshot.yml` (weekly snapshot of
+d1, newest 2 kept). Unlike the deployment key, which a forced command confines to release activation, a HostHatch key
+cannot be scoped: it can do anything the account owner can, including cancelling d1 and deleting snapshots. Keep it
+in that one environment, give it to no other workflow, and rotate it by creating the new key, replacing the secret
+and revoking the old key. This is the only provider credential in GitHub; the rule above against runtime credentials
+still applies.
+
+The workflow deletes the provider snapshots it made itself (names `auto-d1-*`) beyond the newest 2. That is a
+deliberate exception to "do not prune backups automatically", which keeps applying to the backups under
+`/var/log/nightscout/backup`. Details: `ops/servers/HOSTHATCH-API.md`, "Scheduled snapshots".
+
 ## Normal application deployment
 
 1. Ensure the desired commit is on `main` and CI is green.

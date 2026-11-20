@@ -26,7 +26,8 @@ FAKE_PM2 = textwrap.dedent(
     elif command == 'start':
         for app in json.load(open(sys.argv[2]))['apps']:
             apps.append({'name': app['name'], 'pm2_env': {'status': os.environ.get('FAKE_STATUS', 'online'),
-                         'definition': app}, 'monit': {'cpu': 0, 'memory': 1}})
+                         'definition': app, 'pm_cwd': app['cwd'], 'exec_interpreter': app['interpreter'],
+                         'env': {**app['env'], app['name']: {}}}, 'monit': {'cpu': 0, 'memory': 1}})
     elif command == 'delete':
         apps = [app for app in apps if app['name'] != sys.argv[2]]
     elif command == 'save':
@@ -176,6 +177,22 @@ class Pm2Test(AgentTestCase):
         self.assertEqual(self.run_op('pm2-delete 11224_ktomy'), {'name': '11224_ktomy'})
         self.assertEqual(self.state(), [])
 
+    def test_describe_returns_what_start_needs(self):
+        self.run_op('pm2-start', self.definition())
+        result = self.run_op('pm2-describe 11224_ktomy')
+        self.assertEqual(result['status'], 'online')
+        self.assertEqual(result['cwd'], os.path.realpath(self.path('versions/15_0_7')))
+        self.assertEqual(result['interpreter'], os.path.realpath(self.path('node/v22.12.0/bin/node')))
+        self.assertEqual(result['env']['API_SECRET'], 'secret')
+        self.assertNotIn('11224_ktomy', result['env'], 'non-string PM2 entries are not part of a definition')
+        # What it describes can be started again as it is (rollback of a move back to main)
+        self.run_op('pm2-delete 11224_ktomy')
+        definition = {key: result[key] for key in ('name', 'cwd', 'interpreter', 'env')}
+        self.assertEqual(self.run_op('pm2-start', json.dumps({**definition, 'script': 'server.js'}))['status'], 'online')
+        for command in ('pm2-describe 11999_missing', 'pm2-describe setup-ns', 'pm2-describe'):
+            with self.assertRaises(agent.AgentError, msg=command):
+                self.run_op(command)
+
     def test_list_skips_modules(self):
         json.dump(
             [
@@ -235,10 +252,36 @@ class VhostTest(AgentTestCase):
         with self.assertRaises(agent.AgentError):
             self.run_op('vhost-delete ktomy')
 
+    def test_forward_points_an_existing_vhost_at_the_main_server(self):
+        with self.assertRaises(agent.AgentError, msg='no vhost to turn into a forwarder'):
+            self.run_op('vhost-forward ktomy')
+        self.run_op('vhost-create ktomy 11224')
+        result = self.run_op('vhost-forward ktomy')
+        self.assertEqual(result, {'subdomain': 'ktomy', 'forwardTo': '45.134.39.79', 'changed': True})
+        content = open(self.path('available/ktomy')).read()
+        self.assertIn('proxy_pass                    https://45.134.39.79;', content)
+        self.assertIn('proxy_ssl_name                ktomy.nsromania.info;', content)
+        self.assertIn('proxy_ssl_verify              on;', content)
+        self.assertNotIn('11224', content)
+        self.assertEqual(os.readlink(self.path('enabled/ktomy')), self.path('available/ktomy'))
+        self.assertIn('11224', open(os.path.join(self.path('backup'), os.listdir(self.path('backup'))[0])).read())
+        self.assertFalse(self.run_op('vhost-forward ktomy')['changed'])
+        # vhost-create turns it back into the instance's vhost (rollback)
+        self.assertTrue(self.run_op('vhost-create ktomy 11224')['changed'])
+        self.assertIn('localhost:11224', open(self.path('available/ktomy')).read())
+
+    def test_forward_keeps_the_vhost_when_nginx_rejects_it(self):
+        self.run_op('vhost-create ktomy 11224')
+        open(self.fail_marker, 'w').close()
+        with self.assertRaises(agent.AgentError):
+            self.run_op('vhost-forward ktomy')
+        self.assertIn('localhost:11224', open(self.path('available/ktomy')).read())
+
     def test_reserved_and_invalid_names_are_refused(self):
         for command in ('vhost-create default 11224', 'vhost-create setup 11224', 'vhost-create ../x 11224',
                         'vhost-create _template 11224', 'vhost-create ktomy 80', 'vhost-create ktomy 99999',
-                        'vhost-delete 00-default', 'vhost-delete default'):
+                        'vhost-delete 00-default', 'vhost-delete default', 'vhost-forward default',
+                        'vhost-forward setup', 'vhost-forward ../x', 'vhost-forward ktomy 1.2.3.4'):
             with self.assertRaises(agent.AgentError, msg=command):
                 self.run_op(command)
 

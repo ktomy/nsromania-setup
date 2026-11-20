@@ -78,6 +78,11 @@ class ForwarderTest(unittest.TestCase):
         r = c.aggregate(lines, DAY, c.MAIN_ADDRESSES)['a']
         self.assertEqual((r['hits'], r['unique_ips']), (1, 1))
 
+    def test_main_skips_requests_forwarded_by_additional_servers(self):
+        lines = [line('a.nsromania.info', ip='31.220.43.162'), line('a.nsromania.info', ip='9.9.9.9')]
+        r = c.aggregate(lines, DAY, c.remote_addresses([('d1', 'nsagent@31.220.43.162')]))['a']
+        self.assertEqual((r['hits'], r['unique_ips']), (1, 1))
+
     def test_json_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             log = os.path.join(tmp, 'access.log')
@@ -126,6 +131,7 @@ class RemoteTest(unittest.TestCase):
                       'NS_SERVER_D1_SSH="nsagent@31.220.43.162"\n')
             env.flush()
             self.assertEqual(c.remote_servers(env.name), [('d1', 'nsagent@31.220.43.162')])
+            self.assertEqual(c.remote_addresses(c.remote_servers(env.name)), {'31.220.43.162'})
             self.assertEqual(c.mysql_credentials(env.name).hostname, 'h')
         with tempfile.NamedTemporaryFile('w', suffix='.env') as env:
             env.write('NS_REMOTE_SERVERS="d1"\nNS_SERVER_D1_SSH="root@1.2.3.4; rm -rf /"\n')

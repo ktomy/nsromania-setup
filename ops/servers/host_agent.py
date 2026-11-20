@@ -10,11 +10,15 @@ exits 0 or 1.
 Operations (every argument is validated; nothing is passed to a shell):
     ping                     host name and installed Nightscout versions
     pm2-list                 PM2 apps: name, status, cpu, memory, uptime
+    pm2-describe NAME        one instance's definition as PM2 runs it (status, cwd, interpreter, string env values),
+                             for moving it to another server
     pm2-start                start one Nightscout instance (stdin: name, script, cwd, interpreter, env)
     pm2-delete NAME          delete one Nightscout instance
     pm2-save                 save the PM2 list if at least 90% of apps are online (same rule as the panel)
     vhost-list               nginx instance vhosts
     vhost-create SUB PORT    render the main server's vhost template for SUB -> 127.0.0.1:PORT
+    vhost-forward SUB        turn SUB's vhost into a TLS-verified forwarder to the main server (after the instance
+                             moved back there; serves clients that still resolve the old CNAME)
     vhost-delete SUB         remove SUB's vhost (a copy is kept in the backup directory)
     usage-stats YYYY-MM-DD   per-instance request counts of that day from this server's nginx log (read-only; runs
                              the installed ops/usage-stats collector with --json --exclude-forwarders)
@@ -51,6 +55,9 @@ class Config:
     systemctl: str = '/usr/bin/systemctl'
     python: str = '/usr/bin/python3'
     usage_collector: str = '/usr/local/sbin/nsromania-usage-stats'
+    # The only forwarding target vhost-forward accepts (the main server; not an argument)
+    main_address: str = '45.134.39.79'
+    ca_bundle: str = '/etc/ssl/certs/ca-certificates.crt'
     # Lowest CPU and I/O priority, like the cron job on the main server
     low_priority: tuple = ('/usr/bin/nice', '-n', '19', '/usr/bin/ionice', '-c3')
 
@@ -215,6 +222,23 @@ def op_pm2_list(config=CONFIG):
     return result
 
 
+def op_pm2_describe(name, config=CONFIG):
+    parse_name(name)
+    app = next((a for a in pm2_apps(config) if a.get('name') == name), None)
+    if app is None:
+        raise AgentError(f'{name} does not exist')
+    env = app.get('pm2_env') or {}
+    variables = env.get('env') or {}
+    return {
+        'name': name,
+        'status': env.get('status'),
+        'cwd': env.get('pm_cwd'),
+        'interpreter': env.get('exec_interpreter'),
+        # PM2 also keeps non-string entries (per-app objects); a definition only carries strings
+        'env': {key: value for key, value in variables.items() if isinstance(value, str)},
+    }
+
+
 def op_pm2_start(raw_definition, config=CONFIG):
     definition = validate_definition(raw_definition, config)
     name = definition['name']
@@ -300,13 +324,9 @@ def backup_vhost(subdomain, config=CONFIG):
     return target
 
 
-def op_vhost_create(subdomain, port_value, config=CONFIG):
-    validate_subdomain(subdomain)
-    port = validate_port(port_value)
-    with open(os.path.join(config.sites_available, '_template'), encoding='utf-8') as handle:
-        template = handle.read()
-    content = template.replace('[% subdomain %]', subdomain).replace('[% port %]', str(port))
-
+def install_vhost(subdomain, content, config=CONFIG):
+    """Write SUB's vhost (backing up a different previous one), enable it, test and reload nginx; restore the
+    previous state if nginx rejects it. Returns False when it was already in place."""
     available = os.path.join(config.sites_available, subdomain)
     enabled = os.path.join(config.sites_enabled, subdomain)
     previous = None
@@ -314,7 +334,7 @@ def op_vhost_create(subdomain, port_value, config=CONFIG):
         with open(available, encoding='utf-8') as handle:
             previous = handle.read()
         if previous == content and os.path.islink(enabled):
-            return {'subdomain': subdomain, 'port': port, 'changed': False}
+            return False
         backup_vhost(subdomain, config)
 
     temporary = f'{available}.new'
@@ -337,8 +357,50 @@ def op_vhost_create(subdomain, port_value, config=CONFIG):
         if created_link:
             os.unlink(enabled)
         raise AgentError(f'nginx rejected the vhost: {error}')
-    log(f'vhost-create {subdomain} -> {port}')
-    return {'subdomain': subdomain, 'port': port, 'changed': True}
+    return True
+
+
+def op_vhost_create(subdomain, port_value, config=CONFIG):
+    validate_subdomain(subdomain)
+    port = validate_port(port_value)
+    with open(os.path.join(config.sites_available, '_template'), encoding='utf-8') as handle:
+        template = handle.read()
+    content = template.replace('[% subdomain %]', subdomain).replace('[% port %]', str(port))
+    changed = install_vhost(subdomain, content, config)
+    if changed:
+        log(f'vhost-create {subdomain} -> {port}')
+    return {'subdomain': subdomain, 'port': port, 'changed': changed}
+
+
+# Same shape as the forwarder migrate-instance.sh leaves on the main server after a move away from it
+FORWARDER = """# Moved to the main server (ops/servers/migrate-instance.sh migrate-back). Forwards clients that still resolve
+# {subdomain}.nsromania.info to this server; remove once the CNAME change has propagated.
+server {{
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name {subdomain}.nsromania.info;
+    location / {{
+        proxy_pass                    https://{address};
+        proxy_ssl_server_name         on;
+        proxy_ssl_name                {subdomain}.nsromania.info;
+        proxy_ssl_verify              on;
+        proxy_ssl_trusted_certificate {ca_bundle};
+        include /etc/nginx/proxy_params;
+    }}
+    include /etc/nginx/certs_paths;
+}}
+"""
+
+
+def op_vhost_forward(subdomain, config=CONFIG):
+    validate_subdomain(subdomain)
+    if not os.path.isfile(os.path.join(config.sites_available, subdomain)):
+        raise AgentError(f'virtual host {subdomain} does not exist')
+    content = FORWARDER.format(subdomain=subdomain, address=config.main_address, ca_bundle=config.ca_bundle)
+    changed = install_vhost(subdomain, content, config)
+    if changed:
+        log(f'vhost-forward {subdomain} -> {config.main_address}')
+    return {'subdomain': subdomain, 'forwardTo': config.main_address, 'changed': changed}
 
 
 def op_vhost_delete(subdomain, config=CONFIG):
@@ -414,11 +476,13 @@ def op_ping(config=CONFIG):
 OPERATIONS = {
     'ping': (0, False, False, lambda args, stdin, config: op_ping(config)),
     'pm2-list': (0, False, False, lambda args, stdin, config: op_pm2_list(config)),
+    'pm2-describe': (1, False, False, lambda args, stdin, config: op_pm2_describe(args[0], config)),
     'pm2-start': (0, True, True, lambda args, stdin, config: op_pm2_start(stdin, config)),
     'pm2-delete': (1, False, True, lambda args, stdin, config: op_pm2_delete(args[0], config)),
     'pm2-save': (0, False, True, lambda args, stdin, config: op_pm2_save(config)),
     'vhost-list': (0, False, False, lambda args, stdin, config: vhost_names(config)),
     'vhost-create': (2, False, True, lambda args, stdin, config: op_vhost_create(args[0], args[1], config)),
+    'vhost-forward': (1, False, True, lambda args, stdin, config: op_vhost_forward(args[0], config)),
     'vhost-delete': (1, False, True, lambda args, stdin, config: op_vhost_delete(args[0], config)),
     'usage-stats': (1, False, False, lambda args, stdin, config: op_usage_stats(args[0], config)),
 }

@@ -70,9 +70,9 @@ export async function deleteVirtualHost(domain: string, serverId: string = MAIN_
         throw new Error('Domain name is required');
     }
 
-    // Same names createVirtualHost accepts; never a path or one of the reserved files
+    // Letters (some older sites have uppercase names), digits, hyphens and dots; never a path or a reserved file
     if (
-        !/^[a-z0-9-\.]{3,253}$/.test(domain) ||
+        !/^[A-Za-z0-9-\.]{3,253}$/.test(domain) ||
         domain.includes('..') ||
         ['setup', '00-default', 'default'].includes(domain)
     ) {

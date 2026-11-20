@@ -7,7 +7,9 @@ day replaces that day's rows, so the job is idempotent and can be used for backf
 
 On the main server the counts of every additional hosting server (`NS_REMOTE_SERVERS` in the
 panel .env) are fetched through its host agent (`usage-stats DAY`, which runs this script there
-with --json --exclude-forwarders) and added before writing.
+with --json --exclude-forwarders) and added before writing. Forwarder vhosts relay clients that still resolve an
+instance's old CNAME after a move, in both directions: each server skips requests that come from the other servers'
+addresses, because the server that received them from the client already counts them.
 
 Only counts are stored: no IP addresses, paths or user agents leave the log files.
 
@@ -182,6 +184,12 @@ def remote_servers(env_file=ENV_FILE):
     return servers
 
 
+def remote_addresses(servers):
+    """Addresses of the additional servers (from their ssh targets): on main, requests from them are their
+    forwarder vhosts relaying clients of instances moved back to main, already counted in that server's log."""
+    return frozenset(target.split('@', 1)[1] for _server, target in servers)
+
+
 def validate_remote(payload, day):
     """Check a host agent answer and return its {subdomain: counters}."""
     if not isinstance(payload, dict) or not payload.get('ok'):
@@ -253,13 +261,15 @@ def main(argv=None):
     ap.add_argument('--dry-run', action='store_true', help='print the aggregate instead of writing')
     ap.add_argument('--json', action='store_true', help='print this server\'s aggregate as JSON (no MySQL, no remotes)')
     ap.add_argument('--exclude-forwarders', action='store_true',
-                    help='skip requests from the main server (its forwarder vhosts; counted in main\'s log)')
+                    help='skip requests from the main server (its forwarder vhosts; counted in main\'s log); '
+                         'without it, requests from the additional servers\' addresses are skipped')
     ap.add_argument('--no-remote', action='store_true', help='do not add the counts of additional servers')
     args = ap.parse_args(argv)
     day = args.date or (dt.date.today() - dt.timedelta(days=1))
 
     paths = candidate_logs(day)
-    exclude = MAIN_ADDRESSES if args.exclude_forwarders else frozenset()
+    servers = [] if args.json else remote_servers()
+    exclude = MAIN_ADDRESSES if args.exclude_forwarders else remote_addresses(servers)
     stats = aggregate(read_lines(paths), day, exclude)
     total = sum(r['hits'] for r in stats.values())
     summary = '{}: {} domains, {} hits from {} file(s)'.format(day, len(stats), total, len(paths))
@@ -271,7 +281,7 @@ def main(argv=None):
 
     status = 0
     if not args.no_remote:
-        for server, target in remote_servers():
+        for server, target in servers:
             try:
                 remote = fetch_remote(target, day)
             except (RuntimeError, OSError, subprocess.TimeoutExpired) as error:

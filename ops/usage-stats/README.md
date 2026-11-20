@@ -45,6 +45,9 @@ one row per instance and day as before.
 - `--exclude-forwarders` drops requests from main's addresses (`MAIN_ADDRESSES`): those are main's forwarder vhosts
   relaying clients that still resolve a moved instance's old CNAME, already counted in main's log. Update the
   constant if main's addresses change.
+- On main (without `--json`) requests from the additional servers' addresses (taken from `NS_SERVER_<ID>_SSH`) are
+  dropped the same way: they are those servers' forwarder vhosts for instances moved back to main, already counted in
+  that server's log (since 2026-11-20).
 - `unique_ips` is the sum over servers; a client that reached an instance on both servers on the same day (only
   while DNS caches follow a move) is counted twice.
 - If a server cannot be reached, the job still writes the other counts, logs `<id>: FAILED: ...` and exits 2;

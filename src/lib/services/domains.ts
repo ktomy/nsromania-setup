@@ -1,10 +1,66 @@
 import { CreateDomainRequest, GetDomainByIdResponse, PartialNSDomainWithEnvironments } from '@/types/domains';
-import { sanitizeEnvVariableName } from '@/lib/envVariables';
+import { isReservedEnvVariableName, sanitizeEnvVariableName } from '@/lib/envVariables';
+import { isValidSiteName } from '@/lib/siteNames';
 import { prisma } from '../prisma';
 import { getProcessesList } from './nsruntime';
 import { getDefaultServerForNewDomains, isRemoteServer, serverIdOf } from './servers';
 import { NSDomain, User } from '@/generated/client';
 import { checkMongoDatabaseAndUser, getDbSize, getLastDbEntry } from './nsdatbasea';
+import { getAvailableVersions } from './nsversion';
+
+// A request the caller should answer with 400 and this message
+export class DomainValidationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'DomainValidationError';
+    }
+}
+
+type EnvironmentInput = { variable?: string | null; value?: string | null }[] | undefined;
+
+// Clean names as before and refuse variables that would reach Node, the linker or a shell of the root PM2 process
+function checkedEnvironments(environments: EnvironmentInput): { variable: string; value: string | null }[] {
+    if (environments == null) {
+        return [];
+    }
+    if (!Array.isArray(environments)) {
+        throw new DomainValidationError('environments must be a list');
+    }
+    const result = [];
+    for (const env of environments) {
+        const variable = sanitizeEnvVariableName(env?.variable);
+        if (variable === '') {
+            continue;
+        }
+        if (isReservedEnvVariableName(variable)) {
+            throw new DomainValidationError(`Environment variable ${variable} cannot be set`);
+        }
+        if (env.value != null && typeof env.value !== 'string') {
+            throw new DomainValidationError(`Environment variable ${variable} must have a text value`);
+        }
+        result.push({ variable, value: env.value ?? null });
+    }
+    return result;
+}
+
+// Only installed versions: the value becomes a path under NS_HOME that PM2 runs server.js from
+async function checkNsversion(nsversion: unknown) {
+    if (nsversion == null || nsversion === '') {
+        return;
+    }
+    const installed = (await getAvailableVersions()).map((version) => version.directoryName);
+    if (typeof nsversion !== 'string' || !installed.includes(nsversion)) {
+        throw new DomainValidationError('Unknown Nightscout version');
+    }
+}
+
+function checkSiteName(name: unknown) {
+    if (!isValidSiteName(name)) {
+        throw new DomainValidationError(
+            'Subdomain must be 3-63 lowercase letters, digits or inner hyphens and not a reserved name'
+        );
+    }
+}
 
 export async function getAllNSDomains() {
     try {
@@ -71,7 +127,19 @@ export async function getFullDOmainData(id: number): Promise<GetDomainByIdRespon
     return nsDomain;
 }
 
-export async function createNSDomain(data: CreateDomainRequest) {
+// The creator becomes the owner unless an admin creates the site for someone else
+export async function createNSDomain(data: CreateDomainRequest, creator: User) {
+    if (creator.role !== 'admin') {
+        data.ownerEmail = creator.email ?? '';
+        data.ownerName = creator.name ?? '';
+    }
+    if (!data.ownerEmail) {
+        throw new DomainValidationError('Owner is required');
+    }
+    checkSiteName(data.domain);
+    await checkNsversion(data.nsversion);
+    const environments = checkedEnvironments(data.environments);
+
     if (data.ownerEmail == null) {
         throw new Error('Owner is required');
     }
@@ -138,15 +206,8 @@ export async function createNSDomain(data: CreateDomainRequest) {
             server: getDefaultServerForNewDomains(),
             active: data.active,
             dbExists: data.dbExists,
-            environments: data.environments
-                ? {
-                      create: data.environments
-                          .map((env) => ({
-                              variable: sanitizeEnvVariableName(env.variable),
-                              value: env.value || null,
-                          }))
-                          .filter((env) => env.variable !== ''),
-                  }
+            environments: environments.length
+                ? { create: environments.map((env) => ({ variable: env.variable, value: env.value || null })) }
                 : undefined,
         },
         include: {
@@ -198,8 +259,29 @@ export async function setDomainDbExists(id: number, dbExists: 0 | 1) {
     });
 }
 
-export async function updateNSDomain(id: number, data: PartialNSDomainWithEnvironments) {
+// Owners edit their own site's settings; renaming a site or giving it to another user is for admins only, as the
+// name is also its database, vhost and DNS record (destroy would delete whatever the new name points to)
+export async function updateNSDomain(id: number, data: PartialNSDomainWithEnvironments, editor: User) {
     try {
+        const current = await prisma.nSDomain.findUnique({ where: { id } });
+        if (!current) {
+            throw new DomainValidationError('Not found');
+        }
+        const isAdmin = editor.role === 'admin';
+        if (data.domain && data.domain !== current.domain) {
+            if (!isAdmin) {
+                throw new DomainValidationError('Only admins can rename a site');
+            }
+            checkSiteName(data.domain);
+        }
+        if (data.authUserId && data.authUserId !== current.authUserId && !isAdmin) {
+            throw new DomainValidationError('Only admins can change the owner');
+        }
+        if (data.nsversion && data.nsversion !== current.nsversion) {
+            await checkNsversion(data.nsversion);
+        }
+        const environments = data.environments == null ? null : checkedEnvironments(data.environments);
+
         // MySQL refreshes last_updated whenever the row changes (ON UPDATE CURRENT_TIMESTAMP); set it explicitly too,
         // so that a save which only changes environment variables (another table) also counts as an edit
         const updateData: Partial<NSDomain> = { lastUpdated: new Date() };
@@ -235,13 +317,12 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
             where: { nsDomainId: id },
         });
 
-        for (const env of data.environments) {
-            const variable = sanitizeEnvVariableName(env.variable);
-            if (env.value != null && variable !== '') {
+        for (const env of environments ?? []) {
+            if (env.value != null) {
                 await prisma.nSDomainEnvironment.create({
                     data: {
                         nsDomainId: id,
-                        variable,
+                        variable: env.variable,
                         value: env.value,
                     },
                 });
@@ -250,7 +331,9 @@ export async function updateNSDomain(id: number, data: PartialNSDomainWithEnviro
 
         return updatedDomain;
     } catch (error) {
-        console.error('Error updating NSDomain:', error);
+        if (!(error instanceof DomainValidationError)) {
+            console.error('Error updating NSDomain:', error);
+        }
         throw error;
     } finally {
         await prisma.$disconnect();

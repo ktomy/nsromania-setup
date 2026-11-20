@@ -22,11 +22,14 @@ function getClient(): TransactionalEmailsApi {
     return brevoClient;
 }
 
-function renderTemplate(html: string, variables: Record<string, string | number | undefined>) {
-    // Supports {{var}} or {{{var}}}
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// Supports {{var}} or {{{var}}}. Values are HTML-escaped: names and titles come from the public registration form
+// and must not inject links or markup into emails sent from our addresses.
+export function renderTemplate(html: string, variables: Record<string, string | number | undefined>) {
     return html.replace(/\{\{\{?\s*(\w+)\s*\}?\}\}/g, (_, key) => {
         const val = variables[key];
-        return val === undefined || val === null ? '' : String(val);
+        return val === undefined || val === null ? '' : String(val).replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
     });
 }
 

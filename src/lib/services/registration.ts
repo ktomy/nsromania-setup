@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 import { prisma } from '../prisma';
 import { NSDomain, register_request, User } from '@/generated/client';
 import { sendRegistrationNotificationEmail, sendValidationEmail } from './sendemail';
@@ -10,9 +11,7 @@ export async function initiateEmailValidation(email: string) {
     // generate a validation code, save it to the database, send an email to the user
     // return the validation code
 
-    const validationCode = Math.floor(Math.random() * 1000000)
-        .toString()
-        .padStart(6, '0');
+    const validationCode = randomInt(0, 1000000).toString().padStart(6, '0');
     if (process.env.NODE_ENV === 'development') {
         console.log(`Validation code for ${email}: ${validationCode}`);
     }

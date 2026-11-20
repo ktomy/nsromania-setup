@@ -1,4 +1,4 @@
-import { getAllNSDomains, getNSDomainsByUserId, createNSDomain } from '@/lib/services/domains';
+import { getAllNSDomains, getNSDomainsByUserId, createNSDomain, DomainValidationError } from '@/lib/services/domains';
 import { auth } from '@/auth';
 import { User } from '@/generated/client';
 import { NextRequest } from 'next/server';
@@ -63,14 +63,23 @@ export async function POST(req: NextRequest) {
 
     try {
         const { domain } = (await req.json()) as { domain: CreateDomainRequest };
-        console.log('Domain:', domain);
+        if (!domain || typeof domain !== 'object') {
+            throw new DomainValidationError('Invalid request');
+        }
         domain.dbExists = 0;
 
-        const nsDomain = await createNSDomain(domain);
+        const nsDomain = await createNSDomain(domain, user);
+        console.log(`Domain ${nsDomain.domain} created by ${user.email}`);
         return new Response(JSON.stringify(nsDomain), {
             headers: { 'Content-Type': 'application/json' },
         });
     } catch (error: unknown) {
+        if (error instanceof DomainValidationError) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
         if (error instanceof Error && error.message === 'Domain name already exists') {
             return new Response(JSON.stringify({ error: 'Domain name already exists' }), {
                 status: 400,

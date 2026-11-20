@@ -1,5 +1,5 @@
 // /src/app/api/domains/[id]/route.ts
-import { getFullDOmainData, updateNSDomain } from '@/lib/services/domains';
+import { DomainValidationError, getFullDOmainData, updateNSDomain } from '@/lib/services/domains';
 import { authorizeDomainAccess } from '@/lib/services/domainAccess';
 import { PartialNSDomainWithEnvironments } from '@/types/domains';
 
@@ -47,13 +47,18 @@ export async function PUT(req: Request, props: Props) {
 
     try {
         const body = (await req.json()) as PartialNSDomainWithEnvironments;
-        console.log('Body:', body);
-        const updatedDomain = await updateNSDomain(access.domainId, body);
+        const updatedDomain = await updateNSDomain(access.domainId, body, access.user);
 
         return new Response(JSON.stringify(updatedDomain), {
             headers: { 'Content-Type': 'application/json' },
         });
     } catch (error) {
+        if (error instanceof DomainValidationError) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
         const message = error instanceof Error ? error.message : 'An error occurred';
         console.error('Error updating NS domain:' + message);
         return new Response(JSON.stringify({ error: 'Failed to update NS domain' }), {

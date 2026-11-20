@@ -70,6 +70,15 @@ export async function deleteVirtualHost(domain: string, serverId: string = MAIN_
         throw new Error('Domain name is required');
     }
 
+    // Same names createVirtualHost accepts; never a path or one of the reserved files
+    if (
+        !/^[a-z0-9-\.]{3,253}$/.test(domain) ||
+        domain.includes('..') ||
+        ['setup', '00-default', 'default'].includes(domain)
+    ) {
+        throw new Error('Invalid virtual host name');
+    }
+
     if (isRemoteServer(serverId)) {
         console.log('Deleting virtual host:', domain, 'on', serverId);
         await callRemoteAgent(serverId, ['vhost-delete', domain]);

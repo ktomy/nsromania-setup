@@ -139,6 +139,11 @@ class ValidationTest(AgentTestCase):
             'port mismatch': self.definition(env={'PORT': '11225'}),
             'bad env key': self.definition(env={'PORT': '11224', 'BAD-KEY': 'x'}),
             'non-string env value': self.definition(env={'PORT': '11224', 'X': 1}),
+            'NODE_OPTIONS': self.definition(env={'PORT': '11224', 'NODE_OPTIONS': '--import data:,'}),
+            'lowercase node_options': self.definition(env={'PORT': '11224', 'node_options': '--require /tmp/x'}),
+            'LD_PRELOAD': self.definition(env={'PORT': '11224', 'LD_PRELOAD': '/tmp/x.so'}),
+            'NODE_ENV override': self.definition(env={'PORT': '11224', 'NODE_ENV': 'development'}),
+            'OPENSSL_CONF': self.definition(env={'PORT': '11224', 'OPENSSL_CONF': '/tmp/x.cnf'}),
             'other script': self.definition(script='evil.js'),
             'unknown field': json.dumps({**json.loads(self.definition()), 'node_args': ['--inspect']}),
             'not an object': '[]',
@@ -185,9 +190,12 @@ class Pm2Test(AgentTestCase):
         self.assertEqual(result['interpreter'], os.path.realpath(self.path('node/v22.12.0/bin/node')))
         self.assertEqual(result['env']['API_SECRET'], 'secret')
         self.assertNotIn('11224_ktomy', result['env'], 'non-string PM2 entries are not part of a definition')
-        # What it describes can be started again as it is (rollback of a move back to main)
+        # What it describes can be started again (rollback of a move back to main). migrate-instance.sh passes the
+        # environment through make_definition's allowlist, which drops the NODE_ENV the agent itself adds
+        self.assertEqual(result['env']['NODE_ENV'], 'production')
         self.run_op('pm2-delete 11224_ktomy')
         definition = {key: result[key] for key in ('name', 'cwd', 'interpreter', 'env')}
+        definition['env'] = {key: value for key, value in definition['env'].items() if key != 'NODE_ENV'}
         self.assertEqual(self.run_op('pm2-start', json.dumps({**definition, 'script': 'server.js'}))['status'], 'online')
         for command in ('pm2-describe 11999_missing', 'pm2-describe setup-ns', 'pm2-describe'):
             with self.assertRaises(agent.AgentError, msg=command):

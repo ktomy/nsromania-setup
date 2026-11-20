@@ -68,6 +68,12 @@ CONFIG = Config()
 NAME_RE = re.compile(r'^11(\d{3,5})_([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)$')
 SUBDOMAIN_RE = re.compile(r'^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$')
 ENV_KEY_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{0,127}$')
+# Instances run in root PM2: variables read by Node, the dynamic linker, OpenSSL or a shell would run code as root
+# (e.g. NODE_OPTIONS="--import data:..."). Mirrors isReservedEnvVariableName in src/lib/envVariables.ts, except PORT,
+# which is required and checked against the process name.
+RESERVED_ENV_PREFIXES = ('NODE_', 'NPM_', 'LD_', 'DYLD_', 'UV_', 'PM2_', 'OPENSSL_', 'BASH_', 'MALLOC_')
+RESERVED_ENV_NAMES = {'PATH', 'HOME', 'PWD', 'USER', 'LOGNAME', 'SHELL', 'ENV', 'IFS', 'TMPDIR', 'GCONV_PATH',
+                      'LOCPATH', 'HOSTALIASES', 'RES_OPTIONS', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'PYTHONPATH', 'PERL5LIB'}
 # Server-level vhosts on every hosting server that must never be listed, replaced or deleted as instances
 RESERVED_VHOSTS = {'00-default', 'default', 'setup'}
 MAX_STDIN = 256 * 1024
@@ -159,6 +165,8 @@ def validate_definition(raw, config=CONFIG):
     for key, value in env.items():
         if not ENV_KEY_RE.match(key):
             raise AgentError(f'invalid environment variable name: {key[:40]}')
+        if key.upper() in RESERVED_ENV_NAMES or key.upper().startswith(RESERVED_ENV_PREFIXES):
+            raise AgentError(f'reserved environment variable name: {key}')
         if not isinstance(value, str) or len(value) > MAX_ENV_VALUE or '\0' in value:
             raise AgentError(f'invalid value for {key}')
     if env.get('PORT') != str(port):

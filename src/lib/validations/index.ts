@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isReservedSiteName } from '@/lib/siteNames';
 
 // Type for translation function
 type T = (key: string) => string;
@@ -21,6 +22,10 @@ export const subdomainSchema = (t: T) =>
         .regex(/^[a-z0-9-]+$/, t('errors.subdomain.pattern'))
         .refine((val) => !val.startsWith('-') && !val.endsWith('-'), {
             error: t('errors.subdomain.hyphen'),
+        })
+        // MongoDB system databases and the panel's own names; shown as taken
+        .refine((val) => !isReservedSiteName(val), {
+            error: t('errors.subdomain.taken'),
         });
 
 export const apiSecretSchema = (t: T) =>

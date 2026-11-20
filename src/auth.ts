@@ -61,6 +61,26 @@ if (!process.env.GITHUB_CLIENT_SECRET) {
     console.warn('Missing environment variable "GITHUB_CLIENT_SECRET"');
 }
 
+// The GitHub provider may take the primary address from /user/emails without checking that it is verified
+async function isVerifiedGitHubEmail(accessToken: string | undefined, email: string | null | undefined) {
+    if (!accessToken || !email) {
+        return false;
+    }
+    try {
+        const response = await fetch('https://api.github.com/user/emails', {
+            headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'authjs' },
+        });
+        if (!response.ok) {
+            return false;
+        }
+        const emails = (await response.json()) as { email: string; verified: boolean }[];
+        return emails.some((entry) => entry.verified && entry.email.toLowerCase() === email.toLowerCase());
+    } catch (error) {
+        console.error('Unable to check GitHub email verification:', error);
+        return false;
+    }
+}
+
 export const providerMap = providers
     .filter((provider) => provider !== null)
     .map((provider) => {
@@ -92,7 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             return false; // Redirect unauthenticated users to login page
         },
-        async signIn({ user, profile }) {
+        async signIn({ user, account, profile }) {
             // console.log("SignIn arguments:\nuser: ", user,
             //     "\naccount: ", account,
             //     "\nprofile: ", profile,
@@ -100,6 +120,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             //     "\ncredentials: ", credentials);
 
             if (!user) {
+                return false;
+            }
+
+            // Accounts are linked by email (allowDangerousEmailAccountLinking), so an OAuth sign-in is accepted only
+            // when the provider has verified that address; otherwise anyone could add an admin's email to a new
+            // GitHub account and sign in as that admin.
+            if (account?.provider === 'google' && profile?.email_verified !== true) {
+                console.warn(`Refusing Google sign-in with unverified email ${user.email}`);
+                return false;
+            }
+            if (account?.provider === 'github' && !(await isVerifiedGitHubEmail(account.access_token, user.email))) {
+                console.warn(`Refusing GitHub sign-in with unverified email ${user.email}`);
                 return false;
             }
 

@@ -1,6 +1,15 @@
 import { MongoClient } from 'mongodb';
 import { getRemoteServer, isRemoteServer, MAIN_SERVER_ID } from './servers';
 
+// Site databases are named after the site; never create or drop a MongoDB system database through them
+const SYSTEM_DATABASES = new Set(['admin', 'local', 'config']);
+
+function assertSiteDatabaseName(name: string) {
+    if (!name || SYSTEM_DATABASES.has(name.toLowerCase()) || !/^[A-Za-z0-9-]{1,63}$/.test(name)) {
+        throw new Error(`Refusing to use ${JSON.stringify(name)} as a site database`);
+    }
+}
+
 export type DatabaseSize = {
     dbName: string;
     dataSize: number;
@@ -94,6 +103,7 @@ export async function checkMongoDatabaseAndUser(
 }
 
 export async function createDatabaseAndUser(name: string, password: string, serverId: string = MAIN_SERVER_ID) {
+    assertSiteDatabaseName(name);
     const client = createMongoClient(serverId);
 
     try {
@@ -129,6 +139,7 @@ export async function createDatabaseAndUser(name: string, password: string, serv
 }
 
 export async function deleteDatabaseAndUser(name: string, serverId: string = MAIN_SERVER_ID) {
+    assertSiteDatabaseName(name);
     const client = createMongoClient(serverId);
 
     try {

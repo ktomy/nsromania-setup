@@ -119,18 +119,23 @@ async function writeZoneAndReload(zoneText: string) {
     }
 }
 
+// Static records of the zone header (setup, d1, mail, ...) are never created or deleted as instance subdomains
+async function assertNotReserved(subdomain: string) {
+    if (await fileExists(ZONE_HEADER_PATH)) {
+        const reserved = reservedLabels(await fs.readFile(ZONE_HEADER_PATH, 'utf8'));
+        if (reserved.has(subdomain.toLowerCase())) {
+            throw new Error(`Subdomain ${subdomain} is reserved`);
+        }
+    }
+}
+
 // Point the subdomain at the server hosting it, replacing any previous record (also used when moving a site)
 export async function createSubdomain(subdomain: string, serverId: string = MAIN_SERVER_ID) {
     validateSubdomain(subdomain);
     const target = getDnsTarget(serverId);
 
     await withZoneLock(async () => {
-        if (await fileExists(ZONE_HEADER_PATH)) {
-            const reserved = reservedLabels(await fs.readFile(ZONE_HEADER_PATH, 'utf8'));
-            if (reserved.has(subdomain.toLowerCase())) {
-                throw new Error(`Subdomain ${subdomain} is reserved`);
-            }
-        }
+        await assertNotReserved(subdomain);
 
         const zoneText = await fs.readFile(ZONE_FILE_PATH, 'utf8');
         const updated = setSubdomainRecord(zoneText, subdomain, target);
@@ -142,11 +147,10 @@ export async function createSubdomain(subdomain: string, serverId: string = MAIN
 }
 
 export async function deleteSubdomain(subdomain: string) {
-    if (!subdomain) {
-        throw new Error('Subdomain name is required');
-    }
+    validateSubdomain(subdomain);
 
     await withZoneLock(async () => {
+        await assertNotReserved(subdomain);
         const zoneText = await fs.readFile(ZONE_FILE_PATH, 'utf8');
         const updated = setSubdomainRecord(zoneText, subdomain, null);
         if (updated === zoneText) {

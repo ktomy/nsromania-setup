@@ -1,6 +1,6 @@
 import { resolveNightscoutNodeInterpreter } from '@/lib/services/nsnode';
 import { PartialNSDomainWithEnvironments } from '@/types/domains';
-import { sanitizeEnvVariableName } from '@/lib/envVariables';
+import { isReservedEnvVariableName, sanitizeEnvVariableName } from '@/lib/envVariables';
 import { callRemoteAgent } from './remoteagent';
 import { getServerIds, isRemoteServer, MAIN_SERVER_ID, serverIdOf } from './servers';
 
@@ -224,6 +224,11 @@ export async function buildDomainProcess(
     // Names are cleaned as when saved, so rows stored before that check cannot break a start on another server
     domain.environments?.forEach((env) => {
         const variable = sanitizeEnvVariableName(env.variable);
+        if (variable && isReservedEnvVariableName(variable)) {
+            // Refused when saved; rows stored before that check are skipped here, never passed to PM2
+            console.warn(`Skipping reserved environment variable ${variable} of ${domain.domain}`);
+            return;
+        }
         if (variable && env.value) {
             if (variable === 'MONGODB_URI' || variable === 'MONGO_CONNECTION') {
                 connectionStringInVariables = true;

@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     const registrationRequest = parsed.data;
 
-    console.log('Registration request:', registrationRequest);
+    console.log('Registration request for subdomain:', registrationRequest.domain);
 
     if (process.env.NODE_ENV !== 'development' && !(await validateCaptcha(registrationRequest.reCAPTCHAToken))) {
         return new Response(JSON.stringify({ error: t('errors.reCAPTCHA.failed') }), {

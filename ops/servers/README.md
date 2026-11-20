@@ -41,7 +41,8 @@ panel (main, root PM2) ──ssh nsagent@d1 <operation>──▶ forced command:
   the server is fixed and moving the site needs `migrate-instance.sh`. Site owners who initialize their own site get
   the stored server and cannot choose. The site page shows the server and its hostname.
 - **Host agent** (`host_agent.py` → `/usr/local/libexec/nsromania-host-agent`): the only thing the panel's key can
-  run. Besides PM2 and vhost operations it answers the read-only `usage-stats YYYY-MM-DD` used by the usage
+  run. Besides PM2 and vhost operations (including `pm2-describe` and `vhost-forward`, used only to move an instance
+  back to main) it answers the read-only `usage-stats YYYY-MM-DD` used by the usage
   statistics job on main (`ops/usage-stats/README.md`), which needs the collector installed at
   `/usr/local/sbin/nsromania-usage-stats`. It accepts a fixed list of operations, validates every argument (process names `11<id>_<subdomain>` with the
   matching port, Nightscout `cwd` and Node interpreter inside the installed version trees, environment size and
@@ -135,6 +136,32 @@ from whoever started the app stay behind. The main database stays as the rollbac
 After the move: the forwarder vhost on main can be deleted once clients have followed the new CNAME, and the main
 database copy dropped when rollback is no longer wanted. Both are manual (see the runbook).
 
+### Moving an instance back to main
+
+The reverse direction (since 2026-11-20) has its own actions; `SERVER` is still the additional server, now the source:
+
+```
+migrate-instance.sh preflight-back SUB d1   # read-only
+migrate-instance.sh migrate-back   SUB d1   # ~30 s downtime
+migrate-instance.sh finalize-back  SUB d1   # after checking: save d1's PM2 list without the app
+migrate-instance.sh rollback-back  SUB d1   # before dropremote; data written on main meanwhile is not copied back
+migrate-instance.sh dropremote     SUB d1   # after finalize-back: drop d1's database copy once it matches the dump
+```
+
+`preflight-back` needs the site active, initialized and on d1, its app online there with the matching port, its
+Nightscout version and Node interpreter installed on main, no app or database of that name on main, and main's vhost
+either absent or still the forwarder to d1. `migrate-back` takes the deployment lock and backs up main's `dump.pm2` and
+`dump.pm2.bak`, main's vhost (if any), the zone, the panel rows and the app as d1 runs it (agent `pm2-describe`) to
+`/var/log/nightscout/backup/migrateback-SUB-<UTC>`. It builds the definition with the same allowlist as a forward move,
+deletes the app on d1 (the definition stays in the backup for `rollback-back`), copies the database and its user to
+main and compares them, starts the definition in main's root PM2 with the panel's log layout, creates main's vhost from
+`_template`, checks `/api/v1/status.json` through main's nginx, turns d1's vhost into a TLS-verified forwarder to main
+(agent `vhost-forward`, target address fixed in the agent), points the CNAME at `nsromania.info.`, sets
+`ns_domain.server` to NULL and adds only this app to main's `dump.pm2`/`dump.pm2.bak` (no global save). d1's saved PM2
+list still has the app until `finalize-back`; d1's database copy stays until `dropremote` (restore command in
+`RESTORE-D1-DB.txt` next to the dump). Verify as in runbook step 5, with the site answering from main. d1's forwarder is
+removed later with the agent's `vhost-delete SUB` once d1's nginx log shows no more requests for it.
+
 ### Runbook
 
 From a workstation, with `MAIN` being the strict-host-key SSH command for `ktomy@nsromania.info`
@@ -187,7 +214,8 @@ are typed, saved and started.
 Lessons from the first move (`ktomy`): browsers followed the new CNAME (TTL 300 s) within 20 minutes, but an ESP32
 glucose display (`ESP32HTTPClient`) kept calling main's address; such devices resolve DNS once at boot and follow
 only after a restart. Since 2026-11-18 usage statistics include each server's own nginx log (forwarded requests are
-counted once, on main).
+counted once, on main). With forwarders in both directions each server's count skips requests from the other
+servers' addresses: d1 skips main's (`--exclude-forwarders`), main skips the additional servers' (since 2026-11-20).
 
 ### Moves done
 
@@ -197,6 +225,9 @@ counted once, on main).
 | 200 smallest sites (by MongoDB storage + index size, 0.3–65.6 MB) | 2026-11-18 02:30–05:19 UTC | `batch-migrate.sh`; 27–77 s downtime each (average 48 s); all 200 online on d1 and answering through public DNS afterwards. Finalized and main's database copies dropped 06:50–07:30 (`dropmain`); forwarders removed at 06:52 for the 155 sites that had no request on main after their move, 45 kept. List, per-site results and log: `/var/log/nightscout/backup/batch-migrate-20261118T023056Z` (per-site backups `migrate-SUB-20261118T*`). `rusu-sofia` failed and was rolled back automatically, see below |
 | `rusu-sofia` (id 767) | 2026-11-19 22:17 UTC | after its failed attempt of 2026-11-18: the stale copy on d1 was dumped to `d1-leftover-rusu-sofia-20261119T221718Z` (on main) and dropped; then `migrate` with 35 s downtime, backup `migrate-rusu-sofia-20261119T221750Z`; new entries arrived on d1 at 22:21; finalized 22:23 (`finalize-rusu-sofia-20261119T222344Z`); main database copy dropped 22:32 after matching the dump (`RESTORE-MAIN-DB.txt` there); forwarder vhost still on main |
 | forwarder cleanup | 2026-11-19 22:26 UTC | 44 of the 46 remaining forwarders on main removed after checking that day's log (no requests, a scanner only, or the client already on d1); `bali` and `rusu-sofia` kept. Backup `forwarders-20261119T222613Z` |
+| 80 largest sites (by MongoDB storage + index size, 136–302 MB, 13.8 GB together) | 2026-11-19 22:36–23:45 UTC | `batch-migrate.sh`, biggest first, as a memory-pressure test of d1; 40–68 s downtime each (average 50 s), no failures; all 80 answered through public DNS from d1 afterwards. Finalized and main's database copies dropped 23:46–00:03 (`cleanup-batch.sh`: `finalize` + `dropmain` per site, stops at the first failure); forwarders kept. d1 went from 35.3 to 20.9 GB available (about 180 MB per site), no swap, memory PSI 0. List, results, `batch.log`, `cleanup.log`: `/var/log/nightscout/backup/batch-migrate-20261119T223623Z` (per site `migrate-SUB-2026111[9]T*`, `finalize-SUB-*`) |
+| forwarder cleanup | 2026-11-20 10:26 UTC | 73 of the 82 forwarders on main removed: no request since 15 minutes after the move (52) or none in the last 4 hours (21, including `rusu-sofia`); 9 still in use kept (`andreicozos`, `bali`, `dariusica`, `edithardeleanu`, `hun`, `ioanatopala`, `kitty`, `mirunaamelie`, `tudoramaliaalex`). Backup `forwarders-20261120T102641Z` |
+| `ktomy` (id 224) back to main | 2026-11-20 10:37 UTC | first move back (`migrate-back`), as a test of the reverse direction; about 27 s downtime; documents and user identical; new entries on main from 10:41; `finalize-back` 10:42 (d1 saved 281/281 online); d1 database copy dropped 10:42 after matching the dump (`RESTORE-D1-DB.txt`); forwarder vhost on d1 kept. Backup `migrateback-ktomy-20261120T103707Z` |
 
 ## Certificates
 
@@ -212,16 +243,20 @@ changing it:
 
 - Changing actions take the deployment lock (`flock` on `deployment.lock`) and write every file and row they change
   to `/var/log/nightscout/backup/<action>-SUB-<UTC>` first. `preflight` stays read-only.
-- Reach the target only through the host agent operations (`host_agent.py`: `ping`, `pm2-list`, `pm2-start` with
-  the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-delete`, `vhost-list`, `usage-stats`)
+- Reach the target only through the host agent operations (`host_agent.py`: `ping`, `pm2-list`, `pm2-describe`,
+  `pm2-start` with the definition on stdin, `pm2-delete`, `pm2-save`, `vhost-create`, `vhost-forward`,
+  `vhost-delete`, `vhost-list`, `usage-stats`)
   and the MongoDB tunnel. A new remote operation means changing `host_agent.py` and its tests, then re-running
   `install-host-agent.sh` on every server.
 - Secrets never reach a command line or the output: MongoDB URLs go through the environment (`mongo_eval`) or a
   temporary 0600 YAML `--config` (`mongo_tool_config`), and only named keys are read from the panel `.env`.
 - The environment carried to the target is an allowlist that mirrors `buildDomainProcess` in
   `src/lib/services/nsruntime.ts` (fixed keys plus the domain's `ns_domain_environment` rows). Update both together.
-- Never run a global PM2 `save`, `restart all` or similar on main; remove single entries from the dump files as
-  `finalize` does. On the target, `pm2-save` saves only when at least 90% of apps are online.
+- Never run a global PM2 `save`, `restart all` or similar on main; change single entries in the dump files as
+  `finalize` (`dump_remove`) and `migrate-back` (`dump_add`) do. On the target, `pm2-save` saves only when at least
+  90% of apps are online.
+- Backup directories of moves back use the prefix `migrateback-`, never `migrate-back-`: a forward lookup
+  `migrate-SUB-<stamp>` for a site named `back-SUB` would match the latter.
 - Edit the zone only through `set_cname` (candidate file, `named-checkzone`, atomic replace, `rndc reload`).
 
 `batch-migrate.sh LIST SERVER` (run as root on main from the staging directory, normally with `setsid nohup`) runs
@@ -240,16 +275,17 @@ piped to the outer shell.
 
 Not supported yet (candidates for extension):
 
-- moving a site back to main or between additional servers (`SERVER` must not be `main`, and preflight requires
-  `ns_domain.server IS NULL`);
+- moving a site directly between two additional servers (move it back to main, then on);
+- `rehearse` for the reverse direction;
 - several sites in one lock and one backup directory (`batch-migrate.sh` runs `migrate` once per site);
 - `finalize`, `dropmain` and step 8 for many sites at once (on 2026-11-18 a loop ran `finalize` + `dropmain` per
-  site, and a one-off script removed forwarders without traffic; see the moves table);
+  site, on 2026-11-19 the one-off `cleanup-batch.sh` in the batch directory did the same from `results.tsv`, and a
+  one-off script removed forwarders without traffic; see the moves table);
 - automating runbook step 8 (checking forwarder traffic and removing the vhost);
 - moving from the panel instead of the shell.
 
 There are no automated tests for `migrate-instance.sh`. Check changes with `bash -n` (and `shellcheck` when
-available), then `preflight` and `rehearse` against a live site, which change nothing visible. The host agent has
+available), then `preflight`, `preflight-back` and `rehearse` against a live site, which change nothing visible. The host agent has
 unit tests: `python3 -m unittest ops/servers/test_host_agent.py`.
 
 ## Known gaps

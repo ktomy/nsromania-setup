@@ -46,7 +46,8 @@ panel (main, root PM2) ──ssh nsagent@d1 <operation>──▶ forced command:
   statistics job on main (`ops/usage-stats/README.md`), which needs the collector installed at
   `/usr/local/sbin/nsromania-usage-stats`. It accepts a fixed list of operations, validates every argument (process names `11<id>_<subdomain>` with the
   matching port, Nightscout `cwd` and Node interpreter inside the installed version trees, environment size and
-  names), takes a lock for changes, refuses the reserved vhosts (`00-default`, `default`, `setup`), backs up vhosts it
+  names, refusing names that Node, the linker, OpenSSL or a shell read, such as `NODE_OPTIONS`; same list as
+  `src/lib/envVariables.ts`), takes a lock for changes, refuses the reserved vhosts (`00-default`, `default`, `setup`), backs up vhosts it
   replaces or deletes to `/var/log/nightscout/backup/vhosts`, and logs to syslog (`journalctl -t nsromania-host-agent`).
   `pm2-save` saves only when at least 90% of apps are online, like the panel on main. Tests:
   `python3 -m unittest ops/servers/test_host_agent.py`.
@@ -252,6 +253,7 @@ changing it:
   temporary 0600 YAML `--config` (`mongo_tool_config`), and only named keys are read from the panel `.env`.
 - The environment carried to the target is an allowlist that mirrors `buildDomainProcess` in
   `src/lib/services/nsruntime.ts` (fixed keys plus the domain's `ns_domain_environment` rows). Update both together.
+  It must not carry `NODE_ENV` or another reserved name: the agent refuses the whole definition (since 2026-11-20).
 - Never run a global PM2 `save`, `restart all` or similar on main; change single entries in the dump files as
   `finalize` (`dump_remove`) and `migrate-back` (`dump_add`) do. On the target, `pm2-save` saves only when at least
   90% of apps are online.
